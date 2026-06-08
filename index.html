@@ -6,14 +6,13 @@
   <title>blvi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Rouge+Script&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --text: #f0ece4;
       --muted: rgba(240,236,228,0.45);
-      --accent: #d4c4a8;
     }
 
     body {
@@ -28,18 +27,16 @@
       overflow-x: hidden;
     }
 
-    /* video background */
+    /* background */
     .bg-video {
       position: fixed;
       top: 50%; left: 50%;
       min-width: 100%; min-height: 100%;
       width: auto; height: auto;
       transform: translate(-50%, -50%) scale(1.5);
-      object-fit: cover;
       z-index: -2;
       pointer-events: none;
     }
-
     .bg-overlay {
       position: fixed;
       inset: 0;
@@ -64,7 +61,9 @@
       animation: fadeUp 0.9s ease 0.4s forwards;
     }
     .platforms a {
-      display: flex; align-items: center; gap: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
       color: var(--muted);
       text-decoration: none;
       font-family: 'IM Fell English', serif;
@@ -74,57 +73,54 @@
     }
     .platforms a:hover { color: var(--text); }
     .platforms img {
-      width: 15px; height: 15px; object-fit: contain;
+      width: 15px;
+      height: 15px;
+      object-fit: contain;
       filter: grayscale(1) brightness(0.6);
       transition: filter 0.3s ease;
     }
     .platforms a:hover img { filter: grayscale(0) brightness(1); }
 
-    /* ── two-column row ── */
+    /* two-column layout */
     .columns {
       display: flex;
-      gap: 6rem;
       align-items: flex-start;
       justify-content: center;
+      gap: 4rem;
       width: 100%;
+      max-width: 960px;
     }
 
-    /* ── panels ── */
+    /* parallax wrappers */
+    .card-wrap { display: inline-block; position: relative; will-change: transform; }
+
+    /* panels — identical width and structure */
     .panel {
-      flex-shrink: 0;
       opacity: 0;
       animation: fadeUp 0.9s ease 0.7s forwards;
+      width: 380px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
-    /* left panel: two polaroids per row, staggered vertically */
-    .panel.left {
-      width: 420px;
-      position: relative;
-    }
-
-    /* each row holds two polaroids side by side */
-    .polaroid-row {
+    /* rows — identical for both panels */
+    .polaroid-row,
+    .friends-row {
       display: flex;
       gap: 2.5rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 2rem;
       align-items: flex-start;
     }
 
-    /* stagger: odd cards nudged down slightly */
-    .polaroid-row .card:nth-child(odd)  { margin-top: 20px; }
-    .polaroid-row .card:nth-child(even) { margin-top: 0px; }
+    /* stagger — same pattern for both panels */
+    .polaroid-row .card-wrap:nth-child(odd),
+    .friends-row  .card-wrap:nth-child(odd)  { margin-top: 0; }
+    .polaroid-row .card-wrap:nth-child(even),
+    .friends-row  .card-wrap:nth-child(even) { margin-top: 20px; }
 
-    /* right panel: 2-per-row grid, grows as friends are added */
-    .panel.right {
-      width: 340px;
-    }
-    .friends-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 150px);
-      gap: 2rem 2.5rem;
-    }
-
-    /* ── card (shared) ── */
+    /* card — shared base */
     .card {
       text-decoration: none;
       color: var(--text);
@@ -133,27 +129,29 @@
       animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.8s both;
     }
 
-    /* float animations per card index */
-    .panel.left .card:nth-child(1)  { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.80s both, float1 20s ease-in-out 2s infinite; }
-    .panel.left .card:nth-child(2)  { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.00s both, float2 24s ease-in-out 2s infinite; }
-    .panel.left .card:nth-child(3)  { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.20s both, float3 22s ease-in-out 2s infinite; }
-    .panel.left .card:nth-child(4)  { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.40s both, float4 26s ease-in-out 2s infinite; }
-    .friends-grid .card:nth-child(1) { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.90s both, float2 22s ease-in-out 2s infinite; }
-    .friends-grid .card:nth-child(2) { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.10s both, float3 25s ease-in-out 2s infinite; }
-    .friends-grid .card:nth-child(3) { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.30s both, float1 20s ease-in-out 2s infinite; }
-    .friends-grid .card:nth-child(4) { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.50s both, float4 23s ease-in-out 2s infinite; }
+    /* float animations */
+    .polaroid-row:nth-child(1) .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.8s both, float1 20s ease-in-out 2s infinite; }
+    .polaroid-row:nth-child(1) .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.0s both, float2 24s ease-in-out 2s infinite; }
+    .polaroid-row:nth-child(2) .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.2s both, float3 22s ease-in-out 2s infinite; }
+    .polaroid-row:nth-child(2) .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.4s both, float4 26s ease-in-out 2s infinite; }
+    .friends-row:nth-child(1)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.9s both, float2 22s ease-in-out 2s infinite; }
+    .friends-row:nth-child(1)  .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.1s both, float3 25s ease-in-out 2s infinite; }
+    .friends-row:nth-child(2)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.3s both, float1 20s ease-in-out 2s infinite; }
+    .friends-row:nth-child(2)  .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.5s both, float4 23s ease-in-out 2s infinite; }
 
     /* polaroid rotations */
-    .panel.left .card:nth-child(1) .card-photo { transform: rotate(-4.5deg); }
-    .panel.left .card:nth-child(2) .card-photo { transform: rotate(3.5deg);  }
-    .panel.left .card:nth-child(3) .card-photo { transform: rotate(2deg);    }
-    .panel.left .card:nth-child(4) .card-photo { transform: rotate(-3deg);   }
+    .polaroid-row:nth-child(1) .card-wrap:nth-child(1) .card-photo { transform: rotate(-3deg);   }
+    .polaroid-row:nth-child(1) .card-wrap:nth-child(2) .card-photo { transform: rotate(-5.5deg); }
+    .polaroid-row:nth-child(2) .card-wrap:nth-child(1) .card-photo { transform: rotate(4deg);    }
+    .polaroid-row:nth-child(2) .card-wrap:nth-child(2) .card-photo { transform: rotate(2deg);    }
 
-    /* friend square slight tilts */
-    .friends-grid .card:nth-child(odd)  .card-photo { transform: rotate(-2deg); }
-    .friends-grid .card:nth-child(even) .card-photo { transform: rotate(2deg);  }
+    /* friend tilts */
+    .friends-row:nth-child(1) .card-wrap:nth-child(1) .card-photo { transform: rotate(-4deg);   }
+    .friends-row:nth-child(1) .card-wrap:nth-child(2) .card-photo { transform: rotate(3deg);    }
+    .friends-row:nth-child(2) .card-wrap:nth-child(1) .card-photo { transform: rotate(2.5deg);  }
+    .friends-row:nth-child(2) .card-wrap:nth-child(2) .card-photo { transform: rotate(-3deg);   }
 
-    /* photo wrapper — this is what rotates */
+    /* photo wrapper */
     .card-photo {
       position: relative;
       overflow: hidden;
@@ -161,12 +159,12 @@
       transition: transform 0.7s cubic-bezier(0.22,1,0.36,1), box-shadow 0.7s ease;
     }
 
-    /* polaroid variant */
+    /* polaroid */
     .card-photo.polaroid {
       background:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E"),
         linear-gradient(135deg, #ede8de 0%, #e8e0d0 40%, #ede5d5 70%, #e6dece 100%);
-      padding: 10px 10px 38px 10px;
+      padding: 10px 10px 0 10px;
       overflow: visible;
     }
     .card-photo.polaroid img {
@@ -174,21 +172,31 @@
       width: 130px;
       aspect-ratio: 1;
       object-fit: cover;
-      filter: grayscale(0.15) brightness(0.92) saturate(0.85);
       transition: filter 0.8s ease;
     }
+    .card-photo.polaroid .card-caption {
+      font-family: 'Rouge Script', cursive;
+      font-size: 1.05rem;
+      color: #3a3228;
+      text-align: center;
+      padding: 6px 4px 10px;
+      letter-spacing: 0.02em;
+      opacity: 0.85;
+      transition: opacity 0.4s ease;
+    }
+    .card:hover .card-photo.polaroid .card-caption { opacity: 1; }
 
-    /* square variant (friends) */
+    /* friend square */
     .card-photo.square img {
       display: block;
-      width: 150px;
-      height: 150px;
+      width: 130px;
+      height: 130px;
       object-fit: cover;
       filter: grayscale(0.2) brightness(0.88) saturate(0.85);
       transition: filter 0.8s ease;
     }
 
-    /* caption sits BELOW the card wrapper — always centred to the photo width */
+    /* friend caption */
     .card-caption {
       font-family: 'IM Fell English', serif;
       font-size: 0.78rem;
@@ -200,79 +208,67 @@
       white-space: nowrap;
     }
 
+    /* parallax wrapper */
+    .card-wrap { display: inline-block; position: relative; will-change: transform; }
+    .friends-grid .card-wrap { display: block; }
     .card:hover { z-index: 10; }
     .card:hover .card-photo {
       transform: rotate(0deg) scale(1.05) !important;
       box-shadow: 0 22px 64px rgba(0,0,0,0.75), 0 4px 16px rgba(0,0,0,0.5);
     }
-    .card:hover .card-photo img { filter: grayscale(0) brightness(1.02) saturate(1.05); }
-    .card:hover .card-caption { color: rgba(240,236,228,0.95); }
+    .card:hover .card-photo img     { filter: brightness(1.02); }
+    .card:hover .card-caption       { color: rgba(240,236,228,0.95); }
 
-    /* ── float keyframes ── */
+    /* keyframes */
     @keyframes float1 {
-      0%,100% { transform: translate(0px, 0px); }
+      0%,100% { transform: translate(0,    0);    }
       30%      { transform: translate(2px, -3px); }
       60%      { transform: translate(-2px, 2px); }
-      80%      { transform: translate(2px, 1px); }
+      80%      { transform: translate(2px,  1px); }
     }
     @keyframes float2 {
-      0%,100% { transform: translate(0px, 0px); }
-      25%      { transform: translate(-2px, 2px); }
-      55%      { transform: translate(2px, -2px); }
-      80%      { transform: translate(-1px, 3px); }
+      0%,100% { transform: translate(0,     0);   }
+      25%      { transform: translate(-2px,  2px); }
+      55%      { transform: translate(2px,  -2px); }
+      80%      { transform: translate(-1px,  3px); }
     }
     @keyframes float3 {
-      0%,100% { transform: translate(0px, 0px); }
+      0%,100% { transform: translate(0,    0);    }
       35%      { transform: translate(2px, -3px); }
-      65%      { transform: translate(-2px, -1px); }
-      85%      { transform: translate(1px, 2px); }
+      65%      { transform: translate(-2px,-1px);  }
+      85%      { transform: translate(1px,  2px);  }
     }
     @keyframes float4 {
-      0%,100% { transform: translate(0px, 0px); }
+      0%,100% { transform: translate(0,     0);   }
       20%      { transform: translate(-2px, -3px); }
-      50%      { transform: translate(2px, 2px); }
-      75%      { transform: translate(-2px, 1px); }
+      50%      { transform: translate(2px,   2px); }
+      75%      { transform: translate(-2px,  1px); }
     }
-
     @keyframes appear {
       from { opacity: 0; transform: translateY(24px) scale(0.9); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
+      to   { opacity: 1; transform: translateY(0)    scale(1);   }
     }
-
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(18px); }
-      to   { opacity: 1; transform: translateY(0); }
+      to   { opacity: 1; transform: translateY(0);    }
     }
 
     @media (max-width: 900px) {
       .columns { flex-direction: column; align-items: center; gap: 3rem; }
-      .panel { width: 100%; max-width: 420px; }
+      .panel.left, .panel.right { width: 100%; max-width: 420px; }
+      .friends-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 480px) {
       .logo-wrap img { width: 160px; }
-      .panel {
-        height: auto;
-        display: grid;
-        grid-template-columns: repeat(2,1fr);
-        gap: 20px;
-        padding: 1rem 0;
-      }
-      .card {
-        position: relative !important;
-        width: auto !important;
-        top: auto !important; left: auto !important;
-        bottom: auto !important; right: auto !important;
-        animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.8s both !important;
-        display: block;
-      }
-      .card .card-photo { transform: none !important; }
+      .polaroid-row  { gap: 1rem; }
+      .card-photo.polaroid img { width: 100%; }
     }
   </style>
 </head>
 <body>
 
   <video class="bg-video" autoplay muted loop playsinline>
-    <source src="https://archive.org/download/tyer_20260608/tyer.mp4" type="video/mp4">
+    <source src="https://archive.org/download/img-1665-2/Img%201665%202.mp4" type="video/mp4">
   </video>
   <div class="bg-overlay"></div>
 
@@ -281,136 +277,177 @@
   </div>
 
   <div class="platforms">
-    <a href="https://open.spotify.com/artist/7HwF11ILY35YWfO8FTiOQg?si=qTFH5IwkQ3K8F3eNPmn7dA">
-      <img src="https://i.imgur.com/ifasgKW.png" alt=""> Spotify
+    <a href="https://open.spotify.com/artist/7HwF11ILY35YWfO8FTiOQg?si=qTFH5IwkQ3K8F3eNPmn7dA" target="_blank" rel="noopener">
+      <img src="https://i.imgur.com/ifasgKW.png" alt=""> spotify
     </a>
-    <a href="https://soundcloud.com/blvi">
-      <img src="https://i.imgur.com/pFJR1qV.png" alt=""> SoundCloud
+    <a href="https://soundcloud.com/blvi" target="_blank" rel="noopener">
+      <img src="https://i.imgur.com/pFJR1qV.png" alt=""> soundcloud
     </a>
   </div>
 
   <div class="columns">
 
-    <!-- LEFT: releases -->
     <div class="panel left">
 
-      <div class="polaroid-row">
-        <a class="card" href="https://open.spotify.com/track/3jA1dfRX5lcQ22i3cM3g6c?si=8bc5d788a7424029">
-          <div class="card-photo polaroid">
-            <img src="https://imgur.com/zD9gcjl.jpg" alt="worth it">
-          </div>
-          <div class="card-caption">worth it</div>
-        </a>
-        <a class="card" href="https://open.spotify.com/track/6GHMWx90X0d1jZeVjFw7Gi?si=7415ecaeeeeb4227">
-          <div class="card-photo polaroid">
-            <img src="https://i.imgur.com/uFRRPDn.jpeg" alt="skin care">
-          </div>
-          <div class="card-caption">skin care</div>
-        </a>
+        <div class="polaroid-row">
+          <div class="card-wrap"><a class="card" href="https://open.spotify.com/track/3jA1dfRX5lcQ22i3cM3g6c?si=8bc5d788a7424029" target="_blank" rel="noopener">
+            <div class="card-photo polaroid">
+              <img src="https://imgur.com/zD9gcjl.jpg" alt="worth it">
+              <div class="card-caption">worth it</div>
+            </div>
+          </a></div>
+          <div class="card-wrap"><a class="card" href="https://open.spotify.com/track/6GHMWx90X0d1jZeVjFw7Gi?si=7415ecaeeeeb4227" target="_blank" rel="noopener">
+            <div class="card-photo polaroid">
+              <img src="https://i.imgur.com/uFRRPDn.jpeg" alt="skin care">
+              <div class="card-caption">skin care</div>
+            </div>
+          </a></div>
+        </div>
+
+        <div class="polaroid-row">
+          <div class="card-wrap"><a class="card" href="https://open.spotify.com/track/7MR542qEmj4I85qlc19m9V?si=a68bc037c2b94db7" target="_blank" rel="noopener">
+            <div class="card-photo polaroid">
+              <img src="https://i.imgur.com/DJJ8gy2.jpeg" alt="renshaw lane">
+              <div class="card-caption">renshaw lane</div>
+            </div>
+          </a></div>
+          <div class="card-wrap"><a class="card" href="https://open.spotify.com/track/3gbhm4GgJFXw5ZRQIkcSWV?si=4bb016b43c7f4b11" target="_blank" rel="noopener">
+            <div class="card-photo polaroid">
+              <img src="https://i.imgur.com/3Ru1GJ3.jpeg" alt="world eater">
+              <div class="card-caption">world eater</div>
+            </div>
+          </a></div>
+        </div>
+
       </div>
 
-      <div class="polaroid-row">
-        <a class="card" href="https://open.spotify.com/track/7MR542qEmj4I85qlc19m9V?si=a68bc037c2b94db7">
-          <div class="card-photo polaroid">
-            <img src="https://i.imgur.com/DJJ8gy2.jpeg" alt="renshaw lane">
-          </div>
-          <div class="card-caption">renshaw lane</div>
-        </a>
-        <a class="card" href="https://open.spotify.com/track/3gbhm4GgJFXw5ZRQIkcSWV?si=4bb016b43c7f4b11">
-          <div class="card-photo polaroid">
-            <img src="https://i.imgur.com/3Ru1GJ3.jpeg" alt="world eater">
-          </div>
-          <div class="card-caption">world eater</div>
-        </a>
-      </div>
-
-    </div>
-
-    <!-- RIGHT: friends -->
     <div class="panel right">
-      <div class="friends-grid">
 
-        <a class="card" href="https://soundcloud.com/ihateyouclaus">
-          <div class="card-photo square">
-            <img src="https://i1.sndcdn.com/avatars-tDzeTt2fvol1G0G7-zF6jrQ-t1080x1080.jpg" alt="ihateyouclaus">
-          </div>
-          <div class="card-caption">ihateyouclaus</div>
-        </a>
+        <div class="friends-row">
+          <div class="card-wrap"><a class="card" href="https://soundcloud.com/ihateyouclaus" target="_blank" rel="noopener">
+            <div class="card-photo square">
+              <img src="https://i1.sndcdn.com/avatars-tDzeTt2fvol1G0G7-zF6jrQ-t1080x1080.jpg" alt="ihateyouclaus">
+            </div>
+            <div class="card-caption">ihateyouclaus</div>
+          </a></div>
+          <div class="card-wrap"><a class="card" href="https://soundcloud.com/t3rryy" target="_blank" rel="noopener">
+            <div class="card-photo square">
+              <img src="https://i1.sndcdn.com/avatars-FZgjkf3XjaAdxLkP-XZv29g-t1080x1080.jpg" alt="terry">
+            </div>
+            <div class="card-caption">terry</div>
+          </a></div>
+        </div>
 
-        <a class="card" href="https://soundcloud.com/t3rryy">
-          <div class="card-photo square">
-            <img src="https://i1.sndcdn.com/avatars-FZgjkf3XjaAdxLkP-XZv29g-t1080x1080.jpg" alt="terry">
-          </div>
-          <div class="card-caption">terry</div>
-        </a>
-
-        <a class="card" href="https://soundcloud.com/5ume">
-          <div class="card-photo square">
-            <img src="https://i1.sndcdn.com/avatars-vVJZ51ofo3f7E9s3-T0401A-t1080x1080.jpg" alt="5ume">
-          </div>
-          <div class="card-caption">5ume</div>
-        </a>
-
-        <a class="card" href="https://soundcloud.com/sojuxxxcigs">
-          <div class="card-photo square">
-            <img src="https://i1.sndcdn.com/avatars-bAoPKwoIUwcQgyFP-UUIFnQ-t1080x1080.jpg" alt="SojuN'Cigs">
-          </div>
-          <div class="card-caption">SojuN'Cigs</div>
-        </a>
+        <div class="friends-row">
+          <div class="card-wrap"><a class="card" href="https://soundcloud.com/5ume" target="_blank" rel="noopener">
+            <div class="card-photo square">
+              <img src="https://i1.sndcdn.com/avatars-vVJZ51ofo3f7E9s3-T0401A-t1080x1080.jpg" alt="5ume">
+            </div>
+            <div class="card-caption">5ume</div>
+          </a></div>
+          <div class="card-wrap"><a class="card" href="https://soundcloud.com/sojuxxxcigs" target="_blank" rel="noopener">
+            <div class="card-photo square">
+              <img src="https://i1.sndcdn.com/avatars-bAoPKwoIUwcQgyFP-UUIFnQ-t1080x1080.jpg" alt="SojuN'Cigs">
+            </div>
+            <div class="card-caption">SojuN'Cigs</div>
+          </a></div>
+        </div>
 
       </div>
-    </div>
 
   </div>
 
   <canvas id="leaves"></canvas>
 
   <script>
+    // ── stars ──
     const canvas = document.getElementById('leaves');
-    const ctx = canvas.getContext('2d');
+    const ctx    = canvas.getContext('2d');
+
     function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     resize();
     window.addEventListener('resize', resize);
     canvas.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;';
-    const COUNT = 28;
-    const leaves = [];
-    function leafShape(ctx, w, h) {
-      ctx.beginPath();
-      ctx.moveTo(0, -h/2);
-      ctx.bezierCurveTo(w/2,-h/4, w/2,h/4, 0,h/2);
-      ctx.bezierCurveTo(-w/2,h/4, -w/2,-h/4, 0,-h/2);
-      ctx.closePath();
-    }
-    function rand(a,b) { return a + Math.random()*(b-a); }
-    for (let i=0; i<COUNT; i++) {
-      leaves.push({
-        x: rand(0,window.innerWidth), y: rand(-200,window.innerHeight),
-        w: rand(6,14), h: rand(10,22),
-        rot: rand(0,Math.PI*2), rotSpeed: rand(-0.008,0.008),
-        speedX: rand(-0.25,0.25), speedY: rand(0.18,0.55),
-        sway: rand(0.3,0.9), swayOff: rand(0,Math.PI*2),
-        swaySpeed: rand(0.004,0.012),
-        alpha: rand(0.06,0.22), t: rand(0,1000),
-      });
-    }
-    function draw() {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      for (const l of leaves) {
-        l.t++; l.rot += l.rotSpeed;
-        l.x += l.speedX + Math.sin(l.t*l.swaySpeed+l.swayOff)*l.sway*0.4;
-        l.y += l.speedY;
-        if (l.y > canvas.height+30) { l.y=rand(-60,-10); l.x=rand(0,canvas.width); }
-        ctx.save();
-        ctx.translate(l.x,l.y); ctx.rotate(l.rot); ctx.globalAlpha=l.alpha;
-        leafShape(ctx,l.w,l.h);
-        ctx.fillStyle='#c8b89a'; ctx.fill();
-        ctx.beginPath(); ctx.moveTo(0,-l.h/2); ctx.lineTo(0,l.h/2);
-        ctx.strokeStyle='rgba(180,160,120,0.5)'; ctx.lineWidth=0.5; ctx.stroke();
-        ctx.restore();
+
+    function rand(a, b) { return a + Math.random() * (b - a); }
+
+    const stars = Array.from({ length: 200 }, () => {
+      const big = Math.random() < 0.18;
+      return {
+        x: rand(0, window.innerWidth),
+        y: rand(0, window.innerHeight),
+        core:      big ? rand(0.8, 1.6) : rand(0.3, 0.8),
+        halo:      big ? rand(6, 14)    : rand(2, 6),
+        phase:     rand(0, Math.PI * 2),
+        speed:     rand(0.003, big ? 0.014 : 0.02),
+        peakAlpha: big ? rand(0.55, 0.95) : rand(0.2, 0.6),
+        r: 255, g: 255,
+        b: Math.random() < 0.6 ? 255 : Math.random() < 0.5 ? 210 : 168,
+      };
+    });
+
+    function drawStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of stars) {
+        s.phase += s.speed;
+        const alpha = s.peakAlpha * Math.pow(Math.max(0, Math.sin(s.phase)), 2);
+        if (alpha < 0.008) continue;
+
+        const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.halo);
+        glow.addColorStop(0,   `rgba(${s.r},${s.g},${s.b},${alpha * 0.6})`);
+        glow.addColorStop(0.4, `rgba(${s.r},${s.g},${s.b},${alpha * 0.15})`);
+        glow.addColorStop(1,   `rgba(${s.r},${s.g},${s.b},0)`);
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.halo, 0, Math.PI * 2);
+        ctx.fillStyle = glow;
+        ctx.fill();
+
+        const core = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.core);
+        core.addColorStop(0, `rgba(255,255,255,${alpha})`);
+        core.addColorStop(1, `rgba(${s.r},${s.g},${s.b},0)`);
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.core, 0, Math.PI * 2);
+        ctx.fillStyle = core;
+        ctx.fill();
       }
-      requestAnimationFrame(draw);
+      requestAnimationFrame(drawStars);
     }
-    draw();
+
+    // ── parallax ──
+    let mouseX = 0, mouseY = 0;
+    document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+    const RADIUS = 180; // px — how close cursor must be to affect a card
+    const STRENGTH = 12; // max pixel shift
+
+    const allWraps = document.querySelectorAll('.card-wrap');
+    const wrapData = Array.from(allWraps).map(wrap => ({ wrap, tx: 0, ty: 0 }));
+    function parallaxLoop() {
+      for (const d of wrapData) {
+        const rect = d.wrap.getBoundingClientRect();
+        const cx = rect.left + rect.width  / 2;
+        const cy = rect.top  + rect.height / 2;
+        const dx = mouseX - cx;
+        const dy = mouseY - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        let targetX = 0, targetY = 0;
+        if (dist < RADIUS) {
+          const influence = (1 - dist / RADIUS);
+          targetX = (dx / RADIUS) * STRENGTH * influence;
+          targetY = (dy / RADIUS) * STRENGTH * influence;
+        }
+
+        // smooth lerp toward target
+        d.tx += (targetX - d.tx) * 0.08;
+        d.ty += (targetY - d.ty) * 0.08;
+        d.wrap.style.transform = `translate(${d.tx}px, ${d.ty}px)`;
+      }
+      requestAnimationFrame(parallaxLoop);
+    }
+
+    drawStars();
+    parallaxLoop();
   </script>
 
 </body>
