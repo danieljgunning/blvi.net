@@ -255,13 +255,20 @@
 
     @media (max-width: 900px) {
       .columns { flex-direction: column; align-items: center; gap: 3rem; }
-      .panel.left, .panel.right { width: 100%; max-width: 420px; }
-      .friends-grid { grid-template-columns: repeat(2, 1fr); }
+      .panel { width: 100%; max-width: 420px; }
     }
     @media (max-width: 480px) {
-      .logo-wrap img { width: 160px; }
-      .polaroid-row  { gap: 1rem; }
-      .card-photo.polaroid img { width: 100%; }
+      body { padding: 2.5rem 1rem 4rem; }
+      .logo-wrap img { width: 150px; }
+      .platforms { gap: 1.2rem; margin-bottom: 2.5rem; }
+      .panel { max-width: 360px; }
+      .polaroid-row,
+      .friends-row { gap: 1.2rem; margin-bottom: 1.2rem; }
+      .card-photo.polaroid img { width: 100px; }
+      .card-photo.polaroid { padding: 7px 7px 0 7px; }
+      .card-photo.polaroid .card-caption { font-size: 0.85rem; padding: 4px 3px 8px; }
+      .card-photo.square img { width: 100px; height: 100px; }
+      .card-caption { font-size: 0.7rem; margin-top: 5px; }
     }
   </style>
 </head>
