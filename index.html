@@ -1,82 +1,263 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>blvi</title>
-	<style>
-		body {
-      background-color: #1e1e1e;
-      color: white;
-      font-family: 'Arial', sans-serif;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>blvi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --border: rgba(255,255,255,0.15);
+      --text: #f0ece4;
+      --muted: rgba(240,236,228,0.45);
+      --accent: #d4c4a8;
+    }
+
+    body {
+      color: var(--text);
+      font-family: 'IM Fell English', serif;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
+      padding: 4rem 1.5rem 6rem;
+      position: relative;
+      overflow-x: hidden;
     }
-		h1 {
-      font-size: 3rem;
-      margin-bottom: 2rem;
-      letter-spacing: 2px;
-      text-transform: lowercase;
+
+    /* video background */
+    .bg-video {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -2;
+      pointer-events: none;
     }
-    .links {
+
+    /* dark overlay so content stays readable */
+    .bg-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 10, 8, 0.62);
+      z-index: -1;
+    }
+
+    /* logo */
+    .logo-wrap {
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 0.2s forwards;
+    }
+    .logo-wrap img {
+      width: 200px;
+      height: auto;
+      display: block;
+    }
+
+    /* platform links */
+    .platforms {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 4rem;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 0.4s forwards;
+    }
+    .platforms a {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-family: 'IM Fell English SC', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      padding: 0.45rem 1.1rem;
+      border: 1px solid var(--border);
+      transition: color 0.25s, border-color 0.25s, background 0.25s;
+    }
+    .platforms a:hover {
+      color: var(--text);
+      border-color: var(--accent);
+      background: rgba(255,255,255,0.05);
+    }
+    .platforms img {
+      width: 15px;
+      height: 15px;
+      object-fit: contain;
+      filter: grayscale(1) brightness(0.7);
+      transition: filter 0.25s;
+    }
+    .platforms a:hover img {
+      filter: grayscale(0) brightness(1);
+    }
+
+    /* section label */
+    .section-label {
+      font-family: 'IM Fell English SC', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      color: var(--muted);
+      margin-bottom: 1.75rem;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 0.55s forwards;
+    }
+
+    /* releases grid */
+    .releases {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1px;
+      background-color: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.1);
+      width: 100%;
+      max-width: 500px;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 0.7s forwards;
+    }
+
+    .release {
+      text-decoration: none;
+      color: var(--text);
+      display: block;
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 1;
+      background: #0a0a0a;
+    }
+
+    .release img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s ease, filter 0.4s ease;
+      filter: grayscale(0.2) brightness(0.9);
+    }
+
+    .release-info {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(5,8,5,0.95) 0%, rgba(5,8,5,0.35) 55%, transparent 100%);
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      justify-content: flex-end;
+      padding: 1rem 1.1rem;
+      opacity: 0;
+      transition: opacity 0.35s ease;
     }
-    .links a {
-      color: white;
-      background-color: #333;
-      text-decoration: none;
-      padding: 0.8rem 2rem;
-      border-radius: 8px;
-      text-align: center;
-      text-transform: lowercase;
-      transition: background-color 0.3s, transform 0.2s;
-    }
-    .links a:hover {
-      background-color: #555;
+
+    .release:hover .release-info { opacity: 1; }
+    .release:hover img {
       transform: scale(1.05);
+      filter: grayscale(0) brightness(1);
+    }
+
+    .release-title {
+      font-family: 'IM Fell English', serif;
+      font-size: 1.05rem;
+      line-height: 1.2;
+    }
+    .release-cta {
+      font-family: 'IM Fell English SC', serif;
+      font-size: 0.58rem;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      margin-top: 0.3rem;
+    }
+
+    /* always-visible title for touch/mobile */
+    .release-title-static {
+      position: absolute;
+      bottom: 0.7rem;
+      left: 0.8rem;
+      font-family: 'IM Fell English', serif;
+      font-size: 0.85rem;
+      color: var(--text);
+      text-shadow: 0 1px 8px rgba(0,0,0,0.9);
+      pointer-events: none;
+    }
+    @media (hover: hover) {
+      .release-title-static { display: none; }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 480px) {
+      .logo-wrap img { width: 160px; }
+      .releases { max-width: 100%; }
     }
   </style>
 </head>
 <body>
-		
-	<a>
-	  <img src="https://i.imgur.com/cGvk6Hr.png" alt="blvi" style="width: 300px; height: auto;"
-	</a>
-		
- <div class="row-container">
-    
-    <a href="https://open.spotify.com/artist/7HwF11ILY35YWfO8FTiOQg?si=qTFH5IwkQ3K8F3eNPmn7dA"><img src="https://i.imgur.com/ifasgKW.png" alt="spotify"></a>
-    
-    <a href="https://soundcloud.com/blvi"><img src="https://i.imgur.com/pFJR1qV.png" alt="soundcloud"></a>
-</div>
-	<p>worth it</p>
-<a href="https://open.spotify.com/track/3jA1dfRX5lcQ22i3cM3g6c?si=8bc5d788a7424029">
-	<img src="https://imgur.com/zD9gcjl.jpg" alt="worth it" width="250" height="250">
-</a>
 
-	<p>skin care</p>
-<a href="https://open.spotify.com/track/6GHMWx90X0d1jZeVjFw7Gi?si=7415ecaeeeeb4227">
-	<img src="https://i.imgur.com/uFRRPDn.jpeg" alt="skin care" width="250" height="250">
-</a>
+  <video class="bg-video" autoplay muted loop playsinline>
+    <source src="https://archive.org/download/tyer_20260608/tyer.mp4" type="video/mp4">
+  </video>
+  <div class="bg-overlay"></div>
 
-	<p>renshaw lane</p>
-<a href="https://open.spotify.com/track/7MR542qEmj4I85qlc19m9V?si=a68bc037c2b94db7">
-    <img src="https://i.imgur.com/DJJ8gy2.jpeg" alt="renshaw lane" width="250" height="250">
-</a>
-	
-	<p>world eater</p>
-<a href="https://open.spotify.com/track/3gbhm4GgJFXw5ZRQIkcSWV?si=4bb016b43c7f4b11">
-    <img src="https://i.imgur.com/3Ru1GJ3.jpeg" alt="world eater" width="250" height="250">
-</a>
+  <div class="logo-wrap">
+    <img src="https://i.imgur.com/cGvk6Hr.png" alt="blvi">
+  </div>
 
-  <div class="links">
-</div>
+  <div class="platforms">
+    <a href="https://open.spotify.com/artist/7HwF11ILY35YWfO8FTiOQg?si=qTFH5IwkQ3K8F3eNPmn7dA">
+      <img src="https://i.imgur.com/ifasgKW.png" alt="">
+      Spotify
+    </a>
+    <a href="https://soundcloud.com/blvi">
+      <img src="https://i.imgur.com/pFJR1qV.png" alt="">
+      SoundCloud
+    </a>
+  </div>
+
+  <div class="releases">
+
+    <a class="release" href="https://open.spotify.com/track/3jA1dfRX5lcQ22i3cM3g6c?si=8bc5d788a7424029">
+      <img src="https://imgur.com/zD9gcjl.jpg" alt="worth it">
+      <div class="release-info">
+        <span class="release-title">worth it</span>
+        <span class="release-cta">Listen on Spotify ↗</span>
+      </div>
+      <span class="release-title-static">worth it</span>
+    </a>
+
+    <a class="release" href="https://open.spotify.com/track/6GHMWx90X0d1jZeVjFw7Gi?si=7415ecaeeeeb4227">
+      <img src="https://i.imgur.com/uFRRPDn.jpeg" alt="skin care">
+      <div class="release-info">
+        <span class="release-title">skin care</span>
+        <span class="release-cta">Listen on Spotify ↗</span>
+      </div>
+      <span class="release-title-static">skin care</span>
+    </a>
+
+    <a class="release" href="https://open.spotify.com/track/7MR542qEmj4I85qlc19m9V?si=a68bc037c2b94db7">
+      <img src="https://i.imgur.com/DJJ8gy2.jpeg" alt="renshaw lane">
+      <div class="release-info">
+        <span class="release-title">renshaw lane</span>
+        <span class="release-cta">Listen on Spotify ↗</span>
+      </div>
+      <span class="release-title-static">renshaw lane</span>
+    </a>
+
+    <a class="release" href="https://open.spotify.com/track/3gbhm4GgJFXw5ZRQIkcSWV?si=4bb016b43c7f4b11">
+      <img src="https://i.imgur.com/3Ru1GJ3.jpeg" alt="world eater">
+      <div class="release-info">
+        <span class="release-title">world eater</span>
+        <span class="release-cta">Listen on Spotify ↗</span>
+      </div>
+      <span class="release-title-static">world eater</span>
+    </a>
+
+  </div>
 
 </body>
 </html>
