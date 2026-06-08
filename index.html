@@ -32,9 +32,13 @@
     /* video background */
     .bg-video {
       position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
+      top: 50%;
+      left: 50%;
+      min-width: 100%;
+      min-height: 100%;
+      width: auto;
+      height: auto;
+      transform: translate(-50%, -50%) scale(1.5);
       object-fit: cover;
       z-index: -2;
       pointer-events: none;
@@ -63,7 +67,7 @@
     /* platform links */
     .platforms {
       display: flex;
-      gap: 1.5rem;
+      gap: 2rem;
       margin-bottom: 4rem;
       opacity: 0;
       animation: fadeUp 0.9s ease 0.4s forwards;
@@ -74,24 +78,20 @@
       gap: 0.5rem;
       color: var(--muted);
       text-decoration: none;
-      font-family: 'IM Fell English SC', serif;
-      font-size: 0.75rem;
-      letter-spacing: 0.06em;
-      padding: 0.45rem 1.1rem;
-      border: 1px solid var(--border);
-      transition: color 0.25s, border-color 0.25s, background 0.25s;
+      font-family: 'IM Fell English', serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      transition: color 0.3s ease;
     }
     .platforms a:hover {
       color: var(--text);
-      border-color: var(--accent);
-      background: rgba(255,255,255,0.05);
     }
     .platforms img {
       width: 15px;
       height: 15px;
       object-fit: contain;
-      filter: grayscale(1) brightness(0.7);
-      transition: filter 0.25s;
+      filter: grayscale(1) brightness(0.6);
+      transition: filter 0.3s ease;
     }
     .platforms a:hover img {
       filter: grayscale(0) brightness(1);
@@ -108,82 +108,132 @@
       animation: fadeUp 0.9s ease 0.55s forwards;
     }
 
-    /* releases grid */
+    /* releases — polaroid pinboard */
     .releases {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1px;
-      background-color: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.1);
+      position: relative;
       width: 100%;
-      max-width: 500px;
+      max-width: 600px;
+      height: 640px;
       opacity: 0;
       animation: fadeUp 0.9s ease 0.7s forwards;
     }
 
     .release {
       text-decoration: none;
-      color: var(--text);
+      color: #1a1a1a;
       display: block;
-      position: relative;
-      overflow: hidden;
-      aspect-ratio: 1;
-      background: #0a0a0a;
+      position: absolute;
+      overflow: visible;
+      background: transparent;
     }
 
-    .release img {
+    /* only the photo and its white border rotate */
+    .release-photo {
+      position: relative;
+      background: #f0ece4;
+      padding: 10px 10px 38px 10px;
+      box-shadow: 0 6px 28px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.35);
+      transition: transform 0.7s cubic-bezier(0.22,1,0.36,1), box-shadow 0.7s ease;
+    }
+
+    .release-photo img {
       width: 100%;
-      height: 100%;
+      aspect-ratio: 1;
       object-fit: cover;
       display: block;
-      transition: transform 0.6s ease, filter 0.4s ease;
-      filter: grayscale(0.2) brightness(0.9);
+      filter: grayscale(0.15) brightness(0.92) saturate(0.85);
+      transition: filter 0.8s ease;
     }
 
-    .release-info {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to top, rgba(5,8,5,0.95) 0%, rgba(5,8,5,0.35) 55%, transparent 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 1rem 1.1rem;
-      opacity: 0;
-      transition: opacity 0.35s ease;
-    }
-
-    .release:hover .release-info { opacity: 1; }
-    .release:hover img {
-      transform: scale(1.05);
-      filter: grayscale(0) brightness(1);
-    }
-
-    .release-title {
+    /* caption is OUTSIDE .release-photo — stays perfectly upright always */
+    .release-caption {
       font-family: 'IM Fell English', serif;
-      font-size: 1.05rem;
-      line-height: 1.2;
-    }
-    .release-cta {
-      font-family: 'IM Fell English SC', serif;
-      font-size: 0.58rem;
-      letter-spacing: 0.14em;
-      color: var(--accent);
-      margin-top: 0.3rem;
+      font-style: normal;
+      font-size: 0.78rem;
+      color: rgba(240,236,228,0.6);
+      text-align: center;
+      margin-top: 8px;
+      letter-spacing: 0.04em;
+      transition: color 0.4s ease;
     }
 
-    /* always-visible title for touch/mobile */
-    .release-title-static {
-      position: absolute;
-      bottom: 0.7rem;
-      left: 0.8rem;
-      font-family: 'IM Fell English', serif;
-      font-size: 0.85rem;
-      color: var(--text);
-      text-shadow: 0 1px 8px rgba(0,0,0,0.9);
-      pointer-events: none;
+    /* diagonal cascade: top-left → top-right (lower) → bottom-left (higher) → bottom-right */
+    .release:nth-child(1) {
+      width: 175px;
+      top: 0px; left: 10px;
+      z-index: 2;
+      animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.8s both, float1 20s ease-in-out 2s infinite;
     }
-    @media (hover: hover) {
-      .release-title-static { display: none; }
+    .release:nth-child(1) .release-photo { transform: rotate(-4.5deg); }
+
+    .release:nth-child(2) {
+      width: 162px;
+      top: 80px; right: 10px;
+      z-index: 3;
+      animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.05s both, float2 24s ease-in-out 2s infinite;
+    }
+    .release:nth-child(2) .release-photo { transform: rotate(3.5deg); }
+
+    .release:nth-child(3) {
+      width: 182px;
+      bottom: 80px; left: 40px;
+      z-index: 1;
+      animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.25s both, float3 22s ease-in-out 2s infinite;
+    }
+    .release:nth-child(3) .release-photo { transform: rotate(2deg); }
+
+    .release:nth-child(4) {
+      width: 170px;
+      bottom: 0px; right: 30px;
+      z-index: 2;
+      animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.45s both, float4 26s ease-in-out 2s infinite;
+    }
+    .release:nth-child(4) .release-photo { transform: rotate(-3deg); }
+
+    .release:hover { z-index: 10; }
+    .release:hover .release-photo {
+      transform: rotate(0deg) scale(1.05) !important;
+      box-shadow: 0 22px 64px rgba(0,0,0,0.75), 0 4px 16px rgba(0,0,0,0.5);
+    }
+    .release:hover .release-photo img {
+      filter: grayscale(0) brightness(1.02) saturate(1.05);
+    }
+    .release:hover .release-caption { color: rgba(240,236,228,0.95); }
+
+    @keyframes float1 {
+      0%,100% { transform: translate(0px,  0px); }
+      30%      { transform: translate(6px, -10px); }
+      60%      { transform: translate(-4px, 8px); }
+      80%      { transform: translate(8px,  4px); }
+    }
+    @keyframes float2 {
+      0%,100% { transform: translate(0px,  0px); }
+      25%      { transform: translate(-8px, 8px); }
+      55%      { transform: translate(6px, -6px); }
+      80%      { transform: translate(-4px, 10px); }
+    }
+    @keyframes float3 {
+      0%,100% { transform: translate(0px,  0px); }
+      35%      { transform: translate(10px, -8px); }
+      65%      { transform: translate(-6px, -4px); }
+      85%      { transform: translate(4px,  8px); }
+    }
+    @keyframes float4 {
+      0%,100% { transform: translate(0px,  0px); }
+      20%      { transform: translate(-6px, -10px); }
+      50%      { transform: translate(8px,  6px); }
+      75%      { transform: translate(-10px, 4px); }
+    }
+
+    @keyframes appear {
+      from { opacity: 0; transform: translateY(24px) scale(0.9); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @media (max-width: 480px) {
+      .releases { height: auto; display: grid; grid-template-columns: repeat(2,1fr); gap: 20px; padding: 1rem 0; }
+      .release { position: relative; width: auto !important; top: auto !important; left: auto !important; right: auto !important; bottom: auto !important; animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.8s both !important; }
+      .release .release-photo { transform: none !important; }
     }
 
     @keyframes fadeUp {
@@ -211,53 +261,130 @@
   <div class="platforms">
     <a href="https://open.spotify.com/artist/7HwF11ILY35YWfO8FTiOQg?si=qTFH5IwkQ3K8F3eNPmn7dA">
       <img src="https://i.imgur.com/ifasgKW.png" alt="">
-      Spotify
+      spotify
     </a>
     <a href="https://soundcloud.com/blvi">
       <img src="https://i.imgur.com/pFJR1qV.png" alt="">
-      SoundCloud
+      soundcloud
     </a>
   </div>
 
   <div class="releases">
 
     <a class="release" href="https://open.spotify.com/track/3jA1dfRX5lcQ22i3cM3g6c?si=8bc5d788a7424029">
-      <img src="https://imgur.com/zD9gcjl.jpg" alt="worth it">
-      <div class="release-info">
-        <span class="release-title">worth it</span>
-        <span class="release-cta">Listen on Spotify ↗</span>
+      <div class="release-photo">
+        <img src="https://imgur.com/zD9gcjl.jpg" alt="worth it">
       </div>
-      <span class="release-title-static">worth it</span>
+      <div class="release-caption">worth it</div>
     </a>
 
     <a class="release" href="https://open.spotify.com/track/6GHMWx90X0d1jZeVjFw7Gi?si=7415ecaeeeeb4227">
-      <img src="https://i.imgur.com/uFRRPDn.jpeg" alt="skin care">
-      <div class="release-info">
-        <span class="release-title">skin care</span>
-        <span class="release-cta">Listen on Spotify ↗</span>
+      <div class="release-photo">
+        <img src="https://i.imgur.com/uFRRPDn.jpeg" alt="skin care">
       </div>
-      <span class="release-title-static">skin care</span>
+      <div class="release-caption">skin care</div>
     </a>
 
     <a class="release" href="https://open.spotify.com/track/7MR542qEmj4I85qlc19m9V?si=a68bc037c2b94db7">
-      <img src="https://i.imgur.com/DJJ8gy2.jpeg" alt="renshaw lane">
-      <div class="release-info">
-        <span class="release-title">renshaw lane</span>
-        <span class="release-cta">Listen on Spotify ↗</span>
+      <div class="release-photo">
+        <img src="https://i.imgur.com/DJJ8gy2.jpeg" alt="renshaw lane">
       </div>
-      <span class="release-title-static">renshaw lane</span>
+      <div class="release-caption">renshaw lane</div>
     </a>
 
     <a class="release" href="https://open.spotify.com/track/3gbhm4GgJFXw5ZRQIkcSWV?si=4bb016b43c7f4b11">
-      <img src="https://i.imgur.com/3Ru1GJ3.jpeg" alt="world eater">
-      <div class="release-info">
-        <span class="release-title">world eater</span>
-        <span class="release-cta">Listen on Spotify ↗</span>
+      <div class="release-photo">
+        <img src="https://i.imgur.com/3Ru1GJ3.jpeg" alt="world eater">
       </div>
-      <span class="release-title-static">world eater</span>
+      <div class="release-caption">world eater</div>
     </a>
 
   </div>
+
+  <canvas id="leaves"></canvas>
+
+  <script>
+    const canvas = document.getElementById('leaves');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    canvas.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;';
+
+    const COUNT = 28;
+    const leaves = [];
+
+    function leafShape(ctx, w, h) {
+      ctx.beginPath();
+      ctx.moveTo(0, -h / 2);
+      ctx.bezierCurveTo( w / 2, -h / 4,  w / 2,  h / 4,  0,  h / 2);
+      ctx.bezierCurveTo(-w / 2,  h / 4, -w / 2, -h / 4,  0, -h / 2);
+      ctx.closePath();
+    }
+
+    function rand(a, b) { return a + Math.random() * (b - a); }
+
+    for (let i = 0; i < COUNT; i++) {
+      leaves.push({
+        x:       rand(0, window.innerWidth),
+        y:       rand(-200, window.innerHeight),
+        w:       rand(6, 14),
+        h:       rand(10, 22),
+        rot:     rand(0, Math.PI * 2),
+        rotSpeed:rand(-0.008, 0.008),
+        speedX:  rand(-0.25, 0.25),
+        speedY:  rand(0.18, 0.55),
+        sway:    rand(0.3, 0.9),
+        swayOff: rand(0, Math.PI * 2),
+        swaySpeed:rand(0.004, 0.012),
+        alpha:   rand(0.06, 0.22),
+        t:       rand(0, 1000),
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (const l of leaves) {
+        l.t      += 1;
+        l.rot    += l.rotSpeed;
+        l.x      += l.speedX + Math.sin(l.t * l.swaySpeed + l.swayOff) * l.sway * 0.4;
+        l.y      += l.speedY;
+
+        if (l.y > canvas.height + 30) {
+          l.y = rand(-60, -10);
+          l.x = rand(0, canvas.width);
+        }
+
+        ctx.save();
+        ctx.translate(l.x, l.y);
+        ctx.rotate(l.rot);
+        ctx.globalAlpha = l.alpha;
+
+        leafShape(ctx, l.w, l.h);
+        ctx.fillStyle = '#c8b89a';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(0, -l.h / 2);
+        ctx.lineTo(0,  l.h / 2);
+        ctx.strokeStyle = 'rgba(180,160,120,0.5)';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+  </script>
 
 </body>
 </html>
