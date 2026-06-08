@@ -76,10 +76,9 @@
       width: 15px;
       height: 15px;
       object-fit: contain;
-      filter: grayscale(1) brightness(0.6);
       transition: filter 0.3s ease;
     }
-    .platforms a:hover img { filter: grayscale(0) brightness(1); }
+    .platforms a:hover img { filter: brightness(1.2); }
 
     /* two-column layout */
     .columns {
@@ -140,11 +139,11 @@
     .friends-row:nth-child(2)  .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.5s both, float4 23s ease-in-out 2s infinite; }
     .friends-row:nth-child(3)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.7s both, float2 21s ease-in-out 2s infinite; }
 
-    /* polaroid rotations */
-    .polaroid-row:nth-child(1) .card-wrap:nth-child(1) .card-photo { transform: rotate(-3deg);   }
-    .polaroid-row:nth-child(1) .card-wrap:nth-child(2) .card-photo { transform: rotate(-5.5deg); }
-    .polaroid-row:nth-child(2) .card-wrap:nth-child(1) .card-photo { transform: rotate(4deg);    }
-    .polaroid-row:nth-child(2) .card-wrap:nth-child(2) .card-photo { transform: rotate(2deg);    }
+    /* polaroid rotations — alternating directions */
+    .polaroid-row:nth-child(1) .card-wrap:nth-child(1) .card-photo { transform: rotate(-4deg);  }
+    .polaroid-row:nth-child(1) .card-wrap:nth-child(2) .card-photo { transform: rotate(3.5deg); }
+    .polaroid-row:nth-child(2) .card-wrap:nth-child(1) .card-photo { transform: rotate(2.5deg); }
+    .polaroid-row:nth-child(2) .card-wrap:nth-child(2) .card-photo { transform: rotate(-3deg);  }
 
     /* friend tilts */
     .friends-row:nth-child(1) .card-wrap:nth-child(1) .card-photo { transform: rotate(-4deg);   }
@@ -175,6 +174,8 @@
       aspect-ratio: 1;
       object-fit: cover;
       transition: filter 0.8s ease;
+      box-shadow: inset 0 0 0 2px rgba(0,0,0,0.25), 0 0 8px 3px rgba(0,0,0,0.18);
+      outline: 1.5px solid rgba(0,0,0,0.15);
     }
     .card-photo.polaroid .card-caption {
       font-family: 'Rouge Script', cursive;
@@ -220,6 +221,7 @@
     }
     .card:hover .card-photo img     { filter: brightness(1.02); }
     .card:hover .card-caption       { color: rgba(240,236,228,0.95); }
+    .card:hover .card-photo.polaroid .card-caption { color: #3a3228; opacity: 1; }
 
     /* keyframes */
     @keyframes float1 {
@@ -253,6 +255,32 @@
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(18px); }
       to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    /* grain overlay */
+    .grain {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.09;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-size: 256px 256px;
+      mix-blend-mode: overlay;
+      animation: grainShift 0.12s steps(1) infinite;
+    }
+    @keyframes grainShift {
+      0%   { background-position:   0px   0px; }
+      10%  { background-position: -40px -60px; }
+      20%  { background-position:  60px  20px; }
+      30%  { background-position: -20px  80px; }
+      40%  { background-position:  80px -40px; }
+      50%  { background-position: -60px  40px; }
+      60%  { background-position:  20px -80px; }
+      70%  { background-position: -80px  60px; }
+      80%  { background-position:  40px  60px; }
+      90%  { background-position: -60px -20px; }
+      100% { background-position:  20px  40px; }
     }
 
     @media (max-width: 900px) {
@@ -375,6 +403,8 @@
 
   </div>
 
+  <div class="grain"></div>
+
   <script>
     // ── parallax ──
     let mouseX = 0, mouseY = 0;
@@ -411,6 +441,7 @@
 
     parallaxLoop();
   </script>
+
 
 </body>
 </html>
