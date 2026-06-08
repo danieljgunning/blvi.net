@@ -46,11 +46,20 @@
 
     /* logo */
     .logo-wrap {
-      margin-bottom: 2.5rem;
+      margin-bottom: 1rem;
       opacity: 0;
       animation: fadeUp 0.9s ease 0.2s forwards;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .logo-wrap img { width: 200px; height: auto; display: block; }
+    #logo-3d {
+      width: 420px;
+      height: 180px;
+      display: block;
+      cursor: grab;
+    }
+    #logo-3d:active { cursor: grabbing; }
 
     /* platform links */
     .platforms {
@@ -414,7 +423,7 @@
   <div class="bg-overlay"></div>
 
   <div class="logo-wrap">
-    <img src="https://i.imgur.com/cGvk6Hr.png" alt="blvi">
+    <canvas id="logo-3d"></canvas>
   </div>
 
   <div class="platforms">
@@ -518,8 +527,71 @@
     </div>
   </div>
 
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/" } }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+    const canvas   = document.getElementById('logo-3d');
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+
+    const scene  = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+    camera.position.set(0, 0, 4);
+
+    // environment lighting for chrome
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    pmremGenerator.compileEquirectangularShader();
+    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    // controls
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping   = true;
+    controls.dampingFactor   = 0.05;
+    controls.enableZoom      = false;
+    controls.enablePan       = false;
+    controls.autoRotate      = true;
+    controls.autoRotateSpeed = 1.5;
+
+    // load model
+    const loader = new GLTFLoader();
+    loader.load('https://danieljgunning.github.io/chrome/Untitled.glb', gltf => {
+      const model = gltf.scene;
+      const box    = new THREE.Box3().setFromObject(model);
+      const centre = box.getCenter(new THREE.Vector3());
+      const size   = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      model.position.sub(centre);
+      model.scale.multiplyScalar(2.5 / maxDim);
+      scene.add(model);
+    }, undefined, err => console.error('GLB load error:', err));
+
+    window.addEventListener('resize', () => {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+
   <script>
-    // ── parallax ──
     let mouseX = 0, mouseY = 0;
     document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
 
