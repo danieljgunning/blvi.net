@@ -384,10 +384,12 @@
       justify-content: center;
     }
     #cross-3d {
-      width: 200px;
-      height: 200px;
+      width: 300px;
+      height: 300px;
       display: block;
+      cursor: grab;
     }
+    #cross-3d:active { cursor: grabbing; }
 
     @media (max-width: 900px) {
       .columns { flex-direction: column; align-items: center; gap: 3rem; }
@@ -605,11 +607,11 @@
 
     // ── cross renderer ──
     const cc = document.getElementById('cross-3d');
-    cc.width  = 200;
-    cc.height = 200;
+    cc.width  = 300;
+    cc.height = 300;
     const cRenderer = new THREE.WebGLRenderer({ canvas: cc, alpha: true, antialias: true });
     cRenderer.setPixelRatio(window.devicePixelRatio);
-    cRenderer.setSize(200, 200);
+    cRenderer.setSize(300, 300);
     cRenderer.outputColorSpace = THREE.SRGBColorSpace;
     cRenderer.toneMapping = THREE.ACESFilmicToneMapping;
     cRenderer.toneMappingExposure = 1.2;
@@ -622,7 +624,19 @@
     cPmrem.compileEquirectangularShader();
     cScene.environment = cPmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
-    let cAngle = 0;
+    const cControls = new OrbitControls(cCamera, cc);
+    cControls.enableDamping   = true;
+    cControls.dampingFactor   = 0.05;
+    cControls.enableZoom      = false;
+    cControls.enablePan       = false;
+    cControls.autoRotate      = true;
+    cControls.autoRotateSpeed = 1.5;
+
+    cc.addEventListener('mousedown',  () => { cControls.autoRotate = false; });
+    cc.addEventListener('touchstart', () => { cControls.autoRotate = false; });
+    cc.addEventListener('mouseup',    () => { cControls.autoRotate = true; });
+    cc.addEventListener('touchend',   () => { cControls.autoRotate = true; });
+
     const crossLoader = new GLTFLoader();
     crossLoader.setDRACOLoader(dracoLoader);
     crossLoader.load('https://danieljgunning.github.io/cross/cross.glb', gltf => {
@@ -637,10 +651,7 @@
 
     (function animateCross() {
       requestAnimationFrame(animateCross);
-      cAngle += 0.006;
-      cCamera.position.x = Math.sin(cAngle) * 4;
-      cCamera.position.z = Math.cos(cAngle) * 4;
-      cCamera.lookAt(0, 0, 0);
+      cControls.update();
       cRenderer.render(cScene, cCamera);
     })();
   </script>
@@ -795,6 +806,7 @@
       delete dragging.dataset.dragging;
       dragging.style.boxShadow = '';
       dragging.style.zIndex    = '';
+      dragging.style.cursor    = 'grab';
 
       if (didDrag) {
         wasDragged = true;
@@ -804,6 +816,18 @@
       dragging    = null;
       currentData = null;
       didDrag     = false;
+    });
+
+    document.addEventListener('touchcancel', () => {
+      if (!dragging) return;
+      delete dragging.dataset.dragging;
+      dragging.style.boxShadow = '';
+      dragging.style.zIndex    = '';
+      dragging.style.cursor    = 'grab';
+      dragging    = null;
+      currentData = null;
+      didDrag     = false;
+      wasDragged  = false;
     });
 
     // ── guestbook ──
