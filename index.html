@@ -6,7 +6,7 @@
   <title>blvi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Almendra&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Rouge+Script&family=Spectral:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Almendra&family=IM+Fell+English:ital@0;1&family=Spectral:ital@0;1&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -164,7 +164,6 @@
       color: var(--text);
       display: inline-block;
       overflow: visible;
-      animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.8s both;
     }
 
     /* float animations */
@@ -252,9 +251,9 @@
       transform: rotate(0deg) scale(1.05) !important;
       box-shadow: 0 22px 64px rgba(0,0,0,0.75), 0 4px 16px rgba(0,0,0,0.5);
     }
-    .card:hover .card-photo img                        { filter: brightness(1.02); }
-    .card:hover .card-caption                          { color: rgba(240,236,228,0.95); }
-    .card:hover .card-photo.polaroid .card-caption     { color: #3a3228; opacity: 1; }
+    .card:hover .card-photo img                    { filter: brightness(1.02); }
+    .card:hover .card-caption                      { color: rgba(240,236,228,0.95); }
+    .card:hover .card-photo.polaroid .card-caption { color: #3a3228; opacity: 1; }
 
     /* keyframes */
     @keyframes float1 {
@@ -290,7 +289,7 @@
       to   { opacity: 1; transform: translateY(0);    }
     }
 
-    /* shirt */
+    /* shirts */
     .shirt-label {
       font-family: 'Spectral', serif;
       font-size: 0.78rem;
@@ -301,7 +300,6 @@
       margin-bottom: 0.5rem;
     }
     .shirt-wrap {
-      margin-top: 3rem;
       opacity: 0;
       animation: fadeUp 0.9s ease 1.1s forwards;
       display: flex;
@@ -315,9 +313,7 @@
       display: block;
       cursor: grab;
     }
-    #shirt2-3d {
-      mix-blend-mode: screen;
-    }
+    #shirt2-3d { mix-blend-mode: screen; }
     #shirt-3d:active, #shirt2-3d:active { cursor: grabbing; }
 
     /* guestbook */
@@ -328,21 +324,12 @@
       opacity: 0;
       animation: fadeUp 0.9s ease 1s forwards;
     }
-    .guestbook-title {
-      font-family: 'Spectral', serif;
-      font-size: 0.8rem;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      text-align: center;
-      margin-bottom: 0.75rem;
-    }
     .guestbook-form {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
       margin-bottom: 2.5rem;
     }
-    .guestbook-form-row { display: contents; }
     .guestbook-form input,
     .guestbook-form textarea {
       background: transparent;
@@ -390,7 +377,7 @@
     }
     @keyframes inkReveal {
       0%   { opacity: 0; clip-path: inset(0 100% 0 0); }
-      100% { opacity: 1; clip-path: inset(0 0% 0 0); }
+      100% { opacity: 1; clip-path: inset(0 0%   0 0); }
     }
     .guestbook-message-name {
       font-family: 'Spectral', serif;
@@ -401,7 +388,6 @@
     }
     .guestbook-message-text {
       font-family: 'Spectral', serif;
-      font-style: normal;
       font-size: 0.85rem;
       color: var(--text);
       line-height: 1.6;
@@ -415,16 +401,14 @@
       text-align: center;
     }
 
-
-
-    /* disable hover effects on touch devices to prevent stuck hover state */
+    /* disable hover effects on touch devices */
     @media (hover: none) {
       .card:hover .card-photo {
         transform: none !important;
         box-shadow: 0 6px 28px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.35) !important;
       }
-      .card:hover .card-photo img     { filter: none; }
-      .card:hover .card-caption       { color: rgba(240,236,228,0.6); }
+      .card:hover .card-photo img                    { filter: none; }
+      .card:hover .card-caption                      { color: rgba(240,236,228,0.6); }
       .card:hover .card-photo.polaroid .card-caption { opacity: 0.85; }
     }
     @media (max-width: 768px) {
@@ -442,7 +426,6 @@
       .card-photo.square img { width: 100px; height: 100px; }
       .card-caption { font-size: 0.7rem; margin-top: 5px; }
       .shirt-wrap { flex-direction: column; gap: 0; }
-      #shirt-3d, #shirt2-3d { width: 280px; height: 280px; }
     }
   </style>
 </head>
@@ -569,18 +552,13 @@
     <div class="guestbook-form">
       <input id="gb-name" type="text" placeholder="your name" maxlength="50">
       <textarea id="gb-message" placeholder="your message" maxlength="300"></textarea>
-      <div class="guestbook-form-row">
-        <button class="guestbook-submit" id="gb-submit">send</button>
-      </div>
+      <button class="guestbook-submit" id="gb-submit">send</button>
     </div>
     <div class="guestbook-messages" id="gb-messages">
       <p class="guestbook-empty">no messages yet</p>
     </div>
   </div>
 
-
-
-  <!-- Three.js 3D logo -->
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.132.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.132.0/examples/jsm/" } }
   </script>
@@ -591,169 +569,109 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-    // shared Draco decoder
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.132.0/examples/js/libs/draco/');
 
-    const canvas   = document.getElementById('logo-3d');
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    function makeRenderer(canvas, exposure = 1.2) {
+      const r = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      r.setPixelRatio(window.devicePixelRatio);
+      r.outputColorSpace = THREE.SRGBColorSpace;
+      r.toneMapping = THREE.ACESFilmicToneMapping;
+      r.toneMappingExposure = exposure;
+      return r;
+    }
 
-    const scene  = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(40, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
-    camera.position.set(0, 0, 4);
+    function makeScene(renderer) {
+      const scene = new THREE.Scene();
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      pmrem.compileEquirectangularShader();
+      scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      return scene;
+    }
 
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    pmremGenerator.compileEquirectangularShader();
-    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    function makeControls(camera, canvas) {
+      const c = new OrbitControls(camera, canvas);
+      c.enableDamping   = true;
+      c.dampingFactor   = 0.05;
+      c.enableZoom      = false;
+      c.enablePan       = false;
+      c.autoRotate      = true;
+      c.autoRotateSpeed = 1.5;
+      canvas.addEventListener('mousedown',  () => { c.autoRotate = false; });
+      canvas.addEventListener('touchstart', () => { c.autoRotate = false; }, { passive: true });
+      canvas.addEventListener('mouseup',    () => { c.autoRotate = true; });
+      canvas.addEventListener('touchend',   () => { c.autoRotate = true; });
+      return c;
+    }
 
-    const controls = new OrbitControls(camera, canvas);
-    controls.enableDamping   = true;
-    controls.dampingFactor   = 0.05;
-    controls.enableZoom      = false;
-    controls.enablePan       = false;
-    controls.autoRotate      = true;
-    controls.autoRotateSpeed = 1.5;
+    function loadGLB(scene, url) {
+      const loader = new GLTFLoader();
+      loader.setDRACOLoader(dracoLoader);
+      loader.load(url, gltf => {
+        const model  = gltf.scene;
+        const box    = new THREE.Box3().setFromObject(model);
+        const centre = box.getCenter(new THREE.Vector3());
+        const size   = box.getSize(new THREE.Vector3());
+        model.position.sub(centre);
+        model.scale.multiplyScalar(2.5 / Math.max(size.x, size.y, size.z));
+        scene.add(model);
+      }, undefined, err => console.error('GLB load error:', url, err));
+    }
 
-    canvas.addEventListener('mousedown',  () => { controls.autoRotate = false; });
-    canvas.addEventListener('touchstart', () => { controls.autoRotate = false; });
-    canvas.addEventListener('mouseup',    () => { controls.autoRotate = true; });
-    canvas.addEventListener('touchend',   () => { controls.autoRotate = true; });
-
-    const loader = new GLTFLoader();
-    loader.setDRACOLoader(dracoLoader);
-    loader.load('https://danieljgunning.github.io/chrome/Untitled.glb', gltf => {
-      const model  = gltf.scene;
-      const box    = new THREE.Box3().setFromObject(model);
-      const centre = box.getCenter(new THREE.Vector3());
-      const size   = box.getSize(new THREE.Vector3());
-      model.position.sub(centre);
-      model.scale.multiplyScalar(2.5 / Math.max(size.x, size.y, size.z));
-      scene.add(model);
-    }, undefined, err => console.error('GLB load error:', err));
-
+    // ── logo ──
+    const logoCanvas = document.getElementById('logo-3d');
+    const logoRenderer = makeRenderer(logoCanvas, 1.2);
+    logoRenderer.setSize(logoCanvas.clientWidth, logoCanvas.clientHeight);
+    const logoScene  = makeScene(logoRenderer);
+    const logoCamera = new THREE.PerspectiveCamera(40, logoCanvas.clientWidth / logoCanvas.clientHeight, 0.1, 100);
+    logoCamera.position.set(0, 0, 4);
+    const logoControls = makeControls(logoCamera, logoCanvas);
+    loadGLB(logoScene, 'https://danieljgunning.github.io/chrome/Untitled.glb');
     window.addEventListener('resize', () => {
-      renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-      camera.aspect = canvas.clientWidth / canvas.clientHeight;
-      camera.updateProjectionMatrix();
+      logoRenderer.setSize(logoCanvas.clientWidth, logoCanvas.clientHeight);
+      logoCamera.aspect = logoCanvas.clientWidth / logoCanvas.clientHeight;
+      logoCamera.updateProjectionMatrix();
     });
-
-    (function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
+    (function animateLogo() {
+      requestAnimationFrame(animateLogo);
+      logoControls.update();
+      logoRenderer.render(logoScene, logoCamera);
     })();
 
-    // ── shirt renderer ──
-    const sc = document.getElementById('shirt-3d');
+    // ── shirts ──
     const shirtSize = window.innerWidth <= 480 ? Math.min(window.innerWidth - 40, 280) : 300;
-    sc.width  = shirtSize;
-    sc.height = shirtSize;
-    const sRenderer = new THREE.WebGLRenderer({ canvas: sc, alpha: true, antialias: true });
-    sRenderer.setPixelRatio(window.devicePixelRatio);
-    sRenderer.setSize(shirtSize, shirtSize);
-    sRenderer.outputColorSpace = THREE.SRGBColorSpace;
-    sRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-    sRenderer.toneMappingExposure = 1.8;
 
-    const sScene  = new THREE.Scene();
+    const sc = document.getElementById('shirt-3d');
+    sc.width = sc.height = shirtSize;
+    const sRenderer = makeRenderer(sc, 1.8);
+    sRenderer.setSize(shirtSize, shirtSize);
+    const sScene  = makeScene(sRenderer);
     const sCamera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
     sCamera.position.set(0, 0, 4);
-
-    const sPmrem = new THREE.PMREMGenerator(sRenderer);
-    sPmrem.compileEquirectangularShader();
-    sScene.environment = sPmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-
-    const sAmbient = new THREE.AmbientLight(0xffffff, 1.6);
-    sScene.add(sAmbient);
+    sScene.add(new THREE.AmbientLight(0xffffff, 1.6));
     const sDirLight = new THREE.DirectionalLight(0xffffff, 2.0);
     sDirLight.position.set(2, 3, 4);
     sScene.add(sDirLight);
     const sFillLight = new THREE.DirectionalLight(0xffffff, 0.9);
     sFillLight.position.set(-2, 0, -2);
     sScene.add(sFillLight);
-
-    const sControls = new OrbitControls(sCamera, sc);
-    sControls.enableDamping   = true;
-    sControls.dampingFactor   = 0.05;
-    sControls.enableZoom      = false;
-    sControls.enablePan       = false;
-    sControls.autoRotate      = true;
-    sControls.autoRotateSpeed = 1.5;
-
-    sc.addEventListener('mousedown',  () => { sControls.autoRotate = false; });
-    sc.addEventListener('touchstart', () => { sControls.autoRotate = false; });
-    sc.addEventListener('mouseup',    () => { sControls.autoRotate = true; });
-    sc.addEventListener('touchend',   () => { sControls.autoRotate = true; });
-
-    const shirtLoader = new GLTFLoader();
-    shirtLoader.setDRACOLoader(dracoLoader);
-    shirtLoader.load('https://danieljgunning.github.io/shirt/shirt.glb', gltf => {
-      const model  = gltf.scene;
-      const box    = new THREE.Box3().setFromObject(model);
-      const centre = box.getCenter(new THREE.Vector3());
-      const size   = box.getSize(new THREE.Vector3());
-      model.position.sub(centre);
-      model.scale.multiplyScalar(2.5 / Math.max(size.x, size.y, size.z));
-      sScene.add(model);
-    }, undefined, err => console.error('Shirt GLB error:', err));
-
+    const sControls = makeControls(sCamera, sc);
+    loadGLB(sScene, 'https://danieljgunning.github.io/shirt/shirt.glb');
     (function animateShirt() {
       requestAnimationFrame(animateShirt);
       sControls.update();
       sRenderer.render(sScene, sCamera);
     })();
 
-    // ── shirt 2 renderer ──
     const sc2 = document.getElementById('shirt2-3d');
-    sc2.width  = shirtSize;
-    sc2.height = shirtSize;
-    const s2Renderer = new THREE.WebGLRenderer({ canvas: sc2, alpha: true, antialias: true, premultipliedAlpha: false });
-    s2Renderer.setPixelRatio(window.devicePixelRatio);
+    sc2.width = sc2.height = shirtSize;
+    const s2Renderer = makeRenderer(sc2, 1.2);
     s2Renderer.setSize(shirtSize, shirtSize);
-    s2Renderer.outputColorSpace = THREE.SRGBColorSpace;
-    s2Renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    s2Renderer.toneMappingExposure = 1.2;
-
-    const s2Scene  = new THREE.Scene();
+    const s2Scene  = makeScene(s2Renderer);
     const s2Camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
     s2Camera.position.set(0, 0, 4);
-
-    const s2Pmrem = new THREE.PMREMGenerator(s2Renderer);
-    s2Pmrem.compileEquirectangularShader();
-    s2Scene.environment = s2Pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    s2Scene.background = null;
-    s2Renderer.setClearColor(0x000000, 0);
-
-    const s2Controls = new OrbitControls(s2Camera, sc2);
-    s2Controls.enableDamping   = true;
-    s2Controls.dampingFactor   = 0.05;
-    s2Controls.enableZoom      = false;
-    s2Controls.enablePan       = false;
-    s2Controls.autoRotate      = true;
-    s2Controls.autoRotateSpeed = 1.5;
-
-    sc2.addEventListener('mousedown',  () => { s2Controls.autoRotate = false; });
-    sc2.addEventListener('touchstart', () => { s2Controls.autoRotate = false; });
-    sc2.addEventListener('mouseup',    () => { s2Controls.autoRotate = true; });
-    sc2.addEventListener('touchend',   () => { s2Controls.autoRotate = true; });
-
-    const shirt2Loader = new GLTFLoader();
-    shirt2Loader.setDRACOLoader(dracoLoader);
-    shirt2Loader.load('https://danieljgunning.github.io/greenshirt/greenshirt.glb', gltf => {
-      const model  = gltf.scene;
-      const box    = new THREE.Box3().setFromObject(model);
-      const centre = box.getCenter(new THREE.Vector3());
-      const size   = box.getSize(new THREE.Vector3());
-      model.position.sub(centre);
-      model.scale.multiplyScalar(2.5 / Math.max(size.x, size.y, size.z));
-      s2Scene.add(model);
-    }, undefined, err => console.error('Shirt2 GLB error:', err));
-
+    const s2Controls = makeControls(s2Camera, sc2);
+    loadGLB(s2Scene, 'https://danieljgunning.github.io/greenshirt/greenshirt.glb');
     (function animateShirt2() {
       requestAnimationFrame(animateShirt2);
       s2Controls.update();
@@ -769,11 +687,10 @@
 
     const RADIUS   = 180;
     const STRENGTH = 12;
-    const wrapData = Array.from(document.querySelectorAll('.card-wrap')).map(wrap => ({ wrap, tx: 0, ty: 0, dropped: false, dropX: 0, dropY: 0 }));
+    const wrapData = Array.from(document.querySelectorAll('.card-wrap')).map(wrap => ({ wrap, tx: 0, ty: 0, dropped: false }));
 
     function parallaxLoop() {
       for (const d of wrapData) {
-        // skip cards being dragged or permanently dropped
         if (d.wrap.dataset.dragging || d.dropped) continue;
         const rect = d.wrap.getBoundingClientRect();
         const cx   = rect.left + rect.width  / 2;
@@ -805,61 +722,38 @@
     let currentData = null;
     let baseX       = 0;
     let baseY       = 0;
-    let wasDragged  = false; // persists through click event
+    let wasDragged  = false;
 
     document.querySelectorAll('.card-wrap').forEach(wrap => {
       wrap.addEventListener('mousedown', e => {
         if (e.button !== 0) return;
         e.preventDefault();
-
-        startX      = e.clientX;
-        startY      = e.clientY;
-        didDrag     = false;
-        wasDragged  = false;
+        startX = e.clientX; startY = e.clientY;
+        didDrag = false; wasDragged = false;
         dragging    = wrap;
         currentData = wrapData.find(d => d.wrap === wrap);
-
-        const style  = window.getComputedStyle(wrap);
-        const matrix = new DOMMatrix(style.transform);
-        baseX = matrix.m41;
-        baseY = matrix.m42;
-
-        dragOffsetX = e.clientX;
-        dragOffsetY = e.clientY;
-
+        const matrix = new DOMMatrix(window.getComputedStyle(wrap).transform);
+        baseX = matrix.m41; baseY = matrix.m42;
+        dragOffsetX = e.clientX; dragOffsetY = e.clientY;
         wrap.style.zIndex    = '999';
         wrap.style.cursor    = 'grabbing';
         wrap.style.boxShadow = '0 20px 60px rgba(0,0,0,0.7)';
         wrap.dataset.dragging = '1';
       });
 
-      // block link clicks after a drag — fires after mouseup
       wrap.querySelector('a.card').addEventListener('click', e => {
-        if (wasDragged) {
-          e.preventDefault();
-          e.stopPropagation();
-          wasDragged = false;
-        }
+        if (wasDragged) { e.preventDefault(); e.stopPropagation(); wasDragged = false; }
       });
 
-      // touch support
       wrap.addEventListener('touchstart', e => {
         const touch = e.touches[0];
-        startX      = touch.clientX;
-        startY      = touch.clientY;
-        didDrag     = false;
-        wasDragged  = false;
+        startX = touch.clientX; startY = touch.clientY;
+        didDrag = false; wasDragged = false;
         dragging    = wrap;
         currentData = wrapData.find(d => d.wrap === wrap);
-
-        const style  = window.getComputedStyle(wrap);
-        const matrix = new DOMMatrix(style.transform);
-        baseX = matrix.m41;
-        baseY = matrix.m42;
-
-        dragOffsetX = touch.clientX;
-        dragOffsetY = touch.clientY;
-
+        const matrix = new DOMMatrix(window.getComputedStyle(wrap).transform);
+        baseX = matrix.m41; baseY = matrix.m42;
+        dragOffsetX = touch.clientX; dragOffsetY = touch.clientY;
         wrap.style.zIndex     = '999';
         wrap.style.boxShadow  = '0 20px 60px rgba(0,0,0,0.7)';
         wrap.dataset.dragging = '1';
@@ -868,73 +762,37 @@
 
     document.addEventListener('mousemove', e => {
       if (!dragging) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDrag = true;
+      if (Math.abs(e.clientX - startX) > 3 || Math.abs(e.clientY - startY) > 3) didDrag = true;
       const tx = baseX + (e.clientX - dragOffsetX);
       const ty = baseY + (e.clientY - dragOffsetY);
       dragging.style.transform = `translate(${tx}px, ${ty}px)`;
       if (currentData) { currentData.tx = tx; currentData.ty = ty; }
     });
 
-    document.addEventListener('mouseup', () => {
+    function endDrag() {
       if (!dragging) return;
       delete dragging.dataset.dragging;
       dragging.style.cursor    = 'grab';
       dragging.style.boxShadow = '';
       dragging.style.zIndex    = '';
+      if (didDrag) { wasDragged = true; if (currentData) currentData.dropped = true; }
+      dragging = null; currentData = null; didDrag = false;
+    }
 
-      if (didDrag) {
-        wasDragged = true;
-        if (currentData) currentData.dropped = true;
-      }
-
-      dragging    = null;
-      currentData = null;
-      didDrag     = false;
-    });
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchend', endDrag);
+    document.addEventListener('touchcancel', () => { wasDragged = false; endDrag(); });
 
     document.addEventListener('touchmove', e => {
       if (!dragging) return;
       e.preventDefault();
       const touch = e.touches[0];
-      const dx = touch.clientX - startX;
-      const dy = touch.clientY - startY;
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDrag = true;
+      if (Math.abs(touch.clientX - startX) > 3 || Math.abs(touch.clientY - startY) > 3) didDrag = true;
       const tx = baseX + (touch.clientX - dragOffsetX);
       const ty = baseY + (touch.clientY - dragOffsetY);
       dragging.style.transform = `translate(${tx}px, ${ty}px)`;
       if (currentData) { currentData.tx = tx; currentData.ty = ty; }
     }, { passive: false });
-
-    document.addEventListener('touchend', () => {
-      if (!dragging) return;
-      delete dragging.dataset.dragging;
-      dragging.style.boxShadow = '';
-      dragging.style.zIndex    = '';
-      dragging.style.cursor    = 'grab';
-
-      if (didDrag) {
-        wasDragged = true;
-        if (currentData) currentData.dropped = true;
-      }
-
-      dragging    = null;
-      currentData = null;
-      didDrag     = false;
-    });
-
-    document.addEventListener('touchcancel', () => {
-      if (!dragging) return;
-      delete dragging.dataset.dragging;
-      dragging.style.boxShadow = '';
-      dragging.style.zIndex    = '';
-      dragging.style.cursor    = 'grab';
-      dragging    = null;
-      currentData = null;
-      didDrag     = false;
-      wasDragged  = false;
-    });
 
     // ── guestbook ──
     const SUPABASE_URL = 'https://ptyyyhuuccnojxosnjuf.supabase.co';
@@ -945,6 +803,8 @@
       'apikey':        SUPABASE_KEY,
       'Authorization': `Bearer ${SUPABASE_KEY}`,
     };
+
+    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     async function loadMessages() {
       try {
@@ -970,8 +830,6 @@
       } catch(e) { console.error('Failed to send:', e); }
       btn.textContent = 'send'; btn.disabled = false;
     }
-
-    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     document.getElementById('gb-submit').addEventListener('click', submitMessage);
     loadMessages();
