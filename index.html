@@ -384,8 +384,8 @@
       justify-content: center;
     }
     #cross-3d {
-      width: 300px;
-      height: 300px;
+      width: 220px;
+      height: 220px;
       display: block;
       cursor: grab;
     }
@@ -607,11 +607,11 @@
 
     // ── cross renderer ──
     const cc = document.getElementById('cross-3d');
-    cc.width  = 300;
-    cc.height = 300;
+    cc.width  = 220;
+    cc.height = 220;
     const cRenderer = new THREE.WebGLRenderer({ canvas: cc, alpha: true, antialias: true });
     cRenderer.setPixelRatio(window.devicePixelRatio);
-    cRenderer.setSize(300, 300);
+    cRenderer.setSize(220, 220);
     cRenderer.outputColorSpace = THREE.SRGBColorSpace;
     cRenderer.toneMapping = THREE.ACESFilmicToneMapping;
     cRenderer.toneMappingExposure = 1.2;
@@ -811,6 +811,10 @@
       if (didDrag) {
         wasDragged = true;
         if (currentData) currentData.dropped = true;
+      } else {
+        // no drag — clear inline transform so CSS tilt restores
+        dragging.style.transform = '';
+        if (currentData) currentData.dropped = false;
       }
 
       dragging    = null;
