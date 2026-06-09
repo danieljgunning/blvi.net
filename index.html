@@ -811,11 +811,31 @@
       if (didDrag) {
         wasDragged = true;
         if (currentData) currentData.dropped = true;
+        // keep the drag transform so card stays where dropped
       } else {
-        // no drag — clear inline transform so CSS tilt restores
+        // tap — clear transform so CSS tilt restores immediately
         dragging.style.transform = '';
-        if (currentData) currentData.dropped = false;
+        if (currentData) {
+          currentData.tx      = 0;
+          currentData.ty      = 0;
+          currentData.dropped = false;
+        }
       }
+
+      // force immediate parallax reset so tilt restores right away
+      if (currentData) {
+        if (!didDrag) {
+          currentData.tx = 0;
+          currentData.ty = 0;
+        }
+        const el = currentData.wrap;
+        const tx = currentData.tx;
+        const ty = currentData.ty;
+        el.style.transform = `translate(${tx}px, ${ty}px)`;
+      }
+
+      // force blur so card doesn't stay in pressed state
+      if (document.activeElement) document.activeElement.blur();
 
       dragging    = null;
       currentData = null;
