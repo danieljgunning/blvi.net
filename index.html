@@ -44,14 +44,40 @@
       z-index: -1;
     }
 
+    /* grain */
+    .grain {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.09;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-size: 256px 256px;
+      mix-blend-mode: overlay;
+      animation: grainShift 0.12s steps(1) infinite;
+    }
+    @keyframes grainShift {
+      0%   { background-position:   0px   0px; }
+      10%  { background-position: -40px -60px; }
+      20%  { background-position:  60px  20px; }
+      30%  { background-position: -20px  80px; }
+      40%  { background-position:  80px -40px; }
+      50%  { background-position: -60px  40px; }
+      60%  { background-position:  20px -80px; }
+      70%  { background-position: -80px  60px; }
+      80%  { background-position:  40px  60px; }
+      90%  { background-position: -60px -20px; }
+      100% { background-position:  20px  40px; }
+    }
+
     /* logo */
     .logo-wrap {
       margin-bottom: 1rem;
       opacity: 0;
       animation: fadeUp 0.9s ease 0.2s forwards;
       display: flex;
-      flex-direction: column;
       align-items: center;
+      justify-content: center;
     }
     #logo-3d {
       width: 420px;
@@ -89,7 +115,7 @@
     }
     .platforms a:hover img { filter: brightness(1.2); }
 
-    /* two-column layout */
+    /* columns */
     .columns {
       display: flex;
       align-items: flex-start;
@@ -99,10 +125,7 @@
       max-width: 960px;
     }
 
-    /* parallax wrappers */
-    .card-wrap { display: inline-block; position: relative; will-change: transform; }
-
-    /* panels — identical width and structure */
+    /* panels */
     .panel {
       opacity: 0;
       animation: fadeUp 0.9s ease 0.7s forwards;
@@ -113,7 +136,7 @@
       align-items: center;
     }
 
-    /* rows — identical for both panels */
+    /* rows */
     .polaroid-row,
     .friends-row {
       display: flex;
@@ -121,14 +144,21 @@
       margin-bottom: 2rem;
       align-items: flex-start;
     }
-
-    /* stagger — same pattern for both panels */
     .polaroid-row .card-wrap:nth-child(odd),
     .friends-row  .card-wrap:nth-child(odd)  { margin-top: 0; }
     .polaroid-row .card-wrap:nth-child(even),
     .friends-row  .card-wrap:nth-child(even) { margin-top: 20px; }
 
-    /* card — shared base */
+    /* card wrap — parallax applied here */
+    .card-wrap {
+      display: inline-block;
+      position: relative;
+      will-change: transform;
+      cursor: grab;
+    }
+    .card-wrap:active { cursor: grabbing; }
+
+    /* card */
     .card {
       text-decoration: none;
       color: var(--text);
@@ -148,18 +178,16 @@
     .friends-row:nth-child(2)  .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.5s both, float4 23s ease-in-out 2s infinite; }
     .friends-row:nth-child(3)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.7s both, float2 21s ease-in-out 2s infinite; }
 
-    /* polaroid rotations — alternating directions */
-    .polaroid-row:nth-child(1) .card-wrap:nth-child(1) .card-photo { transform: rotate(-4deg);  }
-    .polaroid-row:nth-child(1) .card-wrap:nth-child(2) .card-photo { transform: rotate(3.5deg); }
-    .polaroid-row:nth-child(2) .card-wrap:nth-child(1) .card-photo { transform: rotate(2.5deg); }
-    .polaroid-row:nth-child(2) .card-wrap:nth-child(2) .card-photo { transform: rotate(-3deg);  }
-
-    /* friend tilts */
-    .friends-row:nth-child(1) .card-wrap:nth-child(1) .card-photo { transform: rotate(-4deg);   }
-    .friends-row:nth-child(1) .card-wrap:nth-child(2) .card-photo { transform: rotate(3deg);    }
-    .friends-row:nth-child(2) .card-wrap:nth-child(1) .card-photo { transform: rotate(2.5deg);  }
-    .friends-row:nth-child(2) .card-wrap:nth-child(2) .card-photo { transform: rotate(-3deg);   }
-    .friends-row:nth-child(3) .card-wrap:nth-child(1) .card-photo { transform: rotate(-3.5deg); }
+    /* rotations */
+    .polaroid-row:nth-child(1) .card-wrap:nth-child(1) .card-photo { transform: rotate(-4deg);   }
+    .polaroid-row:nth-child(1) .card-wrap:nth-child(2) .card-photo { transform: rotate(3.5deg);  }
+    .polaroid-row:nth-child(2) .card-wrap:nth-child(1) .card-photo { transform: rotate(2.5deg);  }
+    .polaroid-row:nth-child(2) .card-wrap:nth-child(2) .card-photo { transform: rotate(-3deg);   }
+    .friends-row:nth-child(1)  .card-wrap:nth-child(1) .card-photo { transform: rotate(-4deg);   }
+    .friends-row:nth-child(1)  .card-wrap:nth-child(2) .card-photo { transform: rotate(3deg);    }
+    .friends-row:nth-child(2)  .card-wrap:nth-child(1) .card-photo { transform: rotate(2.5deg);  }
+    .friends-row:nth-child(2)  .card-wrap:nth-child(2) .card-photo { transform: rotate(-3deg);   }
+    .friends-row:nth-child(3)  .card-wrap:nth-child(1) .card-photo { transform: rotate(-3.5deg); }
 
     /* photo wrapper */
     .card-photo {
@@ -169,7 +197,7 @@
       transition: transform 0.7s cubic-bezier(0.22,1,0.36,1), box-shadow 0.7s ease;
     }
 
-    /* polaroid */
+    /* polaroid style */
     .card-photo.polaroid {
       background:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E"),
@@ -183,7 +211,6 @@
       aspect-ratio: 1;
       object-fit: cover;
       transition: filter 0.8s ease;
-      box-shadow: inset 0 0 0 2px rgba(0,0,0,0.25), 0 0 8px 3px rgba(0,0,0,0.18);
       outline: 1.5px solid rgba(0,0,0,0.15);
     }
     .card-photo.polaroid .card-caption {
@@ -196,7 +223,6 @@
       opacity: 0.85;
       transition: opacity 0.4s ease;
     }
-    .card:hover .card-photo.polaroid .card-caption { opacity: 1; }
 
     /* friend square */
     .card-photo.square img {
@@ -208,7 +234,7 @@
       transition: filter 0.8s ease;
     }
 
-    /* friend caption */
+    /* captions */
     .card-caption {
       font-family: 'IM Fell English', serif;
       font-size: 0.78rem;
@@ -220,17 +246,15 @@
       white-space: nowrap;
     }
 
-    /* parallax wrapper */
-    .card-wrap { display: inline-block; position: relative; will-change: transform; }
-    .friends-grid .card-wrap { display: block; }
+    /* hover states */
     .card:hover { z-index: 10; }
     .card:hover .card-photo {
       transform: rotate(0deg) scale(1.05) !important;
       box-shadow: 0 22px 64px rgba(0,0,0,0.75), 0 4px 16px rgba(0,0,0,0.5);
     }
-    .card:hover .card-photo img     { filter: brightness(1.02); }
-    .card:hover .card-caption       { color: rgba(240,236,228,0.95); }
-    .card:hover .card-photo.polaroid .card-caption { color: #3a3228; opacity: 1; }
+    .card:hover .card-photo img                        { filter: brightness(1.02); }
+    .card:hover .card-caption                          { color: rgba(240,236,228,0.95); }
+    .card:hover .card-photo.polaroid .card-caption     { color: #3a3228; opacity: 1; }
 
     /* keyframes */
     @keyframes float1 {
@@ -266,32 +290,6 @@
       to   { opacity: 1; transform: translateY(0);    }
     }
 
-    /* grain overlay */
-    .grain {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      opacity: 0.09;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-      background-size: 256px 256px;
-      mix-blend-mode: overlay;
-      animation: grainShift 0.12s steps(1) infinite;
-    }
-    @keyframes grainShift {
-      0%   { background-position:   0px   0px; }
-      10%  { background-position: -40px -60px; }
-      20%  { background-position:  60px  20px; }
-      30%  { background-position: -20px  80px; }
-      40%  { background-position:  80px -40px; }
-      50%  { background-position: -60px  40px; }
-      60%  { background-position:  20px -80px; }
-      70%  { background-position: -80px  60px; }
-      80%  { background-position:  40px  60px; }
-      90%  { background-position: -60px -20px; }
-      100% { background-position:  20px  40px; }
-    }
-
     /* guestbook */
     .guestbook {
       width: 100%;
@@ -300,7 +298,6 @@
       opacity: 0;
       animation: fadeUp 0.9s ease 1s forwards;
     }
-
     .guestbook-title {
       font-family: 'IM Fell English', serif;
       font-size: 0.8rem;
@@ -309,15 +306,12 @@
       text-align: center;
       margin-bottom: 2rem;
     }
-
     .guestbook-form {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
       margin-bottom: 2.5rem;
     }
-
-    .guestbook-form input,
     .guestbook-form textarea {
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.1);
@@ -327,21 +321,10 @@
       padding: 0.7rem 1rem;
       outline: none;
       resize: none;
+      height: 90px;
       transition: border-color 0.3s ease;
     }
-
-    .guestbook-form input::placeholder,
-    .guestbook-form textarea::placeholder {
-      color: var(--muted);
-    }
-
-    .guestbook-form input:focus,
-    .guestbook-form textarea:focus {
-      border-color: rgba(255,255,255,0.25);
-    }
-
-    .guestbook-form textarea { height: 90px; }
-
+    .guestbook-form textarea:focus { border-color: rgba(255,255,255,0.25); }
     .guestbook-submit {
       font-family: 'IM Fell English', serif;
       font-size: 0.8rem;
@@ -351,34 +334,15 @@
       padding: 0.6rem 1.5rem;
       cursor: pointer;
       align-self: center;
-      transition: color 0.3s ease, border-color 0.3s ease;
       letter-spacing: 0.06em;
+      transition: color 0.3s ease, border-color 0.3s ease;
     }
-
-    .guestbook-submit:hover {
-      color: var(--text);
-      border-color: rgba(255,255,255,0.3);
-    }
-
-    .guestbook-messages {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-
+    .guestbook-submit:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+    .guestbook-messages { display: flex; flex-direction: column; gap: 1.25rem; }
     .guestbook-message {
       border-left: 1px solid rgba(255,255,255,0.1);
       padding: 0.5rem 0 0.5rem 1rem;
     }
-
-    .guestbook-message-name {
-      font-family: 'IM Fell English SC', serif;
-      font-size: 0.7rem;
-      color: var(--muted);
-      letter-spacing: 0.1em;
-      margin-bottom: 0.3rem;
-    }
-
     .guestbook-message-text {
       font-family: 'IM Fell English', serif;
       font-style: normal;
@@ -387,7 +351,6 @@
       line-height: 1.5;
       opacity: 0.8;
     }
-
     .guestbook-empty {
       font-family: 'IM Fell English', serif;
       font-size: 0.8rem;
@@ -402,11 +365,9 @@
     }
     @media (max-width: 480px) {
       body { padding: 2.5rem 1rem 4rem; }
-      .logo-wrap img { width: 150px; }
       .platforms { gap: 1.2rem; margin-bottom: 2.5rem; }
       .panel { max-width: 360px; }
-      .polaroid-row,
-      .friends-row { gap: 1.8rem; margin-bottom: 2rem; }
+      .polaroid-row, .friends-row { gap: 1.8rem; margin-bottom: 2rem; }
       .card-photo.polaroid img { width: 100px; }
       .card-photo.polaroid { padding: 7px 7px 0 7px; }
       .card-photo.polaroid .card-caption { font-size: 0.85rem; padding: 4px 3px 8px; }
@@ -421,6 +382,7 @@
     <source src="https://archive.org/download/img-1665-2/Img%201665%202.mp4" type="video/mp4">
   </video>
   <div class="bg-overlay"></div>
+  <div class="grain"></div>
 
   <div class="logo-wrap">
     <canvas id="logo-3d"></canvas>
@@ -438,81 +400,92 @@
   <div class="columns">
 
     <div class="panel left">
-
-        <div class="polaroid-row">
-          <div class="card-wrap"><a class="card" href="https://open.spotify.com/track/3jA1dfRX5lcQ22i3cM3g6c?si=8bc5d788a7424029" target="_blank" rel="noopener">
+      <div class="polaroid-row">
+        <div class="card-wrap">
+          <a class="card" href="https://open.spotify.com/track/3jA1dfRX5lcQ22i3cM3g6c?si=8bc5d788a7424029" target="_blank" rel="noopener">
             <div class="card-photo polaroid">
               <img src="https://imgur.com/zD9gcjl.jpg" alt="worth it">
               <div class="card-caption">worth it</div>
             </div>
-          </a></div>
-          <div class="card-wrap"><a class="card" href="https://open.spotify.com/track/6GHMWx90X0d1jZeVjFw7Gi?si=7415ecaeeeeb4227" target="_blank" rel="noopener">
+          </a>
+        </div>
+        <div class="card-wrap">
+          <a class="card" href="https://open.spotify.com/track/6GHMWx90X0d1jZeVjFw7Gi?si=7415ecaeeeeb4227" target="_blank" rel="noopener">
             <div class="card-photo polaroid">
               <img src="https://i.imgur.com/uFRRPDn.jpeg" alt="skin care">
               <div class="card-caption">skin care</div>
             </div>
-          </a></div>
+          </a>
         </div>
-
-        <div class="polaroid-row">
-          <div class="card-wrap"><a class="card" href="https://open.spotify.com/track/7MR542qEmj4I85qlc19m9V?si=a68bc037c2b94db7" target="_blank" rel="noopener">
+      </div>
+      <div class="polaroid-row">
+        <div class="card-wrap">
+          <a class="card" href="https://open.spotify.com/track/7MR542qEmj4I85qlc19m9V?si=a68bc037c2b94db7" target="_blank" rel="noopener">
             <div class="card-photo polaroid">
               <img src="https://i.imgur.com/DJJ8gy2.jpeg" alt="renshaw lane">
               <div class="card-caption">renshaw lane</div>
             </div>
-          </a></div>
-          <div class="card-wrap"><a class="card" href="https://open.spotify.com/track/3gbhm4GgJFXw5ZRQIkcSWV?si=4bb016b43c7f4b11" target="_blank" rel="noopener">
+          </a>
+        </div>
+        <div class="card-wrap">
+          <a class="card" href="https://open.spotify.com/track/3gbhm4GgJFXw5ZRQIkcSWV?si=4bb016b43c7f4b11" target="_blank" rel="noopener">
             <div class="card-photo polaroid">
               <img src="https://i.imgur.com/3Ru1GJ3.jpeg" alt="world eater">
               <div class="card-caption">world eater</div>
             </div>
-          </a></div>
+          </a>
         </div>
-
       </div>
+    </div>
 
     <div class="panel right">
-
-        <div class="friends-row">
-          <div class="card-wrap"><a class="card" href="https://soundcloud.com/ihateyouclaus" target="_blank" rel="noopener">
+      <div class="friends-row">
+        <div class="card-wrap">
+          <a class="card" href="https://soundcloud.com/ihateyouclaus" target="_blank" rel="noopener">
             <div class="card-photo square">
               <img src="https://i1.sndcdn.com/avatars-tDzeTt2fvol1G0G7-zF6jrQ-t1080x1080.jpg" alt="ihateyouclaus">
             </div>
             <div class="card-caption">ihateyouclaus</div>
-          </a></div>
-          <div class="card-wrap"><a class="card" href="https://soundcloud.com/t3rryy" target="_blank" rel="noopener">
+          </a>
+        </div>
+        <div class="card-wrap">
+          <a class="card" href="https://soundcloud.com/t3rryy" target="_blank" rel="noopener">
             <div class="card-photo square">
               <img src="https://i1.sndcdn.com/avatars-FZgjkf3XjaAdxLkP-XZv29g-t1080x1080.jpg" alt="terry">
             </div>
             <div class="card-caption">terry</div>
-          </a></div>
+          </a>
         </div>
-
-        <div class="friends-row">
-          <div class="card-wrap"><a class="card" href="https://soundcloud.com/5ume" target="_blank" rel="noopener">
+      </div>
+      <div class="friends-row">
+        <div class="card-wrap">
+          <a class="card" href="https://soundcloud.com/5ume" target="_blank" rel="noopener">
             <div class="card-photo square">
               <img src="https://i1.sndcdn.com/avatars-vVJZ51ofo3f7E9s3-T0401A-t1080x1080.jpg" alt="5ume">
             </div>
             <div class="card-caption">5ume</div>
-          </a></div>
-          <div class="card-wrap"><a class="card" href="https://soundcloud.com/sojuxxxcigs" target="_blank" rel="noopener">
+          </a>
+        </div>
+        <div class="card-wrap">
+          <a class="card" href="https://soundcloud.com/sojuxxxcigs" target="_blank" rel="noopener">
             <div class="card-photo square">
               <img src="https://i1.sndcdn.com/avatars-bAoPKwoIUwcQgyFP-UUIFnQ-t1080x1080.jpg" alt="SojuN'Cigs">
             </div>
             <div class="card-caption">SojuN'Cigs</div>
-          </a></div>
+          </a>
         </div>
-
-        <div class="friends-row">
-          <div class="card-wrap"><a class="card" href="https://soundcloud.com/r3mes" target="_blank" rel="noopener">
+      </div>
+      <div class="friends-row">
+        <div class="card-wrap">
+          <a class="card" href="https://soundcloud.com/r3mes" target="_blank" rel="noopener">
             <div class="card-photo square">
               <img src="https://i1.sndcdn.com/avatars-sUsdew8TDg1NegIY-x0neTw-t1080x1080.jpg" alt="reme">
             </div>
             <div class="card-caption">reme</div>
-          </a></div>
+          </a>
         </div>
-
       </div>
+    </div>
 
   </div>
 
@@ -527,6 +500,7 @@
     </div>
   </div>
 
+  <!-- Three.js 3D logo -->
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/" } }
   </script>
@@ -548,12 +522,10 @@
     const camera = new THREE.PerspectiveCamera(40, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
     camera.position.set(0, 0, 4);
 
-    // environment lighting for chrome
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     pmremGenerator.compileEquirectangularShader();
     scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
 
-    // controls
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping   = true;
     controls.dampingFactor   = 0.05;
@@ -562,133 +534,177 @@
     controls.autoRotate      = true;
     controls.autoRotateSpeed = 1.5;
 
-    // load model
     const loader = new GLTFLoader();
     loader.load('https://danieljgunning.github.io/chrome/Untitled.glb', gltf => {
-      const model = gltf.scene;
+      const model  = gltf.scene;
       const box    = new THREE.Box3().setFromObject(model);
       const centre = box.getCenter(new THREE.Vector3());
       const size   = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
       model.position.sub(centre);
-      model.scale.multiplyScalar(2.5 / maxDim);
+      model.scale.multiplyScalar(2.5 / Math.max(size.x, size.y, size.z));
       scene.add(model);
     }, undefined, err => console.error('GLB load error:', err));
 
     window.addEventListener('resize', () => {
-      const w = canvas.clientWidth;
-      const h = canvas.clientHeight;
-      renderer.setSize(w, h);
-      camera.aspect = w / h;
+      renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
       camera.updateProjectionMatrix();
     });
 
-    function animate() {
+    (function animate() {
       requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
-    }
-    animate();
+    })();
   </script>
 
   <script>
+    // ── proximity parallax ──
     let mouseX = 0, mouseY = 0;
     document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
 
-    const RADIUS = 180; // px — how close cursor must be to affect a card
-    const STRENGTH = 12; // max pixel shift
+    const RADIUS   = 180;
+    const STRENGTH = 12;
+    const wrapData = Array.from(document.querySelectorAll('.card-wrap')).map(wrap => ({ wrap, tx: 0, ty: 0, dropped: false, dropX: 0, dropY: 0 }));
 
-    const allWraps = document.querySelectorAll('.card-wrap');
-    const wrapData = Array.from(allWraps).map(wrap => ({ wrap, tx: 0, ty: 0 }));
     function parallaxLoop() {
       for (const d of wrapData) {
+        // skip cards being dragged or permanently dropped
+        if (d.wrap.dataset.dragging || d.dropped) continue;
         const rect = d.wrap.getBoundingClientRect();
-        const cx = rect.left + rect.width  / 2;
-        const cy = rect.top  + rect.height / 2;
-        const dx = mouseX - cx;
-        const dy = mouseY - cy;
+        const cx   = rect.left + rect.width  / 2;
+        const cy   = rect.top  + rect.height / 2;
+        const dx   = mouseX - cx;
+        const dy   = mouseY - cy;
         const dist = Math.sqrt(dx * dx + dy * dy);
-
-        let targetX = 0, targetY = 0;
+        let tx = 0, ty = 0;
         if (dist < RADIUS) {
-          const influence = (1 - dist / RADIUS);
-          targetX = (dx / RADIUS) * STRENGTH * influence;
-          targetY = (dy / RADIUS) * STRENGTH * influence;
+          const inf = 1 - dist / RADIUS;
+          tx = (dx / RADIUS) * STRENGTH * inf;
+          ty = (dy / RADIUS) * STRENGTH * inf;
         }
-
-        // smooth lerp toward target
-        d.tx += (targetX - d.tx) * 0.08;
-        d.ty += (targetY - d.ty) * 0.08;
+        d.tx += (tx - d.tx) * 0.08;
+        d.ty += (ty - d.ty) * 0.08;
         d.wrap.style.transform = `translate(${d.tx}px, ${d.ty}px)`;
       }
       requestAnimationFrame(parallaxLoop);
     }
-
     parallaxLoop();
-  </script>
 
-  <script>
+    // ── draggable cards ──
+    let dragging    = null;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    let startX      = 0;
+    let startY      = 0;
+    let didDrag     = false;
+    let currentData = null;
+    let baseX       = 0;
+    let baseY       = 0;
+    let wasDragged  = false; // persists through click event
+
+    document.querySelectorAll('.card-wrap').forEach(wrap => {
+      wrap.addEventListener('mousedown', e => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+
+        startX      = e.clientX;
+        startY      = e.clientY;
+        didDrag     = false;
+        wasDragged  = false;
+        dragging    = wrap;
+        currentData = wrapData.find(d => d.wrap === wrap);
+
+        const style  = window.getComputedStyle(wrap);
+        const matrix = new DOMMatrix(style.transform);
+        baseX = matrix.m41;
+        baseY = matrix.m42;
+
+        dragOffsetX = e.clientX;
+        dragOffsetY = e.clientY;
+
+        wrap.style.zIndex    = '999';
+        wrap.style.cursor    = 'grabbing';
+        wrap.style.boxShadow = '0 20px 60px rgba(0,0,0,0.7)';
+        wrap.dataset.dragging = '1';
+      });
+
+      // block link clicks after a drag — fires after mouseup
+      wrap.querySelector('a.card').addEventListener('click', e => {
+        if (wasDragged) {
+          e.preventDefault();
+          e.stopPropagation();
+          wasDragged = false;
+        }
+      });
+    });
+
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDrag = true;
+      const tx = baseX + (e.clientX - dragOffsetX);
+      const ty = baseY + (e.clientY - dragOffsetY);
+      dragging.style.transform = `translate(${tx}px, ${ty}px)`;
+      if (currentData) { currentData.tx = tx; currentData.ty = ty; }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      delete dragging.dataset.dragging;
+      dragging.style.cursor    = 'grab';
+      dragging.style.boxShadow = '';
+      dragging.style.zIndex    = '';
+
+      if (didDrag) {
+        wasDragged = true;
+        if (currentData) currentData.dropped = true;
+      }
+
+      dragging    = null;
+      currentData = null;
+      didDrag     = false;
+    });
+
     // ── guestbook ──
     const SUPABASE_URL = 'https://ptyyyhuuccnojxosnjuf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_K7NFAi3YjR9w7f6DOf3JSA_FKcOXiOp';
-    const API = `${SUPABASE_URL}/rest/v1/messages`;
+    const API     = `${SUPABASE_URL}/rest/v1/messages`;
     const HEADERS = {
       'Content-Type': 'application/json',
-      'apikey': SUPABASE_KEY,
+      'apikey':        SUPABASE_KEY,
       'Authorization': `Bearer ${SUPABASE_KEY}`,
     };
 
     async function loadMessages() {
       try {
-        const res = await fetch(`${API}?select=message,created_at&order=created_at.desc`, { headers: HEADERS });
+        const res  = await fetch(`${API}?select=message,created_at&order=created_at.desc`, { headers: HEADERS });
         const data = await res.json();
-        const container = document.getElementById('gb-messages');
-        if (!data.length) {
-          container.innerHTML = '<p class="guestbook-empty">no messages yet</p>';
-          return;
-        }
-        container.innerHTML = data.map(m => `
-          <div class="guestbook-message">
-            <div class="guestbook-message-text">${escapeHtml(m.message)}</div>
-          </div>
-        `).join('');
-      } catch (e) {
-        console.error('Failed to load messages:', e);
-      }
+        const box  = document.getElementById('gb-messages');
+        if (!data.length) { box.innerHTML = '<p class="guestbook-empty">no messages yet</p>'; return; }
+        box.innerHTML = data.map(m => `<div class="guestbook-message"><div class="guestbook-message-text">${esc(m.message)}</div></div>`).join('');
+      } catch(e) { console.error('Failed to load messages:', e); }
     }
 
     async function submitMessage() {
-      const message = document.getElementById('gb-message').value.trim();
-      if (!message) return;
-
+      const msg = document.getElementById('gb-message').value.trim();
+      if (!msg) return;
       const btn = document.getElementById('gb-submit');
-      btn.textContent = 'sending...';
-      btn.disabled = true;
-
+      btn.textContent = 'sending...'; btn.disabled = true;
       try {
-        await fetch(API, {
-          method: 'POST',
-          headers: { ...HEADERS, 'Prefer': 'return=minimal' },
-          body: JSON.stringify({ message }),
-        });
+        await fetch(API, { method: 'POST', headers: { ...HEADERS, 'Prefer': 'return=minimal' }, body: JSON.stringify({ message: msg }) });
         document.getElementById('gb-message').value = '';
         await loadMessages();
-      } catch (e) {
-        console.error('Failed to send message:', e);
-      }
-
-      btn.textContent = 'send';
-      btn.disabled = false;
+      } catch(e) { console.error('Failed to send:', e); }
+      btn.textContent = 'send'; btn.disabled = false;
     }
 
-    function escapeHtml(str) {
-      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
+    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     document.getElementById('gb-submit').addEventListener('click', submitMessage);
     loadMessages();
   </script>
-
 
 </body>
 </html>
