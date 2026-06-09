@@ -22,7 +22,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 4rem 1.5rem 6rem;
+      padding: 2rem 1.5rem 6rem;
       position: relative;
       overflow-x: hidden;
     }
@@ -294,7 +294,7 @@
     .guestbook {
       width: 100%;
       max-width: 560px;
-      margin-top: 5rem;
+      margin-top: 2.5rem;
       opacity: 0;
       animation: fadeUp 0.9s ease 1s forwards;
     }
@@ -659,7 +659,7 @@
         wrap.style.zIndex     = '999';
         wrap.style.boxShadow  = '0 20px 60px rgba(0,0,0,0.7)';
         wrap.dataset.dragging = '1';
-      }, { passive: true });
+      }, { passive: false });
     });
 
     document.addEventListener('mousemove', e => {
@@ -692,6 +692,7 @@
 
     document.addEventListener('touchmove', e => {
       if (!dragging) return;
+      e.preventDefault();
       const touch = e.touches[0];
       const dx = touch.clientX - startX;
       const dy = touch.clientY - startY;
@@ -700,7 +701,7 @@
       const ty = baseY + (touch.clientY - dragOffsetY);
       dragging.style.transform = `translate(${tx}px, ${ty}px)`;
       if (currentData) { currentData.tx = tx; currentData.ty = ty; }
-    }, { passive: true });
+    }, { passive: false });
 
     document.addEventListener('touchend', () => {
       if (!dragging) return;
@@ -717,6 +718,8 @@
       currentData = null;
       didDrag     = false;
     });
+
+    // ── guestbook ──
     const SUPABASE_URL = 'https://ptyyyhuuccnojxosnjuf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_K7NFAi3YjR9w7f6DOf3JSA_FKcOXiOp';
     const API     = `${SUPABASE_URL}/rest/v1/messages`;
