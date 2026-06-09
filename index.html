@@ -637,6 +637,29 @@
           wasDragged = false;
         }
       });
+
+      // touch support
+      wrap.addEventListener('touchstart', e => {
+        const touch = e.touches[0];
+        startX      = touch.clientX;
+        startY      = touch.clientY;
+        didDrag     = false;
+        wasDragged  = false;
+        dragging    = wrap;
+        currentData = wrapData.find(d => d.wrap === wrap);
+
+        const style  = window.getComputedStyle(wrap);
+        const matrix = new DOMMatrix(style.transform);
+        baseX = matrix.m41;
+        baseY = matrix.m42;
+
+        dragOffsetX = touch.clientX;
+        dragOffsetY = touch.clientY;
+
+        wrap.style.zIndex     = '999';
+        wrap.style.boxShadow  = '0 20px 60px rgba(0,0,0,0.7)';
+        wrap.dataset.dragging = '1';
+      }, { passive: true });
     });
 
     document.addEventListener('mousemove', e => {
@@ -667,7 +690,33 @@
       didDrag     = false;
     });
 
-    // ── guestbook ──
+    document.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      const touch = e.touches[0];
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDrag = true;
+      const tx = baseX + (touch.clientX - dragOffsetX);
+      const ty = baseY + (touch.clientY - dragOffsetY);
+      dragging.style.transform = `translate(${tx}px, ${ty}px)`;
+      if (currentData) { currentData.tx = tx; currentData.ty = ty; }
+    }, { passive: true });
+
+    document.addEventListener('touchend', () => {
+      if (!dragging) return;
+      delete dragging.dataset.dragging;
+      dragging.style.boxShadow = '';
+      dragging.style.zIndex    = '';
+
+      if (didDrag) {
+        wasDragged = true;
+        if (currentData) currentData.dropped = true;
+      }
+
+      dragging    = null;
+      currentData = null;
+      didDrag     = false;
+    });
     const SUPABASE_URL = 'https://ptyyyhuuccnojxosnjuf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_K7NFAi3YjR9w7f6DOf3JSA_FKcOXiOp';
     const API     = `${SUPABASE_URL}/rest/v1/messages`;
