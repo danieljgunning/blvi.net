@@ -290,6 +290,23 @@
       to   { opacity: 1; transform: translateY(0);    }
     }
 
+    /* shirt */
+    .shirt-wrap {
+      margin-top: 3rem;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 1.1s forwards;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #shirt-3d {
+      width: 340px;
+      height: 340px;
+      display: block;
+      cursor: grab;
+    }
+    #shirt-3d:active { cursor: grabbing; }
+
     /* guestbook */
     .guestbook {
       width: 100%;
@@ -374,22 +391,7 @@
       font-style: italic;
     }
 
-    /* cross flourish */
-    .cross-wrap {
-      margin-top: 3rem;
-      opacity: 0;
-      animation: fadeUp 0.9s ease 1.2s forwards;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #cross-3d {
-      width: 220px;
-      height: 220px;
-      display: block;
-      cursor: grab;
-    }
-    #cross-3d:active { cursor: grabbing; }
+
 
     /* disable hover effects on touch devices to prevent stuck hover state */
     @media (hover: none) {
@@ -401,6 +403,7 @@
       .card:hover .card-caption       { color: rgba(240,236,228,0.6); }
       .card:hover .card-photo.polaroid .card-caption { opacity: 0.85; }
     }
+    @media (max-width: 768px) {
       .columns { flex-direction: column; align-items: center; gap: 3rem; }
       .panel { width: 100%; max-width: 420px; }
     }
@@ -530,6 +533,10 @@
 
   </div>
 
+  <div class="shirt-wrap">
+    <canvas id="shirt-3d"></canvas>
+  </div>
+
   <div class="guestbook">
     <p class="guestbook-title">leave a message</p>
     <div class="guestbook-form">
@@ -542,9 +549,7 @@
     </div>
   </div>
 
-  <div class="cross-wrap">
-    <canvas id="cross-3d"></canvas>
-  </div>
+
 
   <!-- Three.js 3D logo -->
   <script type="importmap">
@@ -614,55 +619,65 @@
       renderer.render(scene, camera);
     })();
 
-    // ── cross renderer ──
-    const cc = document.getElementById('cross-3d');
-    cc.width  = 220;
-    cc.height = 220;
-    const cRenderer = new THREE.WebGLRenderer({ canvas: cc, alpha: true, antialias: true });
-    cRenderer.setPixelRatio(window.devicePixelRatio);
-    cRenderer.setSize(220, 220);
-    cRenderer.outputColorSpace = THREE.SRGBColorSpace;
-    cRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-    cRenderer.toneMappingExposure = 1.2;
+    // ── shirt renderer ──
+    const sc = document.getElementById('shirt-3d');
+    sc.width  = 340;
+    sc.height = 340;
+    const sRenderer = new THREE.WebGLRenderer({ canvas: sc, alpha: true, antialias: true });
+    sRenderer.setPixelRatio(window.devicePixelRatio);
+    sRenderer.setSize(340, 340);
+    sRenderer.outputColorSpace = THREE.SRGBColorSpace;
+    sRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+    sRenderer.toneMappingExposure = 1.8;
 
-    const cScene  = new THREE.Scene();
-    const cCamera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-    cCamera.position.set(0, 0, 4);
+    const sScene  = new THREE.Scene();
+    const sCamera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    sCamera.position.set(0, 0, 4);
 
-    const cPmrem = new THREE.PMREMGenerator(cRenderer);
-    cPmrem.compileEquirectangularShader();
-    cScene.environment = cPmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    const sPmrem = new THREE.PMREMGenerator(sRenderer);
+    sPmrem.compileEquirectangularShader();
+    sScene.environment = sPmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
-    const cControls = new OrbitControls(cCamera, cc);
-    cControls.enableDamping   = true;
-    cControls.dampingFactor   = 0.05;
-    cControls.enableZoom      = false;
-    cControls.enablePan       = false;
-    cControls.autoRotate      = true;
-    cControls.autoRotateSpeed = 1.5;
+    const sAmbient = new THREE.AmbientLight(0xffffff, 1.6);
+    sScene.add(sAmbient);
+    const sDirLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    sDirLight.position.set(2, 3, 4);
+    sScene.add(sDirLight);
+    const sFillLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    sFillLight.position.set(-2, 0, -2);
+    sScene.add(sFillLight);
 
-    cc.addEventListener('mousedown',  () => { cControls.autoRotate = false; });
-    cc.addEventListener('touchstart', () => { cControls.autoRotate = false; });
-    cc.addEventListener('mouseup',    () => { cControls.autoRotate = true; });
-    cc.addEventListener('touchend',   () => { cControls.autoRotate = true; });
+    const sControls = new OrbitControls(sCamera, sc);
+    sControls.enableDamping   = true;
+    sControls.dampingFactor   = 0.05;
+    sControls.enableZoom      = false;
+    sControls.enablePan       = false;
+    sControls.autoRotate      = true;
+    sControls.autoRotateSpeed = 1.5;
 
-    const crossLoader = new GLTFLoader();
-    crossLoader.setDRACOLoader(dracoLoader);
-    crossLoader.load('https://danieljgunning.github.io/cross/cross.glb', gltf => {
+    sc.addEventListener('mousedown',  () => { sControls.autoRotate = false; });
+    sc.addEventListener('touchstart', () => { sControls.autoRotate = false; });
+    sc.addEventListener('mouseup',    () => { sControls.autoRotate = true; });
+    sc.addEventListener('touchend',   () => { sControls.autoRotate = true; });
+
+    const shirtLoader = new GLTFLoader();
+    shirtLoader.setDRACOLoader(dracoLoader);
+    shirtLoader.load('https://danieljgunning.github.io/shirt/shirt.glb', gltf => {
       const model  = gltf.scene;
       const box    = new THREE.Box3().setFromObject(model);
       const centre = box.getCenter(new THREE.Vector3());
       const size   = box.getSize(new THREE.Vector3());
       model.position.sub(centre);
       model.scale.multiplyScalar(2.5 / Math.max(size.x, size.y, size.z));
-      cScene.add(model);
-    }, undefined, err => console.error('Cross GLB error:', err));
+      sScene.add(model);
+    }, undefined, err => console.error('Shirt GLB error:', err));
 
-    (function animateCross() {
-      requestAnimationFrame(animateCross);
-      cControls.update();
-      cRenderer.render(cScene, cCamera);
+    (function animateShirt() {
+      requestAnimationFrame(animateShirt);
+      sControls.update();
+      sRenderer.render(sScene, sCamera);
     })();
+
   </script>
 
   <script>
