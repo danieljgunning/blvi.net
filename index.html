@@ -291,6 +291,15 @@
     }
 
     /* shirt */
+    .shirt-label {
+      font-family: 'Spectral', serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 3rem;
+      margin-bottom: 0.5rem;
+    }
     .shirt-wrap {
       margin-top: 3rem;
       opacity: 0;
@@ -298,14 +307,18 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 2rem;
     }
-    #shirt-3d {
-      width: 340px;
-      height: 340px;
+    #shirt-3d, #shirt2-3d {
+      width: 300px;
+      height: 300px;
       display: block;
       cursor: grab;
     }
-    #shirt-3d:active { cursor: grabbing; }
+    #shirt2-3d {
+      mix-blend-mode: screen;
+    }
+    #shirt-3d:active, #shirt2-3d:active { cursor: grabbing; }
 
     /* guestbook */
     .guestbook {
@@ -544,8 +557,10 @@
 
   </div>
 
+  <p class="shirt-label">coming soon</p>
   <div class="shirt-wrap">
     <canvas id="shirt-3d"></canvas>
+    <canvas id="shirt2-3d"></canvas>
   </div>
 
   <div class="guestbook">
@@ -633,11 +648,11 @@
 
     // ── shirt renderer ──
     const sc = document.getElementById('shirt-3d');
-    sc.width  = 340;
-    sc.height = 340;
+    sc.width  = 300;
+    sc.height = 300;
     const sRenderer = new THREE.WebGLRenderer({ canvas: sc, alpha: true, antialias: true });
     sRenderer.setPixelRatio(window.devicePixelRatio);
-    sRenderer.setSize(340, 340);
+    sRenderer.setSize(300, 300);
     sRenderer.outputColorSpace = THREE.SRGBColorSpace;
     sRenderer.toneMapping = THREE.ACESFilmicToneMapping;
     sRenderer.toneMappingExposure = 1.8;
@@ -688,6 +703,58 @@
       requestAnimationFrame(animateShirt);
       sControls.update();
       sRenderer.render(sScene, sCamera);
+    })();
+
+    // ── shirt 2 renderer ──
+    const sc2 = document.getElementById('shirt2-3d');
+    sc2.width  = 300;
+    sc2.height = 300;
+    const s2Renderer = new THREE.WebGLRenderer({ canvas: sc2, alpha: true, antialias: true, premultipliedAlpha: false });
+    s2Renderer.setPixelRatio(window.devicePixelRatio);
+    s2Renderer.setSize(300, 300);
+    s2Renderer.outputColorSpace = THREE.SRGBColorSpace;
+    s2Renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    s2Renderer.toneMappingExposure = 1.2;
+
+    const s2Scene  = new THREE.Scene();
+    const s2Camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    s2Camera.position.set(0, 0, 4);
+
+    const s2Pmrem = new THREE.PMREMGenerator(s2Renderer);
+    s2Pmrem.compileEquirectangularShader();
+    s2Scene.environment = s2Pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    s2Scene.background = null;
+    s2Renderer.setClearColor(0x000000, 0);
+
+    const s2Controls = new OrbitControls(s2Camera, sc2);
+    s2Controls.enableDamping   = true;
+    s2Controls.dampingFactor   = 0.05;
+    s2Controls.enableZoom      = false;
+    s2Controls.enablePan       = false;
+    s2Controls.autoRotate      = true;
+    s2Controls.autoRotateSpeed = 1.5;
+
+    sc2.addEventListener('mousedown',  () => { s2Controls.autoRotate = false; });
+    sc2.addEventListener('touchstart', () => { s2Controls.autoRotate = false; });
+    sc2.addEventListener('mouseup',    () => { s2Controls.autoRotate = true; });
+    sc2.addEventListener('touchend',   () => { s2Controls.autoRotate = true; });
+
+    const shirt2Loader = new GLTFLoader();
+    shirt2Loader.setDRACOLoader(dracoLoader);
+    shirt2Loader.load('https://danieljgunning.github.io/greenshirt/greenshirt.glb', gltf => {
+      const model  = gltf.scene;
+      const box    = new THREE.Box3().setFromObject(model);
+      const centre = box.getCenter(new THREE.Vector3());
+      const size   = box.getSize(new THREE.Vector3());
+      model.position.sub(centre);
+      model.scale.multiplyScalar(2.5 / Math.max(size.x, size.y, size.z));
+      s2Scene.add(model);
+    }, undefined, err => console.error('Shirt2 GLB error:', err));
+
+    (function animateShirt2() {
+      requestAnimationFrame(animateShirt2);
+      s2Controls.update();
+      s2Renderer.render(s2Scene, s2Camera);
     })();
 
   </script>
