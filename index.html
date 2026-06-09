@@ -441,6 +441,8 @@
       .card-photo.polaroid .card-caption { font-size: 0.85rem; padding: 4px 3px 8px; }
       .card-photo.square img { width: 100px; height: 100px; }
       .card-caption { font-size: 0.7rem; margin-top: 5px; }
+      .shirt-wrap { flex-direction: column; gap: 0; }
+      #shirt-3d, #shirt2-3d { width: 280px; height: 280px; }
     }
   </style>
 </head>
@@ -648,11 +650,12 @@
 
     // ── shirt renderer ──
     const sc = document.getElementById('shirt-3d');
-    sc.width  = 300;
-    sc.height = 300;
+    const shirtSize = window.innerWidth <= 480 ? Math.min(window.innerWidth - 40, 280) : 300;
+    sc.width  = shirtSize;
+    sc.height = shirtSize;
     const sRenderer = new THREE.WebGLRenderer({ canvas: sc, alpha: true, antialias: true });
     sRenderer.setPixelRatio(window.devicePixelRatio);
-    sRenderer.setSize(300, 300);
+    sRenderer.setSize(shirtSize, shirtSize);
     sRenderer.outputColorSpace = THREE.SRGBColorSpace;
     sRenderer.toneMapping = THREE.ACESFilmicToneMapping;
     sRenderer.toneMappingExposure = 1.8;
@@ -707,11 +710,11 @@
 
     // ── shirt 2 renderer ──
     const sc2 = document.getElementById('shirt2-3d');
-    sc2.width  = 300;
-    sc2.height = 300;
+    sc2.width  = shirtSize;
+    sc2.height = shirtSize;
     const s2Renderer = new THREE.WebGLRenderer({ canvas: sc2, alpha: true, antialias: true, premultipliedAlpha: false });
     s2Renderer.setPixelRatio(window.devicePixelRatio);
-    s2Renderer.setSize(300, 300);
+    s2Renderer.setSize(shirtSize, shirtSize);
     s2Renderer.outputColorSpace = THREE.SRGBColorSpace;
     s2Renderer.toneMapping = THREE.ACESFilmicToneMapping;
     s2Renderer.toneMappingExposure = 1.2;
