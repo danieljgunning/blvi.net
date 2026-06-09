@@ -22,7 +22,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem 1.5rem 6rem;
+      padding: 0.5rem 1.5rem 6rem;
       position: relative;
       overflow-x: hidden;
     }
@@ -72,7 +72,7 @@
 
     /* logo */
     .logo-wrap {
-      margin-bottom: 1rem;
+      margin-bottom: 0;
       opacity: 0;
       animation: fadeUp 0.9s ease 0.2s forwards;
       display: flex;
@@ -91,7 +91,7 @@
     .platforms {
       display: flex;
       gap: 2rem;
-      margin-bottom: 4rem;
+      margin-bottom: 2rem;
       opacity: 0;
       animation: fadeUp 0.9s ease 0.4s forwards;
     }
@@ -626,12 +626,14 @@
     const logoCamera = new THREE.PerspectiveCamera(40, logoCanvas.clientWidth / logoCanvas.clientHeight, 0.1, 100);
     logoCamera.position.set(0, 0, 4);
     const logoControls = makeControls(logoCamera, logoCanvas);
-    loadGLB(logoScene, 'https://danieljgunning.github.io/chrome/Untitled.glb');
+    loadGLB(logoScene, 'https://danieljgunning.github.io/chrome/chrome.glb');
+
     window.addEventListener('resize', () => {
       logoRenderer.setSize(logoCanvas.clientWidth, logoCanvas.clientHeight);
       logoCamera.aspect = logoCanvas.clientWidth / logoCanvas.clientHeight;
       logoCamera.updateProjectionMatrix();
     });
+
     (function animateLogo() {
       requestAnimationFrame(animateLogo);
       logoControls.update();
@@ -657,8 +659,76 @@
     sScene.add(sFillLight);
     const sControls = makeControls(sCamera, sc);
     loadGLB(sScene, 'https://danieljgunning.github.io/shirt/shirt.glb');
+
+    // ── shirt1Spark sparkles ──
+    const shirt1SparkGeo = new THREE.BufferGeometry();
+    const shirt1SparkCount = 80;
+    const shirt1SparkPos   = new Float32Array(shirt1SparkCount * 3);
+    const shirt1SparkRadii = new Float32Array(shirt1SparkCount);
+    const shirt1SparkSpeeds= new Float32Array(shirt1SparkCount);
+    const shirt1SparkAngles= new Float32Array(shirt1SparkCount);
+    const shirt1SparkElevs = new Float32Array(shirt1SparkCount);
+    const shirt1SparkSizes = new Float32Array(shirt1SparkCount);
+    const shirt1SparkCols  = new Float32Array(shirt1SparkCount * 3);
+    for (let i = 0; i < shirt1SparkCount; i++) {
+      shirt1SparkRadii[i]  = 0.4 + Math.random() * 0.9;
+      shirt1SparkSpeeds[i] = (0.03 + Math.random() * 0.08) * (Math.random() < 0.5 ? 1 : -1);
+      shirt1SparkAngles[i] = Math.random() * Math.PI * 2;
+      shirt1SparkElevs[i]  = (Math.random() - 0.5) * Math.PI * 0.45;
+      shirt1SparkSizes[i]  = 1.2 + Math.random() * 1.8;
+      shirt1SparkCols[i*3] = 1.0; shirt1SparkCols[i*3+1] = 1.0; shirt1SparkCols[i*3+2] = 1.0;
+    }
+    shirt1SparkGeo.setAttribute('position', new THREE.BufferAttribute(shirt1SparkPos,   3));
+    shirt1SparkGeo.setAttribute('size',     new THREE.BufferAttribute(shirt1SparkSizes, 1));
+    shirt1SparkGeo.setAttribute('color',    new THREE.BufferAttribute(shirt1SparkCols,  3));
+    const shirt1SparkMat = new THREE.ShaderMaterial({
+      uniforms: { time: { value: 0 } },
+      vertexShader: `
+        attribute float size;
+        attribute vec3 color;
+        varying float vAlpha;
+        varying vec3 vColor;
+        uniform float time;
+        void main() {
+          vColor = color;
+          vAlpha = 0.3 + 0.7 * abs(sin(time * 0.9 + position.x * 5.1 + position.z * 3.3));
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = size * (80.0 / -mv.z);
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: `
+        varying float vAlpha;
+        varying vec3 vColor;
+        void main() {
+          vec2 uv = gl_PointCoord - 0.5;
+          float d = length(uv) * 2.0;
+          if (d > 1.0) discard;
+          float core = 1.0 - smoothstep(0.0, 0.15, d);
+          float spike = max(
+            exp(-abs(uv.x) * 40.0) * (1.0 - smoothstep(0.0, 0.5, abs(uv.y) * 2.0)),
+            exp(-abs(uv.y) * 40.0) * (1.0 - smoothstep(0.0, 0.5, abs(uv.x) * 2.0))
+          ) * 0.8;
+          gl_FragColor = vec4(vColor, clamp(core + spike, 0.0, 1.0) * vAlpha);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+    });
+    sScene.add(new THREE.Points(shirt1SparkGeo, shirt1SparkMat));
     (function animateShirt() {
       requestAnimationFrame(animateShirt);
+      const t1 = performance.now() * 0.001;
+      shirt1SparkMat.uniforms.time.value = t1;
+      const p1 = shirt1SparkGeo.attributes.position.array;
+      for (let i = 0; i < shirt1SparkCount; i++) {
+        shirt1SparkAngles[i] += shirt1SparkSpeeds[i] * 0.004;
+        const r = shirt1SparkRadii[i], el = shirt1SparkElevs[i], ang = shirt1SparkAngles[i];
+        p1[i*3]   = r * Math.cos(el) * Math.cos(ang);
+        p1[i*3+1] = r * Math.sin(el);
+        p1[i*3+2] = r * Math.cos(el) * Math.sin(ang);
+      }
+      shirt1SparkGeo.attributes.position.needsUpdate = true;
       sControls.update();
       sRenderer.render(sScene, sCamera);
     })();
@@ -672,8 +742,76 @@
     s2Camera.position.set(0, 0, 4);
     const s2Controls = makeControls(s2Camera, sc2);
     loadGLB(s2Scene, 'https://danieljgunning.github.io/greenshirt/greenshirt.glb');
+
+    // ── shirt2Spark sparkles ──
+    const shirt2SparkGeo = new THREE.BufferGeometry();
+    const shirt2SparkCount = 80;
+    const shirt2SparkPos   = new Float32Array(shirt2SparkCount * 3);
+    const shirt2SparkRadii = new Float32Array(shirt2SparkCount);
+    const shirt2SparkSpeeds= new Float32Array(shirt2SparkCount);
+    const shirt2SparkAngles= new Float32Array(shirt2SparkCount);
+    const shirt2SparkElevs = new Float32Array(shirt2SparkCount);
+    const shirt2SparkSizes = new Float32Array(shirt2SparkCount);
+    const shirt2SparkCols  = new Float32Array(shirt2SparkCount * 3);
+    for (let i = 0; i < shirt2SparkCount; i++) {
+      shirt2SparkRadii[i]  = 0.4 + Math.random() * 0.9;
+      shirt2SparkSpeeds[i] = (0.03 + Math.random() * 0.08) * (Math.random() < 0.5 ? 1 : -1);
+      shirt2SparkAngles[i] = Math.random() * Math.PI * 2;
+      shirt2SparkElevs[i]  = (Math.random() - 0.5) * Math.PI * 0.45;
+      shirt2SparkSizes[i]  = 1.2 + Math.random() * 1.8;
+      shirt2SparkCols[i*3] = 1.0; shirt2SparkCols[i*3+1] = 0.4; shirt2SparkCols[i*3+2] = 0.7;
+    }
+    shirt2SparkGeo.setAttribute('position', new THREE.BufferAttribute(shirt2SparkPos,   3));
+    shirt2SparkGeo.setAttribute('size',     new THREE.BufferAttribute(shirt2SparkSizes, 1));
+    shirt2SparkGeo.setAttribute('color',    new THREE.BufferAttribute(shirt2SparkCols,  3));
+    const shirt2SparkMat = new THREE.ShaderMaterial({
+      uniforms: { time: { value: 0 } },
+      vertexShader: `
+        attribute float size;
+        attribute vec3 color;
+        varying float vAlpha;
+        varying vec3 vColor;
+        uniform float time;
+        void main() {
+          vColor = color;
+          vAlpha = 0.3 + 0.7 * abs(sin(time * 0.9 + position.x * 5.1 + position.z * 3.3));
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = size * (80.0 / -mv.z);
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: `
+        varying float vAlpha;
+        varying vec3 vColor;
+        void main() {
+          vec2 uv = gl_PointCoord - 0.5;
+          float d = length(uv) * 2.0;
+          if (d > 1.0) discard;
+          float core = 1.0 - smoothstep(0.0, 0.15, d);
+          float spike = max(
+            exp(-abs(uv.x) * 40.0) * (1.0 - smoothstep(0.0, 0.5, abs(uv.y) * 2.0)),
+            exp(-abs(uv.y) * 40.0) * (1.0 - smoothstep(0.0, 0.5, abs(uv.x) * 2.0))
+          ) * 0.8;
+          gl_FragColor = vec4(vColor, clamp(core + spike, 0.0, 1.0) * vAlpha);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+    });
+    s2Scene.add(new THREE.Points(shirt2SparkGeo, shirt2SparkMat));
     (function animateShirt2() {
       requestAnimationFrame(animateShirt2);
+      const t2 = performance.now() * 0.001;
+      shirt2SparkMat.uniforms.time.value = t2;
+      const p2 = shirt2SparkGeo.attributes.position.array;
+      for (let i = 0; i < shirt2SparkCount; i++) {
+        shirt2SparkAngles[i] += shirt2SparkSpeeds[i] * 0.004;
+        const r = shirt2SparkRadii[i], el = shirt2SparkElevs[i], ang = shirt2SparkAngles[i];
+        p2[i*3]   = r * Math.cos(el) * Math.cos(ang);
+        p2[i*3+1] = r * Math.sin(el);
+        p2[i*3+2] = r * Math.cos(el) * Math.sin(ang);
+      }
+      shirt2SparkGeo.attributes.position.needsUpdate = true;
       s2Controls.update();
       s2Renderer.render(s2Scene, s2Camera);
     })();
