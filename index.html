@@ -834,6 +834,12 @@
         el.style.transform = `translate(${tx}px, ${ty}px)`;
       }
 
+      // clear stuck mobile hover state
+      const parent = dragging.parentNode;
+      const next   = dragging.nextSibling;
+      parent.removeChild(dragging);
+      parent.insertBefore(dragging, next);
+
       // force blur so card doesn't stay in pressed state
       if (document.activeElement) document.activeElement.blur();
 
