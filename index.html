@@ -304,7 +304,7 @@
       letter-spacing: 0.08em;
       color: var(--muted);
       text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 0.75rem;
     }
     .guestbook-form {
       display: flex;
@@ -312,36 +312,51 @@
       gap: 0.75rem;
       margin-bottom: 2.5rem;
     }
+    .guestbook-form input,
     .guestbook-form textarea {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.1);
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
       color: var(--text);
       font-family: 'IM Fell English', serif;
       font-size: 0.85rem;
-      padding: 0.7rem 1rem;
+      padding: 0.5rem 0;
       outline: none;
       resize: none;
-      height: 90px;
       transition: border-color 0.3s ease;
+      width: 100%;
     }
-    .guestbook-form textarea:focus { border-color: rgba(255,255,255,0.25); }
+    .guestbook-form input::placeholder,
+    .guestbook-form textarea::placeholder { color: var(--muted); font-style: italic; }
+    .guestbook-form input:focus,
+    .guestbook-form textarea:focus { border-bottom-color: rgba(255,255,255,0.4); }
+    .guestbook-form textarea { height: 70px; }
     .guestbook-submit {
       font-family: 'IM Fell English', serif;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--muted);
       background: transparent;
-      border: 1px solid rgba(255,255,255,0.1);
-      padding: 0.6rem 1.5rem;
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      padding: 0.3rem 0;
       cursor: pointer;
-      align-self: center;
-      letter-spacing: 0.06em;
+      align-self: flex-end;
+      letter-spacing: 0.12em;
+      text-transform: lowercase;
       transition: color 0.3s ease, border-color 0.3s ease;
     }
-    .guestbook-submit:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+    .guestbook-submit:hover { color: var(--text); border-bottom-color: rgba(255,255,255,0.4); }
     .guestbook-messages { display: flex; flex-direction: column; gap: 1.25rem; }
     .guestbook-message {
       border-left: 1px solid rgba(255,255,255,0.1);
       padding: 0.5rem 0 0.5rem 1rem;
+    }
+    .guestbook-message-name {
+      font-family: 'IM Fell English SC', serif;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.3rem;
     }
     .guestbook-message-text {
       font-family: 'IM Fell English', serif;
@@ -357,6 +372,21 @@
       color: var(--muted);
       text-align: center;
       font-style: italic;
+    }
+
+    /* cross flourish */
+    .cross-wrap {
+      margin-top: 3rem;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 1.2s forwards;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #cross-3d {
+      width: 200px;
+      height: 200px;
+      display: block;
     }
 
     @media (max-width: 900px) {
@@ -492,6 +522,7 @@
   <div class="guestbook">
     <p class="guestbook-title">leave a message</p>
     <div class="guestbook-form">
+      <input id="gb-name" type="text" placeholder="your name" maxlength="50">
       <textarea id="gb-message" maxlength="300"></textarea>
       <button class="guestbook-submit" id="gb-submit">send</button>
     </div>
@@ -500,15 +531,24 @@
     </div>
   </div>
 
+  <div class="cross-wrap">
+    <canvas id="cross-3d"></canvas>
+  </div>
+
   <!-- Three.js 3D logo -->
   <script type="importmap">
-    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/" } }
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.132.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.132.0/examples/jsm/" } }
   </script>
   <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+    // shared Draco decoder
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.132.0/examples/js/libs/draco/');
 
     const canvas   = document.getElementById('logo-3d');
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
@@ -534,7 +574,13 @@
     controls.autoRotate      = true;
     controls.autoRotateSpeed = 1.5;
 
+    canvas.addEventListener('mousedown',  () => { controls.autoRotate = false; });
+    canvas.addEventListener('touchstart', () => { controls.autoRotate = false; });
+    canvas.addEventListener('mouseup',    () => { controls.autoRotate = true; });
+    canvas.addEventListener('touchend',   () => { controls.autoRotate = true; });
+
     const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
     loader.load('https://danieljgunning.github.io/chrome/Untitled.glb', gltf => {
       const model  = gltf.scene;
       const box    = new THREE.Box3().setFromObject(model);
@@ -555,6 +601,47 @@
       requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
+    })();
+
+    // ── cross renderer ──
+    const cc = document.getElementById('cross-3d');
+    cc.width  = 200;
+    cc.height = 200;
+    const cRenderer = new THREE.WebGLRenderer({ canvas: cc, alpha: true, antialias: true });
+    cRenderer.setPixelRatio(window.devicePixelRatio);
+    cRenderer.setSize(200, 200);
+    cRenderer.outputColorSpace = THREE.SRGBColorSpace;
+    cRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+    cRenderer.toneMappingExposure = 1.2;
+
+    const cScene  = new THREE.Scene();
+    const cCamera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    cCamera.position.set(0, 0, 4);
+
+    const cPmrem = new THREE.PMREMGenerator(cRenderer);
+    cPmrem.compileEquirectangularShader();
+    cScene.environment = cPmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    let cAngle = 0;
+    const crossLoader = new GLTFLoader();
+    crossLoader.setDRACOLoader(dracoLoader);
+    crossLoader.load('https://danieljgunning.github.io/cross/cross.glb', gltf => {
+      const model  = gltf.scene;
+      const box    = new THREE.Box3().setFromObject(model);
+      const centre = box.getCenter(new THREE.Vector3());
+      const size   = box.getSize(new THREE.Vector3());
+      model.position.sub(centre);
+      model.scale.multiplyScalar(2.5 / Math.max(size.x, size.y, size.z));
+      cScene.add(model);
+    }, undefined, err => console.error('Cross GLB error:', err));
+
+    (function animateCross() {
+      requestAnimationFrame(animateCross);
+      cAngle += 0.006;
+      cCamera.position.x = Math.sin(cAngle) * 4;
+      cCamera.position.z = Math.cos(cAngle) * 4;
+      cCamera.lookAt(0, 0, 0);
+      cRenderer.render(cScene, cCamera);
     })();
   </script>
 
@@ -731,21 +818,23 @@
 
     async function loadMessages() {
       try {
-        const res  = await fetch(`${API}?select=message,created_at&order=created_at.desc`, { headers: HEADERS });
+        const res  = await fetch(`${API}?select=name,message,created_at&order=created_at.desc`, { headers: HEADERS });
         const data = await res.json();
         const box  = document.getElementById('gb-messages');
         if (!data.length) { box.innerHTML = '<p class="guestbook-empty">no messages yet</p>'; return; }
-        box.innerHTML = data.map(m => `<div class="guestbook-message"><div class="guestbook-message-text">${esc(m.message)}</div></div>`).join('');
+        box.innerHTML = data.map(m => `<div class="guestbook-message"><div class="guestbook-message-name">${esc(m.name)}</div><div class="guestbook-message-text">${esc(m.message)}</div></div>`).join('');
       } catch(e) { console.error('Failed to load messages:', e); }
     }
 
     async function submitMessage() {
-      const msg = document.getElementById('gb-message').value.trim();
-      if (!msg) return;
+      const name = document.getElementById('gb-name').value.trim();
+      const msg  = document.getElementById('gb-message').value.trim();
+      if (!name || !msg) return;
       const btn = document.getElementById('gb-submit');
       btn.textContent = 'sending...'; btn.disabled = true;
       try {
-        await fetch(API, { method: 'POST', headers: { ...HEADERS, 'Prefer': 'return=minimal' }, body: JSON.stringify({ message: msg }) });
+        await fetch(API, { method: 'POST', headers: { ...HEADERS, 'Prefer': 'return=minimal' }, body: JSON.stringify({ name, message: msg }) });
+        document.getElementById('gb-name').value    = '';
         document.getElementById('gb-message').value = '';
         await loadMessages();
       } catch(e) { console.error('Failed to send:', e); }
