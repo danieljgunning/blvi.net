@@ -36,6 +36,11 @@
       transform: translate(-50%, -50%) scale(1.5);
       z-index: -2;
       pointer-events: none;
+      animation: bgDrift 80s ease-in-out infinite alternate;
+    }
+    @keyframes bgDrift {
+      from { transform: translate(-50%, -50%) scale(1.5); }
+      to   { transform: translate(-50%, -50%) scale(1.58); }
     }
     .bg-overlay {
       position: fixed;
@@ -104,9 +109,25 @@
       font-family: 'Spectral', serif;
       font-size: 0.8rem;
       letter-spacing: 0.08em;
-      transition: color 0.3s ease;
+      transition: color 0.3s ease, letter-spacing 0.4s ease;
     }
-    .platforms a:hover { color: var(--text); }
+    .platforms a:hover { color: var(--text); letter-spacing: 0.14em; }
+    .platforms a[href*="spotify"]    { --lc: 30, 215, 96; }
+    .platforms a[href*="soundcloud"] { --lc: 255, 95, 0;  animation-delay: -1.7s; }
+    .platforms a[href*="spotify"],
+    .platforms a[href*="soundcloud"] {
+      color: rgb(var(--lc));
+      animation: linkBreathe 3.6s ease-in-out infinite;
+    }
+    .platforms a[href*="spotify"]:hover,
+    .platforms a[href*="soundcloud"]:hover {
+      color: rgba(var(--lc), 1);
+      filter: brightness(1.25);
+    }
+    @keyframes linkBreathe {
+      0%, 100% { text-shadow: 0 0 7px  rgba(var(--lc), 0.22); }
+      50%      { text-shadow: 0 0 16px rgba(var(--lc), 0.6); }
+    }
     .platforms img {
       width: 15px;
       height: 15px;
@@ -209,9 +230,20 @@
       width: 130px;
       aspect-ratio: 1;
       object-fit: cover;
-      transition: filter 0.8s ease;
+      transition: filter 0.9s ease;
       outline: 1.5px solid rgba(0,0,0,0.15);
     }
+    .card-photo.polaroid::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,0.3) 48%, rgba(255,255,255,0.07) 54%, transparent 64%);
+      background-size: 250% 100%;
+      background-position: 180% 0;
+      transition: background-position 0.9s ease;
+    }
+    .card:hover .card-photo.polaroid::after { background-position: -80% 0; }
     .card-photo.polaroid .card-caption {
       font-family: 'Almendra', serif;
       font-size: 0.82rem;
@@ -229,7 +261,6 @@
       width: 130px;
       height: 130px;
       object-fit: cover;
-      filter: grayscale(0.2) brightness(0.88) saturate(0.85);
       transition: filter 0.8s ease;
     }
 
@@ -382,7 +413,8 @@
     .guestbook-message-name {
       font-family: 'Spectral', serif;
       font-size: 0.8rem;
-      color: var(--text);
+      color: #e8b285;
+      text-shadow: 0 0 8px rgba(255, 180, 110, 0.22);
       letter-spacing: 0.1em;
       margin-bottom: 0.3rem;
     }
@@ -401,8 +433,133 @@
       text-align: center;
     }
 
+    /* ── atmosphere ── */
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,0.55) 100%);
+    }
+    .torch {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background: radial-gradient(560px at var(--tx, 50%) var(--ty, 35%), rgba(240,236,228,0.07), transparent 70%);
+    }
+    @media (hover: none) { .torch { display: none; } }
+
+    .veil {
+      position: fixed;
+      inset: 0;
+      background: #060706;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 1.1s ease, visibility 1.1s ease;
+    }
+    .veil.done { opacity: 0; visibility: hidden; }
+    .veil span {
+      font-family: 'Spectral', serif;
+      font-size: 1.05rem;
+      letter-spacing: 0.55em;
+      margin-right: -0.55em;
+      color: var(--muted);
+      animation: veilPulse 2.2s ease-in-out infinite;
+    }
+    @keyframes veilPulse {
+      0%, 100% { opacity: 0.3; }
+      50%       { opacity: 0.85; }
+    }
+
+    .fireflies {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .firefly {
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: rgba(255, 205, 145, 0.95);
+      box-shadow: 0 0 6px 2px rgba(255, 180, 110, 0.45), 0 0 16px 6px rgba(255, 165, 90, 0.16);
+      animation: fireflyPulse ease-in-out infinite;
+      will-change: transform;
+    }
+    @keyframes fireflyPulse {
+      0%, 100% { opacity: 0.1; }
+      50%       { opacity: 0.9; }
+    }
+
+    /* distant lightning */
+    .lightning {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: #e8ecf4;
+      opacity: 0;
+      mix-blend-mode: overlay;
+    }
+
+    /* click spark burst */
+    .burst-spark {
+      position: fixed;
+      z-index: 9998;
+      pointer-events: none;
+      border-radius: 50%;
+      background: rgba(255, 205, 145, 0.95);
+      box-shadow: 0 0 8px 3px rgba(255, 180, 110, 0.5), 0 0 18px 7px rgba(255, 165, 90, 0.18);
+      animation: burstFly 1.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes burstFly {
+      from { transform: translate(0, 0) scale(1); opacity: 1; }
+      to   { transform: translate(var(--dx), var(--dy)) scale(0.3); opacity: 0; }
+    }
+
+    /* living letters */
+    .alive-word { display: inline-block; }
+    .alive-letter {
+      display: inline-block;
+      animation: letterFloat 3.2s ease-in-out infinite, letterAurora 7s ease-in-out infinite;
+      will-change: transform, color;
+    }
+    @keyframes letterFloat {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-1.8px); }
+    }
+    @keyframes letterAurora {
+      0%, 100% {
+        color: #e2a878;
+        text-shadow: 0 0 8px rgba(255, 175, 110, 0.28);
+      }
+      50% {
+        color: #ffd6a0;
+        text-shadow: 0 0 16px rgba(255, 185, 115, 0.65);
+      }
+    }
+
+    ::selection { background: rgba(240,236,228,0.22); color: #fff; }
+    ::-webkit-scrollbar { width: 9px; }
+    ::-webkit-scrollbar-track { background: #0a0b0a; }
+    ::-webkit-scrollbar-thumb { background: rgba(240,236,228,0.16); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(240,236,228,0.3); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bg-video { animation: none; }
+      .fireflies, .lightning { display: none; }
+      .grain { animation: none; }
+      .veil span { animation: none; }
+      .alive-letter { animation: none; color: inherit; }
+    }
+
     /* disable hover effects on touch devices */
     @media (hover: none) {
+      .card-photo.polaroid::after { display: none; }
       .card:hover .card-photo {
         transform: none !important;
         box-shadow: 0 6px 28px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.35) !important;
@@ -436,6 +593,11 @@
   </video>
   <div class="bg-overlay"></div>
   <div class="grain"></div>
+  <div class="vignette"></div>
+  <div class="torch" id="torch"></div>
+  <div class="fireflies" aria-hidden="true"></div>
+  <div class="lightning" aria-hidden="true"></div>
+  <div class="veil" id="veil"><span>blvi</span></div>
 
   <div class="logo-wrap">
     <canvas id="logo-3d"></canvas>
@@ -572,6 +734,10 @@
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.132.0/examples/js/libs/draco/');
 
+    // mouse position for sparkle flee behaviour
+    let pCX = -9999, pCY = -9999;
+    window.addEventListener('mousemove', e => { pCX = e.clientX; pCY = e.clientY; });
+
     function makeRenderer(canvas, exposure = 1.2) {
       const r = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
       r.setPixelRatio(window.devicePixelRatio);
@@ -662,7 +828,7 @@
 
     // ── shirt1Spark sparkles ──
     const shirt1SparkGeo = new THREE.BufferGeometry();
-    const shirt1SparkCount = 80;
+    const shirt1SparkCount = 30;
     const shirt1SparkPos   = new Float32Array(shirt1SparkCount * 3);
     const shirt1SparkRadii = new Float32Array(shirt1SparkCount);
     const shirt1SparkSpeeds= new Float32Array(shirt1SparkCount);
@@ -671,11 +837,11 @@
     const shirt1SparkSizes = new Float32Array(shirt1SparkCount);
     const shirt1SparkCols  = new Float32Array(shirt1SparkCount * 3);
     for (let i = 0; i < shirt1SparkCount; i++) {
-      shirt1SparkRadii[i]  = 0.4 + Math.random() * 0.9;
+      shirt1SparkRadii[i]  = 0.8 + Math.random() * 0.7;
       shirt1SparkSpeeds[i] = (0.03 + Math.random() * 0.08) * (Math.random() < 0.5 ? 1 : -1);
       shirt1SparkAngles[i] = Math.random() * Math.PI * 2;
-      shirt1SparkElevs[i]  = (Math.random() - 0.5) * Math.PI * 0.45;
-      shirt1SparkSizes[i]  = 1.2 + Math.random() * 1.8;
+      shirt1SparkElevs[i]  = (Math.random() - 0.5) * Math.PI * 0.85;
+      shirt1SparkSizes[i]  = 0.7 + Math.random() * 0.9;
       shirt1SparkCols[i*3] = 1.0; shirt1SparkCols[i*3+1] = 1.0; shirt1SparkCols[i*3+2] = 1.0;
     }
     shirt1SparkGeo.setAttribute('position', new THREE.BufferAttribute(shirt1SparkPos,   3));
@@ -691,7 +857,7 @@
         uniform float time;
         void main() {
           vColor = color;
-          vAlpha = 0.3 + 0.7 * abs(sin(time * 0.9 + position.x * 5.1 + position.z * 3.3));
+          vAlpha = 0.2 + 0.5 * abs(sin(time * 0.9 + position.x * 5.1 + position.z * 3.3));
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           gl_PointSize = size * (80.0 / -mv.z);
           gl_Position = projectionMatrix * mv;
@@ -704,33 +870,59 @@
           vec2 uv = gl_PointCoord - 0.5;
           float d = length(uv) * 2.0;
           if (d > 1.0) discard;
-          float core = 1.0 - smoothstep(0.0, 0.15, d);
+          float core = 1.0 - smoothstep(0.0, 0.4, d);
           float spike = max(
-            exp(-abs(uv.x) * 40.0) * (1.0 - smoothstep(0.0, 0.5, abs(uv.y) * 2.0)),
-            exp(-abs(uv.y) * 40.0) * (1.0 - smoothstep(0.0, 0.5, abs(uv.x) * 2.0))
-          ) * 0.8;
+            exp(-abs(uv.x) * 34.0) * (1.0 - smoothstep(0.0, 0.5, abs(uv.y) * 2.0)),
+            exp(-abs(uv.y) * 34.0) * (1.0 - smoothstep(0.0, 0.5, abs(uv.x) * 2.0))
+          ) * 0.12;
           gl_FragColor = vec4(vColor, clamp(core + spike, 0.0, 1.0) * vAlpha);
         }
       `,
       transparent: true,
       depthWrite: false,
     });
-    sScene.add(new THREE.Points(shirt1SparkGeo, shirt1SparkMat));
+    const shirt1SparkPoints = new THREE.Points(shirt1SparkGeo, shirt1SparkMat);
+    const shirt1SparkScene  = new THREE.Scene();
+    shirt1SparkScene.add(shirt1SparkPoints);
+    const shirt1SparkCam = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    shirt1SparkCam.position.set(0, 0, 4);
+    const shirt1OffX = new Float32Array(shirt1SparkCount);
+    const shirt1OffY = new Float32Array(shirt1SparkCount);
+    sRenderer.autoClear = false;
     (function animateShirt() {
       requestAnimationFrame(animateShirt);
       const t1 = performance.now() * 0.001;
       shirt1SparkMat.uniforms.time.value = t1;
+      const rect1 = sc.getBoundingClientRect();
+      const half1 = Math.tan(20 * Math.PI / 180) * 4;
+      const mwx1 = ((pCX - rect1.left) / rect1.width  * 2 - 1) * half1;
+      const mwy1 = -((pCY - rect1.top) / rect1.height * 2 - 1) * half1;
       const p1 = shirt1SparkGeo.attributes.position.array;
       for (let i = 0; i < shirt1SparkCount; i++) {
         shirt1SparkAngles[i] += shirt1SparkSpeeds[i] * 0.004;
         const r = shirt1SparkRadii[i], el = shirt1SparkElevs[i], ang = shirt1SparkAngles[i];
-        p1[i*3]   = r * Math.cos(el) * Math.cos(ang);
-        p1[i*3+1] = r * Math.sin(el);
-        p1[i*3+2] = r * Math.cos(el) * Math.sin(ang);
+        const bx = r * Math.cos(el) * Math.cos(ang);
+        const by = r * Math.sin(el);
+        const bz = r * Math.cos(el) * Math.sin(ang);
+        const fdx = bx - mwx1, fdy = by - mwy1;
+        const fd  = Math.sqrt(fdx * fdx + fdy * fdy);
+        let txo = 0, tyo = 0;
+        if (fd < 0.85 && fd > 0.001) {
+          const push = (0.85 - fd) * 1.3;
+          txo = (fdx / fd) * push;
+          tyo = (fdy / fd) * push;
+        }
+        shirt1OffX[i] += (txo - shirt1OffX[i]) * 0.07;
+        shirt1OffY[i] += (tyo - shirt1OffY[i]) * 0.07;
+        p1[i*3]   = bx + shirt1OffX[i];
+        p1[i*3+1] = by + shirt1OffY[i];
+        p1[i*3+2] = bz;
       }
       shirt1SparkGeo.attributes.position.needsUpdate = true;
       sControls.update();
+      sRenderer.clear();
       sRenderer.render(sScene, sCamera);
+      sRenderer.render(shirt1SparkScene, shirt1SparkCam);
     })();
 
     const sc2 = document.getElementById('shirt2-3d');
@@ -745,7 +937,7 @@
 
     // ── shirt2Spark sparkles ──
     const shirt2SparkGeo = new THREE.BufferGeometry();
-    const shirt2SparkCount = 80;
+    const shirt2SparkCount = 30;
     const shirt2SparkPos   = new Float32Array(shirt2SparkCount * 3);
     const shirt2SparkRadii = new Float32Array(shirt2SparkCount);
     const shirt2SparkSpeeds= new Float32Array(shirt2SparkCount);
@@ -754,11 +946,11 @@
     const shirt2SparkSizes = new Float32Array(shirt2SparkCount);
     const shirt2SparkCols  = new Float32Array(shirt2SparkCount * 3);
     for (let i = 0; i < shirt2SparkCount; i++) {
-      shirt2SparkRadii[i]  = 0.4 + Math.random() * 0.9;
+      shirt2SparkRadii[i]  = 0.8 + Math.random() * 0.7;
       shirt2SparkSpeeds[i] = (0.03 + Math.random() * 0.08) * (Math.random() < 0.5 ? 1 : -1);
       shirt2SparkAngles[i] = Math.random() * Math.PI * 2;
-      shirt2SparkElevs[i]  = (Math.random() - 0.5) * Math.PI * 0.45;
-      shirt2SparkSizes[i]  = 1.2 + Math.random() * 1.8;
+      shirt2SparkElevs[i]  = (Math.random() - 0.5) * Math.PI * 0.85;
+      shirt2SparkSizes[i]  = 0.7 + Math.random() * 0.9;
       shirt2SparkCols[i*3] = 1.0; shirt2SparkCols[i*3+1] = 0.4; shirt2SparkCols[i*3+2] = 0.7;
     }
     shirt2SparkGeo.setAttribute('position', new THREE.BufferAttribute(shirt2SparkPos,   3));
@@ -774,7 +966,7 @@
         uniform float time;
         void main() {
           vColor = color;
-          vAlpha = 0.3 + 0.7 * abs(sin(time * 0.9 + position.x * 5.1 + position.z * 3.3));
+          vAlpha = 0.2 + 0.5 * abs(sin(time * 0.9 + position.x * 5.1 + position.z * 3.3));
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           gl_PointSize = size * (80.0 / -mv.z);
           gl_Position = projectionMatrix * mv;
@@ -787,33 +979,59 @@
           vec2 uv = gl_PointCoord - 0.5;
           float d = length(uv) * 2.0;
           if (d > 1.0) discard;
-          float core = 1.0 - smoothstep(0.0, 0.15, d);
+          float core = 1.0 - smoothstep(0.0, 0.4, d);
           float spike = max(
-            exp(-abs(uv.x) * 40.0) * (1.0 - smoothstep(0.0, 0.5, abs(uv.y) * 2.0)),
-            exp(-abs(uv.y) * 40.0) * (1.0 - smoothstep(0.0, 0.5, abs(uv.x) * 2.0))
-          ) * 0.8;
+            exp(-abs(uv.x) * 34.0) * (1.0 - smoothstep(0.0, 0.5, abs(uv.y) * 2.0)),
+            exp(-abs(uv.y) * 34.0) * (1.0 - smoothstep(0.0, 0.5, abs(uv.x) * 2.0))
+          ) * 0.12;
           gl_FragColor = vec4(vColor, clamp(core + spike, 0.0, 1.0) * vAlpha);
         }
       `,
       transparent: true,
       depthWrite: false,
     });
-    s2Scene.add(new THREE.Points(shirt2SparkGeo, shirt2SparkMat));
+    const shirt2SparkPoints = new THREE.Points(shirt2SparkGeo, shirt2SparkMat);
+    const shirt2SparkScene  = new THREE.Scene();
+    shirt2SparkScene.add(shirt2SparkPoints);
+    const shirt2SparkCam = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    shirt2SparkCam.position.set(0, 0, 4);
+    const shirt2OffX = new Float32Array(shirt2SparkCount);
+    const shirt2OffY = new Float32Array(shirt2SparkCount);
+    s2Renderer.autoClear = false;
     (function animateShirt2() {
       requestAnimationFrame(animateShirt2);
       const t2 = performance.now() * 0.001;
       shirt2SparkMat.uniforms.time.value = t2;
+      const rect2 = sc2.getBoundingClientRect();
+      const half2 = Math.tan(20 * Math.PI / 180) * 4;
+      const mwx2 = ((pCX - rect2.left) / rect2.width  * 2 - 1) * half2;
+      const mwy2 = -((pCY - rect2.top) / rect2.height * 2 - 1) * half2;
       const p2 = shirt2SparkGeo.attributes.position.array;
       for (let i = 0; i < shirt2SparkCount; i++) {
         shirt2SparkAngles[i] += shirt2SparkSpeeds[i] * 0.004;
         const r = shirt2SparkRadii[i], el = shirt2SparkElevs[i], ang = shirt2SparkAngles[i];
-        p2[i*3]   = r * Math.cos(el) * Math.cos(ang);
-        p2[i*3+1] = r * Math.sin(el);
-        p2[i*3+2] = r * Math.cos(el) * Math.sin(ang);
+        const bx = r * Math.cos(el) * Math.cos(ang);
+        const by = r * Math.sin(el);
+        const bz = r * Math.cos(el) * Math.sin(ang);
+        const fdx = bx - mwx2, fdy = by - mwy2;
+        const fd  = Math.sqrt(fdx * fdx + fdy * fdy);
+        let txo = 0, tyo = 0;
+        if (fd < 0.85 && fd > 0.001) {
+          const push = (0.85 - fd) * 1.3;
+          txo = (fdx / fd) * push;
+          tyo = (fdy / fd) * push;
+        }
+        shirt2OffX[i] += (txo - shirt2OffX[i]) * 0.07;
+        shirt2OffY[i] += (tyo - shirt2OffY[i]) * 0.07;
+        p2[i*3]   = bx + shirt2OffX[i];
+        p2[i*3+1] = by + shirt2OffY[i];
+        p2[i*3+2] = bz;
       }
       shirt2SparkGeo.attributes.position.needsUpdate = true;
       s2Controls.update();
+      s2Renderer.clear();
       s2Renderer.render(s2Scene, s2Camera);
+      s2Renderer.render(shirt2SparkScene, shirt2SparkCam);
     })();
 
   </script>
@@ -971,6 +1189,148 @@
 
     document.getElementById('gb-submit').addEventListener('click', submitMessage);
     loadMessages();
+
+    // ── entrance veil ──
+    setTimeout(() => {
+      const veil = document.getElementById('veil');
+      if (veil) {
+        veil.classList.add('done');
+        setTimeout(() => veil.remove(), 1300);
+      }
+    }, 1000);
+
+    // ── torchlight ──
+    const torch = document.getElementById('torch');
+    if (torch && window.matchMedia('(hover: hover)').matches) {
+      document.addEventListener('mousemove', e => {
+        torch.style.setProperty('--tx', e.clientX + 'px');
+        torch.style.setProperty('--ty', e.clientY + 'px');
+      });
+    }
+
+    // ── fireflies: wander the page, scatter from the cursor ──
+    (function fireflies() {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const host = document.querySelector('.fireflies');
+      if (!host) return;
+
+      const N = 13;
+      const flies = [];
+      let fmx = -9999, fmy = -9999;
+      document.addEventListener('mousemove', e => { fmx = e.clientX; fmy = e.clientY; });
+
+      for (let i = 0; i < N; i++) {
+        const el = document.createElement('div');
+        el.className = 'firefly';
+        el.style.animationDuration = (2.2 + Math.random() * 3.5) + 's';
+        el.style.animationDelay    = (-Math.random() * 4) + 's';
+        host.appendChild(el);
+        flies.push({
+          el,
+          bx: Math.random() * window.innerWidth,
+          by: window.innerHeight * (0.15 + Math.random() * 0.8),
+          a1: 60 + Math.random() * 140,  f1: 0.05 + Math.random() * 0.1,  p1: Math.random() * 6.28,
+          a2: 40 + Math.random() * 90,   f2: 0.13 + Math.random() * 0.15, p2: Math.random() * 6.28,
+          a3: 50 + Math.random() * 120,  f3: 0.04 + Math.random() * 0.09, p3: Math.random() * 6.28,
+          a4: 30 + Math.random() * 80,   f4: 0.11 + Math.random() * 0.16, p4: Math.random() * 6.28,
+          x: 0, y: 0,
+        });
+      }
+
+      window.addEventListener('resize', () => {
+        for (const f of flies) {
+          f.bx = Math.random() * window.innerWidth;
+          f.by = window.innerHeight * (0.15 + Math.random() * 0.8);
+        }
+      });
+
+      const FLEE = 140;
+      (function flyLoop() {
+        const t = performance.now() * 0.001;
+        for (const f of flies) {
+          let tx = f.bx + f.a1 * Math.sin(t * f.f1 * 6.28 + f.p1) + f.a2 * Math.sin(t * f.f2 * 6.28 + f.p2);
+          let ty = f.by + f.a3 * Math.sin(t * f.f3 * 6.28 + f.p3) + f.a4 * Math.sin(t * f.f4 * 6.28 + f.p4);
+          const dx = tx - fmx, dy = ty - fmy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < FLEE && dist > 0.01) {
+            const push = (FLEE - dist) * 1.4;
+            tx += (dx / dist) * push;
+            ty += (dy / dist) * push;
+          }
+          f.x += (tx - f.x) * 0.035;
+          f.y += (ty - f.y) * 0.035;
+          f.el.style.transform = `translate(${f.x}px, ${f.y}px)`;
+        }
+        requestAnimationFrame(flyLoop);
+      })();
+    })();
+
+    // ── distant lightning ──
+    (function lightning() {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const el = document.querySelector('.lightning');
+      if (!el) return;
+      function strike() {
+        el.style.opacity = 0.14;
+        setTimeout(() => { el.style.opacity = 0; }, 60);
+        setTimeout(() => { el.style.opacity = 0.08; }, 140);
+        setTimeout(() => { el.style.opacity = 0; }, 200);
+        schedule();
+      }
+      function schedule() {
+        setTimeout(strike, 22000 + Math.random() * 38000);
+      }
+      schedule();
+    })();
+
+    // ── click bursts: a handful of fireflies scatter from your touch ──
+    (function clickBursts() {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      document.addEventListener('pointerdown', e => {
+        if (e.target.closest('input, textarea')) return;
+        const n = 6 + Math.floor(Math.random() * 4);
+        for (let i = 0; i < n; i++) {
+          const s = document.createElement('span');
+          s.className = 'burst-spark';
+          const size  = 3 + Math.random() * 3;
+          const angle = Math.random() * Math.PI * 2;
+          const dist  = 24 + Math.random() * 44;
+          s.style.width  = size + 'px';
+          s.style.height = size + 'px';
+          s.style.left   = (e.clientX - size / 2) + 'px';
+          s.style.top    = (e.clientY - size / 2) + 'px';
+          s.style.setProperty('--dx', (Math.cos(angle) * dist) + 'px');
+          s.style.setProperty('--dy', (Math.sin(angle) * dist - 14 - Math.random() * 18) + 'px');
+          document.body.appendChild(s);
+          s.addEventListener('animationend', () => s.remove());
+        }
+      });
+    })();
+
+    // ── living letters: social links + friend names ──
+    (function aliveText() {
+      function animateText(el) {
+        const textNodes = [];
+        el.childNodes.forEach(n => {
+          if (n.nodeType === 3 && n.textContent.trim()) textNodes.push(n);
+        });
+        textNodes.forEach(node => {
+          const word = document.createElement('span');
+          word.className = 'alive-word';
+          node.textContent.trim().split('').forEach((ch, i) => {
+            if (ch === ' ') { word.appendChild(document.createTextNode(' ')); return; }
+            const s = document.createElement('span');
+            s.className = 'alive-letter';
+            s.textContent = ch;
+            s.style.animationDelay = `${(i * 0.13).toFixed(2)}s, ${(-i * 0.45).toFixed(2)}s`;
+            word.appendChild(s);
+          });
+          node.replaceWith(word);
+        });
+      }
+      document.querySelectorAll('.friends-row .card-caption, .shirt-label').forEach(animateText);
+    })();
+
   </script>
 
 </body>
