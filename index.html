@@ -26,31 +26,33 @@
     }
 
     /* ── background ── */
+    html, body { background: #080a08; }
     .bg-video {
       position: fixed;
-      inset: 0;
+      top: 0; left: 0;
       width: 100%; height: 100%;
-      height: 100dvh;
       object-fit: cover;
       object-position: center;
       z-index: -2;
+      pointer-events: none;
+    }
+    .bg-overlay {
+      position: fixed;
+      top: -10%; left: -10%;
+      width: 120%; height: 120%;
+      background: rgba(8,10,8,0.35);
+      z-index: -1;
       pointer-events: none;
       animation: bgDrift 80s ease-in-out infinite alternate;
     }
     @keyframes bgDrift {
       from { transform: scale(1.0); }
-      to   { transform: scale(1.05); }
-    }
-    .bg-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(8,10,8,0.35);
-      z-index: -1;
-      pointer-events: none;
+      to   { transform: scale(1.04); }
     }
     .vignette {
       position: fixed;
-      inset: 0;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.3) 100%);
       z-index: -1;
       pointer-events: none;
@@ -424,24 +426,27 @@
 
     /* ── responsive ── */
     @media (prefers-reduced-motion: reduce) {
-      .bg-video, .alive-letter { animation: none; }
+      .bg-overlay, .alive-letter { animation: none; }
       .alive-letter { color: inherit; }
     }
     @media (max-width: 768px) {
-      .columns { flex-direction: column; align-items: center; gap: 3rem; }
+      .columns { flex-direction: column; align-items: center; gap: 2rem; }
       .panel { width: 100%; max-width: 420px; }
     }
     @media (max-width: 480px) {
-      body { padding: 1.5rem 1rem 4rem; }
-      .platforms { gap: 1.2rem; margin-bottom: 2.5rem; }
+      body { padding: 0.5rem 1rem 4rem; }
+      #logo-3d { width: 280px; height: 120px; }
+      .platforms { gap: 1.2rem; margin-bottom: 1.5rem; }
+      .columns { gap: 1.5rem; }
       .panel { max-width: 360px; }
-      .polaroid-row, .friends-row { gap: 1.8rem; margin-bottom: 2rem; }
-      .card-photo.polaroid img { width: 100px; }
+      .polaroid-row, .friends-row { gap: 1.5rem; margin-bottom: 1.5rem; }
+      .card-photo.polaroid img { width: 110px; }
       .card-photo.polaroid { padding: 7px 7px 0 7px; }
-      .card-photo.polaroid .card-caption { font-size: 0.85rem; padding: 4px 3px 8px; }
-      .card-photo.square img { width: 100px; height: 100px; }
-      .card-caption { font-size: 0.7rem; margin-top: 5px; }
+      .card-photo.polaroid .card-caption { font-size: 0.8rem; padding: 4px 3px 8px; }
+      .card-photo.square img { width: 110px; height: 110px; }
+      .card-caption { font-size: 0.72rem; margin-top: 5px; }
       .shirt-wrap { flex-direction: column; gap: 0; }
+      #shirt-3d, #shirt2-3d { width: 240px; height: 240px; }
     }
   </style>
 </head>
@@ -659,10 +664,13 @@
     const lctrl = makeControls(lcam, lc);
     loadGLB(ls, 'https://danieljgunning.github.io/chrome/chrome.glb');
     window.addEventListener('resize', () => {
-      lr.setSize(lc.clientWidth, lc.clientHeight);
-      lcam.aspect = lc.clientWidth / lc.clientHeight;
+      const w = lc.clientWidth, h = lc.clientHeight;
+      lr.setSize(w, h);
+      lcam.aspect = w / h;
       lcam.updateProjectionMatrix();
     });
+    // fire once on load to catch mobile size
+    window.dispatchEvent(new Event('resize'));
     reg(lc, () => { lctrl.update(); lr.render(ls, lcam); });
 
     // shirts — reveal label + each canvas only once the GLB is in the scene
