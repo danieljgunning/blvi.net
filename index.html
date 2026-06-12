@@ -30,6 +30,7 @@
       position: fixed;
       inset: 0;
       width: 100%; height: 100%;
+      height: 100dvh;
       object-fit: cover;
       object-position: center;
       z-index: -2;
@@ -311,7 +312,6 @@
       opacity: 0;
       transition: opacity 0.9s cubic-bezier(0.22,1,0.36,1);
     }
-    #shirt2-3d { mix-blend-mode: screen; }
     #shirt-3d:active, #shirt2-3d:active { cursor: grabbing; }
 
     /* ── guestbook ── */
@@ -591,11 +591,12 @@
     draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.132.0/examples/js/libs/draco/');
 
     function makeRenderer(canvas, exposure) {
-      const r = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      const r = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, premultipliedAlpha: false });
       r.setPixelRatio(Math.min(devicePixelRatio, 2));
-      r.outputEncoding    = THREE.sRGBEncoding;
-      r.toneMapping       = THREE.ACESFilmicToneMapping;
+      r.outputEncoding      = THREE.sRGBEncoding;
+      r.toneMapping         = THREE.ACESFilmicToneMapping;
       r.toneMappingExposure = exposure;
+      r.setClearColor(0x000000, 0);
       return r;
     }
     function makeEnv(renderer) {
