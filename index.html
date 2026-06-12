@@ -49,36 +49,9 @@
       z-index: -1;
     }
 
-    /* grain */
-    .grain {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      opacity: 0.09;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-      background-size: 256px 256px;
-      mix-blend-mode: overlay;
-      animation: grainShift 0.4s steps(1) infinite;
-    }
-    @keyframes grainShift {
-      0%   { background-position:   0px   0px; }
-      10%  { background-position: -40px -60px; }
-      20%  { background-position:  60px  20px; }
-      30%  { background-position: -20px  80px; }
-      40%  { background-position:  80px -40px; }
-      50%  { background-position: -60px  40px; }
-      60%  { background-position:  20px -80px; }
-      70%  { background-position: -80px  60px; }
-      80%  { background-position:  40px  60px; }
-      90%  { background-position: -60px -20px; }
-      100% { background-position:  20px  40px; }
-    }
-
     /* logo */
     .logo-wrap {
       margin-bottom: 0;
-      opacity: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -96,8 +69,7 @@
       display: flex;
       gap: 2rem;
       margin-bottom: 2rem;
-      opacity: 0;
-      animation: fadeUp 0.9s ease 0.4s forwards;
+      animation: fadeUp 0.9s ease 0.4s both;
     }
     .platforms a {
       display: flex;
@@ -147,8 +119,7 @@
 
     /* panels */
     .panel {
-      opacity: 0;
-      animation: fadeUp 0.9s ease 0.7s forwards;
+      animation: fadeUp 0.9s ease 0.7s both;
       width: 380px;
       flex-shrink: 0;
       display: flex;
@@ -330,8 +301,7 @@
       margin-bottom: 0.5rem;
     }
     .shirt-wrap {
-      opacity: 0;
-      animation: fadeUp 0.9s ease 1.1s forwards;
+      animation: fadeUp 0.9s ease 1.1s both;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -351,8 +321,7 @@
       width: 100%;
       max-width: 560px;
       margin-top: 2.5rem;
-      opacity: 0;
-      animation: fadeUp 0.9s ease 1s forwards;
+      animation: fadeUp 0.9s ease 1s both;
     }
     .guestbook-form {
       display: flex;
@@ -449,20 +418,7 @@
     }
     @media (hover: none) {
       .torch { display: none; }
-      .grain { animation: none; }
     }
-
-    .veil {
-      position: fixed;
-      inset: 0;
-      background: #060706;
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: opacity 1.1s ease, visibility 1.1s ease;
-    }
-    .veil.done { opacity: 0; visibility: hidden; }
 
     .fireflies {
       position: fixed;
@@ -483,17 +439,6 @@
     @keyframes fireflyPulse {
       0%, 100% { opacity: 0.1; }
       50%       { opacity: 0.9; }
-    }
-
-    /* distant lightning */
-    .lightning {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
-      background: #e8ecf4;
-      opacity: 0;
-      mix-blend-mode: overlay;
     }
 
     /* click spark burst */
@@ -552,8 +497,7 @@
 
     @media (prefers-reduced-motion: reduce) {
       .bg-video { animation: none; }
-      .fireflies, .lightning { display: none; }
-      .grain { animation: none; }
+      .fireflies { display: none; }
       .alive-letter { animation: none; color: inherit; }
     }
 
@@ -589,15 +533,12 @@
 <body>
 
   <video class="bg-video" autoplay muted loop playsinline>
-    <source src="https://archive.org/download/img-1665-2/Img%201665%202.mp4" type="video/mp4">
+    <source src="backgroundpc.mp4" type="video/mp4">
   </video>
   <div class="bg-overlay"></div>
-  <div class="grain"></div>
   <div class="vignette"></div>
   <div class="torch" id="torch"></div>
   <div class="fireflies" aria-hidden="true"></div>
-  <div class="lightning" aria-hidden="true"></div>
-  <div class="veil" id="veil"></div>
 
   <div class="logo-wrap">
     <canvas id="logo-3d"></canvas>
@@ -794,8 +735,6 @@
       }
     });
     function register(canvas, render) {
-      // visible by default so rendering never depends on the observer firing;
-      // the observer then switches off whatever is genuinely off-screen
       renderables.push({ canvas, render, visible: true });
       visibility.observe(canvas);
     }
@@ -814,12 +753,7 @@
     const logoCamera = new THREE.PerspectiveCamera(40, logoCanvas.clientWidth / logoCanvas.clientHeight, 0.1, 100);
     logoCamera.position.set(0, 0, 4);
     const logoControls = makeControls(logoCamera, logoCanvas);
-    // let the entrance sequence crank the model's own spin during the flight
-    window.__logoSpin = speed => { logoControls.autoRotateSpeed = speed; };
-    loadGLB(logoScene, 'https://danieljgunning.github.io/chrome/chrome.glb', () => {
-      window.__logoReady = true;
-      if (window.__onLogoReady) window.__onLogoReady();
-    });
+    loadGLB(logoScene, 'https://danieljgunning.github.io/chrome/chrome.glb');
 
     window.addEventListener('resize', () => {
       logoRenderer.setSize(logoCanvas.clientWidth, logoCanvas.clientHeight);
@@ -977,8 +911,6 @@
     const STRENGTH = 12;
     const wrapData = Array.from(document.querySelectorAll('.card-wrap')).map(wrap => ({ wrap, tx: 0, ty: 0, dropped: false, cx: 0, cy: 0 }));
 
-    // cache card centres in page coordinates (minus their own translate) so the
-    // loop never forces layout with getBoundingClientRect
     function cacheCentres() {
       for (const d of wrapData) {
         const rect = d.wrap.getBoundingClientRect();
@@ -1133,161 +1065,6 @@
     document.getElementById('gb-submit').addEventListener('click', submitMessage);
     loadMessages();
 
-    // ── entrance: the chrome logo emerges from the veil, then settles home ──
-    (function entrance() {
-      const veil = document.getElementById('veil');
-      const wrap = document.querySelector('.logo-wrap');
-      if (!veil || !wrap) return;
-
-      function dissolveVeil() {
-        veil.classList.add('done');
-        setTimeout(() => veil.remove(), 1300);
-      }
-
-      // reduced motion: no flight, just a clean reveal
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        wrap.style.opacity = '1';
-        dissolveVeil();
-        return;
-      }
-
-      // always start the sequence from the top of the page, not a restored scroll spot
-      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-      window.scrollTo(0, 0);
-
-      const mobile = window.innerWidth <= 600;
-      const EMERGE = 1500;                 // ember ignites, logo fades up inside it
-      const HOLD   = 1100;                 // turns slowly in its pool of light
-      const FLIGHT = 2100;                 // rises home as the light washes the dark away
-      const HERO   = mobile ? 0.92 : 1.18; // hero scale at centre (modest)
-
-      // scatter a handful of amber sparks from a screen point (reuses .burst-spark)
-      function sparkBurst(x, y, n) {
-        for (let i = 0; i < n; i++) {
-          const s = document.createElement('span');
-          s.className = 'burst-spark';
-          const size  = 3 + Math.random() * 4;
-          const angle = Math.random() * Math.PI * 2;
-          const dist  = 40 + Math.random() * 90;
-          s.style.width  = size + 'px';
-          s.style.height = size + 'px';
-          s.style.left   = (x - size / 2) + 'px';
-          s.style.top    = (y - size / 2) + 'px';
-          s.style.zIndex = '10002';
-          s.style.setProperty('--dx', (Math.cos(angle) * dist) + 'px');
-          s.style.setProperty('--dy', (Math.sin(angle) * dist - 10 - Math.random() * 30) + 'px');
-          document.body.appendChild(s);
-          s.addEventListener('animationend', () => s.remove());
-        }
-      }
-
-      // brief sheet-lightning flicker (reuses the page's .lightning layer)
-      function flicker() {
-        const el = document.querySelector('.lightning');
-        if (!el) return;
-        el.style.opacity = 0.16;
-        setTimeout(() => { el.style.opacity = 0; }, 70);
-        setTimeout(() => { el.style.opacity = 0.09; }, 150);
-        setTimeout(() => { el.style.opacity = 0; }, 230);
-      }
-
-      function reveal() {
-        // FLIP: measure the logo's true home, then float it to screen centre
-        const r = wrap.getBoundingClientRect();
-        const homeX = r.left + r.width  / 2;
-        const homeY = r.top  + r.height / 2;
-        const dx = (window.innerWidth  / 2) - homeX;
-        const dy = (window.innerHeight / 2) - homeY;
-
-        // a warm pool of candlelight the logo emerges from and carries home
-        const halo = document.createElement('div');
-        halo.style.cssText =
-          'position:fixed; left:0; top:0; width:70vmax; height:70vmax;' +
-          'margin:-35vmax 0 0 -35vmax; border-radius:50%; pointer-events:none;' +
-          'z-index:10001; mix-blend-mode:screen; opacity:0; transition:opacity 1.2s ease;' +
-          'background:radial-gradient(circle, rgba(255,196,140,0.30) 0%, rgba(255,170,110,0.12) 32%, rgba(255,150,90,0.04) 52%, transparent 70%);';
-        document.body.appendChild(halo);
-        const placeHalo = (cx, cy, scale) => { halo.style.transform = `translate(${cx}px, ${cy}px) scale(${scale})`; };
-        placeHalo(window.innerWidth / 2, window.innerHeight / 2, 0.62);
-
-        wrap.style.position   = 'relative';
-        wrap.style.zIndex     = '10002';
-        wrap.style.willChange = 'transform, opacity';
-
-        // ── emerge: the ember kindles, the chrome fades up inside its light ──
-        requestAnimationFrame(() => { halo.style.opacity = '1'; });
-        const emerge = wrap.animate([
-          { transform: `translate(${dx}px, ${dy}px) scale(${(HERO * 0.62).toFixed(3)})`, opacity: 0 },
-          { offset: 0.7, opacity: 1 },
-          { transform: `translate(${dx}px, ${dy}px) scale(${HERO})`, opacity: 1 },
-        ], { duration: EMERGE, easing: 'cubic-bezier(0.22,1,0.36,1)', fill: 'forwards' });
-
-        // safety: never let the veil trap the page in black
-        setTimeout(() => { if (document.getElementById('veil')) dissolveVeil(); },
-                   EMERGE + HOLD + FLIGHT + 800);
-
-        const ease  = u => (u < 0.5 ? 4*u*u*u : 1 - Math.pow(-2*u + 2, 3) / 2);
-        const drift = window.innerWidth * (mobile ? 0.03 : 0.05);
-        const maxR  = Math.hypot(window.innerWidth, window.innerHeight);
-
-        // ── rise home: a slow, weighted lift while the logo's light blooms
-        //     outward and dissolves the dark with a soft, feathered edge ──
-        setTimeout(() => {
-          emerge.cancel();
-          wrap.style.opacity = '1';
-          const t0 = performance.now();
-          (function fly() {
-            const u = Math.min((performance.now() - t0) / FLIGHT, 1);
-            const p = ease(u);
-            // mostly-vertical rise with a whisper of sideways drift, then settle
-            const x = dx * (1 - p) + Math.sin(p * Math.PI) * drift;
-            const y = dy * (1 - p);
-            const s = HERO + (1 - HERO) * p;
-            wrap.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${s.toFixed(4)})`;
-
-            // the chrome's spin lifts gently and eases back into its idle drift
-            if (window.__logoSpin) window.__logoSpin(1.5 + 4 * Math.sin(Math.PI * p));
-
-            // the warm pool follows the logo and blooms as the light grows
-            placeHalo(homeX + x, homeY + y, 0.62 + 1.5 * p);
-
-            // dissolve the veil: a large, soft feathered reveal centred on the
-            // logo, the whole sheet lightening at once — no hard edge anywhere
-            if (veil.parentNode) {
-              const hx = homeX + x, hy = homeY + y;
-              const inner = maxR * p * 0.9;
-              const outer = inner + maxR * 0.5 + 220;
-              const m = `radial-gradient(circle at ${hx.toFixed(0)}px ${hy.toFixed(0)}px, transparent ${inner.toFixed(0)}px, black ${outer.toFixed(0)}px)`;
-              veil.style.webkitMaskImage = m;
-              veil.style.maskImage = m;
-              veil.style.opacity = (1 - p * 0.85).toFixed(3);
-              if (u >= 1) veil.remove();
-            }
-
-            if (u < 1) { requestAnimationFrame(fly); return; }
-
-            // landed: a quiet amber breath, fade the pool, hand back to the page
-            sparkBurst(homeX, homeY, 6);
-            if (window.__logoSpin) window.__logoSpin(1.5);
-            halo.style.opacity = '0';
-            setTimeout(() => halo.remove(), 1300);
-            wrap.style.transform  = '';
-            wrap.style.opacity    = '1';
-            wrap.style.position   = '';
-            wrap.style.zIndex     = '';
-            wrap.style.willChange = '';
-          })();
-        }, EMERGE + HOLD);
-      }
-
-      // begin once the chrome model is in the scene; fall back so it never hangs
-      let started = false;
-      function go() { if (!started) { started = true; reveal(); } }
-      if (window.__logoReady) go();
-      else window.__onLogoReady = go;
-      setTimeout(go, 5000);
-    })();
-
     // ── torchlight ──
     const torch = document.getElementById('torch');
     if (torch && window.matchMedia('(hover: hover)').matches) {
@@ -1355,24 +1132,6 @@
       })();
     })();
 
-    // ── distant lightning ──
-    (function lightning() {
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      const el = document.querySelector('.lightning');
-      if (!el) return;
-      function strike() {
-        el.style.opacity = 0.14;
-        setTimeout(() => { el.style.opacity = 0; }, 60);
-        setTimeout(() => { el.style.opacity = 0.08; }, 140);
-        setTimeout(() => { el.style.opacity = 0; }, 200);
-        schedule();
-      }
-      function schedule() {
-        setTimeout(strike, 22000 + Math.random() * 38000);
-      }
-      schedule();
-    })();
-
     // ── click bursts: a handful of fireflies scatter from your touch ──
     (function clickBursts() {
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -1397,7 +1156,7 @@
       });
     })();
 
-    // ── living letters: social links + friend names ──
+    // ── living letters: friend names ──
     (function aliveText() {
       function animateText(el) {
         const textNodes = [];
