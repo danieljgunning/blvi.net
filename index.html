@@ -6,7 +6,7 @@
   <title>blvi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Almendra&family=IM+Fell+English:ital@0;1&family=Spectral:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Almendra&family=Spectral:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -17,7 +17,8 @@
 
     body {
       color: var(--text);
-      font-family: 'IM Fell English', serif;
+      font-family: 'Spectral', serif;
+      font-weight: 400;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -84,8 +85,8 @@
       from { opacity: 0; transform: translateY(24px) scale(0.9); }
       to   { opacity: 1; transform: translateY(0)    scale(1);   }
     }
-    .appear { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.3s both; }
-    .appear-slow { animation: appear 1.1s cubic-bezier(0.22,1,0.36,1) 0.3s both; }
+    .appear      { opacity: 0; transform: translateY(24px) scale(0.9); }
+    .appear-slow { opacity: 0; transform: translateY(24px) scale(0.9); }
 
     /* ── logo ── */
     .logo-wrap {
@@ -114,20 +115,20 @@
       text-decoration: none;
       font-family: 'Spectral', serif;
       font-size: 0.8rem;
-      letter-spacing: 0.08em;
-      transition: letter-spacing 0.4s ease, filter 0.3s ease;
+      letter-spacing: 0.04em;
+      transition: transform 0.4s cubic-bezier(0.22,1,0.36,1), filter 0.4s ease;
     }
-    .platforms a:hover { letter-spacing: 0.14em; filter: brightness(1.25); }
-    .platforms a[href*="spotify"]    { color: rgb(30,215,96);  animation: breatheGreen  3.6s ease-in-out infinite; }
-    .platforms a[href*="soundcloud"] { color: rgb(255,95,0);   animation: breatheOrange 3.6s ease-in-out infinite; }
-    @keyframes breatheGreen  {
-      0%,100% { text-shadow: 0 0 7px rgba(30,215,96,0.22); }
-      50%     { text-shadow: 0 0 16px rgba(30,215,96,0.6); }
+    .platforms a:hover { transform: scale(1.12); }
+    .platforms a[href*="spotify"] {
+      color: rgb(30,215,96);
+      text-shadow: 0 0 8px rgba(30,215,96,0.15);
     }
-    @keyframes breatheOrange {
-      0%,100% { text-shadow: 0 0 7px rgba(255,95,0,0.22); }
-      50%     { text-shadow: 0 0 16px rgba(255,95,0,0.6); }
+    .platforms a[href*="soundcloud"] {
+      color: rgb(255,95,0);
+      text-shadow: 0 0 8px rgba(255,95,0,0.15);
     }
+    .platform-float { animation: letterFloat 3.2s ease-in-out infinite; display: flex; align-items: center; gap: 0.5rem; }
+    .platforms a[href*="soundcloud"] .platform-float { animation-delay: -1.6s; }
     .platforms img { width: 15px; height: 15px; object-fit: contain; }
 
     /* ── two-column layout ── */
@@ -135,7 +136,7 @@
       display: flex;
       align-items: flex-start;
       justify-content: center;
-      gap: 4rem;
+      gap: 7rem;
       width: 100%;
       max-width: 960px;
     }
@@ -172,26 +173,26 @@
     }
 
     /* card float animations */
-    .polaroid-row:nth-child(1) .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.8s both, float1 20s ease-in-out 2s infinite; }
-    .polaroid-row:nth-child(1) .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.0s both, float2 24s ease-in-out 2s infinite; }
-    .polaroid-row:nth-child(2) .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.2s both, float3 22s ease-in-out 2s infinite; }
-    .polaroid-row:nth-child(2) .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.4s both, float4 26s ease-in-out 2s infinite; }
-    .friends-row:nth-child(1)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.9s both, float2 22s ease-in-out 2s infinite; }
-    .friends-row:nth-child(1)  .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.1s both, float3 25s ease-in-out 2s infinite; }
-    .friends-row:nth-child(2)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.3s both, float1 20s ease-in-out 2s infinite; }
-    .friends-row:nth-child(2)  .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.5s both, float4 23s ease-in-out 2s infinite; }
-    .friends-row:nth-child(3)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.7s both, float2 21s ease-in-out 2s infinite; }
+    .polaroid-row:nth-of-type(1) .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.8s both, float1 20s ease-in-out 2s infinite; }
+    .polaroid-row:nth-of-type(1) .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.0s both, float2 24s ease-in-out 2s infinite; }
+    .polaroid-row:nth-of-type(2) .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.2s both, float3 22s ease-in-out 2s infinite; }
+    .polaroid-row:nth-of-type(2) .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.4s both, float4 26s ease-in-out 2s infinite; }
+    .friends-row:nth-of-type(1)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.9s both, float2 22s ease-in-out 2s infinite; }
+    .friends-row:nth-of-type(1)  .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.1s both, float3 25s ease-in-out 2s infinite; }
+    .friends-row:nth-of-type(2)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.3s both, float1 20s ease-in-out 2s infinite; }
+    .friends-row:nth-of-type(2)  .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.5s both, float4 23s ease-in-out 2s infinite; }
+    .friends-row:nth-of-type(3)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.7s both, float2 21s ease-in-out 2s infinite; }
 
     /* card rotations */
-    .polaroid-row:nth-child(1) .card-wrap:nth-child(1) .card-photo { transform: rotate(-4deg);   }
-    .polaroid-row:nth-child(1) .card-wrap:nth-child(2) .card-photo { transform: rotate(3.5deg);  }
-    .polaroid-row:nth-child(2) .card-wrap:nth-child(1) .card-photo { transform: rotate(2.5deg);  }
-    .polaroid-row:nth-child(2) .card-wrap:nth-child(2) .card-photo { transform: rotate(-3deg);   }
-    .friends-row:nth-child(1)  .card-wrap:nth-child(1) .card-photo { transform: rotate(-4deg);   }
-    .friends-row:nth-child(1)  .card-wrap:nth-child(2) .card-photo { transform: rotate(3deg);    }
-    .friends-row:nth-child(2)  .card-wrap:nth-child(1) .card-photo { transform: rotate(2.5deg);  }
-    .friends-row:nth-child(2)  .card-wrap:nth-child(2) .card-photo { transform: rotate(-3deg);   }
-    .friends-row:nth-child(3)  .card-wrap:nth-child(1) .card-photo { transform: rotate(-3.5deg); }
+    .polaroid-row:nth-of-type(1) .card-wrap:nth-child(1) .card-photo { transform: rotate(-4deg);   }
+    .polaroid-row:nth-of-type(1) .card-wrap:nth-child(2) .card-photo { transform: rotate(3.5deg);  }
+    .polaroid-row:nth-of-type(2) .card-wrap:nth-child(1) .card-photo { transform: rotate(2.5deg);  }
+    .polaroid-row:nth-of-type(2) .card-wrap:nth-child(2) .card-photo { transform: rotate(-3deg);   }
+    .friends-row:nth-of-type(1)  .card-wrap:nth-child(1) .card-photo { transform: rotate(-4deg);   }
+    .friends-row:nth-of-type(1)  .card-wrap:nth-child(2) .card-photo { transform: rotate(3deg);    }
+    .friends-row:nth-of-type(2)  .card-wrap:nth-child(1) .card-photo { transform: rotate(2.5deg);  }
+    .friends-row:nth-of-type(2)  .card-wrap:nth-child(2) .card-photo { transform: rotate(-3deg);   }
+    .friends-row:nth-of-type(3)  .card-wrap:nth-child(1) .card-photo { transform: rotate(-3.5deg); }
 
     @keyframes float1 {
       0%,100% { transform: translate(0,0); }    25% { transform: translate(6px,-10px); }
@@ -291,7 +292,7 @@
     .shirt-label {
       font-family: 'Spectral', serif;
       font-size: 0.78rem;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.04em;
       color: var(--muted);
       text-align: center;
       margin-top: 3rem;
@@ -307,7 +308,7 @@
       gap: 2rem;
     }
     #shirt-3d, #shirt2-3d {
-      width: 300px; height: 300px;
+      width: 220px; height: 220px;
       display: block;
       cursor: grab;
       opacity: 0;
@@ -315,8 +316,44 @@
     }
     #shirt-3d:active, #shirt2-3d:active { cursor: grabbing; }
 
-    /* ── guestbook ── */
-    .guestbook { width: 100%; max-width: 560px; margin-top: 2.5rem; }
+    /* ── section labels ── */
+    .section-label {
+      font-family: 'Spectral', serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      color: #b9bfc9;
+      text-shadow: 0 0 8px rgba(210,220,235,0.28);
+      text-transform: lowercase;
+      margin-bottom: 1.2rem;
+      align-self: center;
+      text-align: center;
+    }
+
+    /* ── wax seal divider ── */
+    .wax-seal-wrap {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 560px;
+      gap: 0;
+      margin-top: 3rem;
+      margin-bottom: 3rem;
+    }
+    .wax-seal-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(240,236,228,0.15), transparent);
+    }
+    .wax-seal {
+      flex-shrink: 0;
+      width: 52px; height: 52px;
+      margin: 0 1rem;
+      opacity: 0.9;
+      filter: grayscale(1) brightness(1.4);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .wax-seal:hover { opacity: 1; transform: scale(1.08); }
+    .guestbook { width: 100%; max-width: 560px; margin-top: 0; }
     .guestbook-form { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2.5rem; }
     .guestbook-form input, .guestbook-form textarea {
       background: transparent;
@@ -348,7 +385,7 @@
       padding: 0.3rem 0;
       cursor: pointer;
       align-self: center;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.04em;
       transition: color 0.3s ease, border-color 0.3s ease;
     }
     .guestbook-submit:hover { color: var(--text); border-bottom-color: rgba(255,255,255,0.4); }
@@ -366,9 +403,9 @@
     .guestbook-message-name {
       font-family: 'Spectral', serif;
       font-size: 0.8rem;
-      color: #e8b285;
-      text-shadow: 0 0 8px rgba(255,180,110,0.22);
-      letter-spacing: 0.1em;
+      color: #b9bfc9;
+      text-shadow: 0 0 8px rgba(210,220,235,0.28);
+      letter-spacing: 0.04em;
       margin-bottom: 0.3rem;
     }
     .guestbook-message-text {
@@ -400,17 +437,12 @@
     .alive-word { display: inline-block; }
     .alive-letter {
       display: inline-block;
-      animation: letterFloat 3.2s ease-in-out infinite, letterEmber 7s ease-in-out infinite;
+      animation: letterFloat 3.2s ease-in-out infinite, letterSilver 7s ease-in-out infinite;
     }
     @keyframes letterFloat {
       0%,100% { transform: translateY(0); }
       50%     { transform: translateY(-1.8px); }
     }
-    @keyframes letterEmber {
-      0%,100% { color: #e2a878; text-shadow: 0 0 8px rgba(255,175,110,0.28); }
-      50%     { color: #ffd6a0; text-shadow: 0 0 16px rgba(255,185,115,0.65); }
-    }
-    .friends-row .alive-letter { animation-name: letterFloat, letterSilver; }
     @keyframes letterSilver {
       0%,100% { color: #b9bfc9; text-shadow: 0 0 8px rgba(210,220,235,0.28); }
       50%     { color: #eef1f6; text-shadow: 0 0 16px rgba(225,232,245,0.6); }
@@ -444,7 +476,7 @@
       .card-photo.polaroid .card-caption { font-size: 0.8rem; padding: 4px 3px 8px; }
       .card-photo.square img { width: 110px; height: 110px; }
       .card-caption { font-size: 0.72rem; margin-top: 5px; }
-      .shirt-wrap { flex-direction: column; gap: 0; }
+      .shirt-wrap { flex-direction: column; gap: 2rem; }
       #shirt-3d, #shirt2-3d { width: 240px; height: 240px; }
     }
   </style>
@@ -464,16 +496,17 @@
 
   <div class="platforms appear">
     <a href="https://open.spotify.com/artist/7HwF11ILY35YWfO8FTiOQg?si=qTFH5IwkQ3K8F3eNPmn7dA" target="_blank" rel="noopener">
-      <img src="https://i.imgur.com/ifasgKW.png" alt=""> spotify
+      <span class="platform-float"><img src="https://i.imgur.com/ifasgKW.png" alt=""> spotify</span>
     </a>
     <a href="https://soundcloud.com/blvi" target="_blank" rel="noopener">
-      <img src="https://i.imgur.com/pFJR1qV.png" alt=""> soundcloud
+      <span class="platform-float"><img src="https://i.imgur.com/pFJR1qV.png" alt=""> soundcloud</span>
     </a>
   </div>
 
   <div class="columns appear">
 
     <div class="panel left">
+      <p class="section-label">music</p>
       <div class="polaroid-row">
         <div class="card-wrap">
           <a class="card" href="https://open.spotify.com/track/3jA1dfRX5lcQ22i3cM3g6c?si=8bc5d788a7424029" target="_blank" rel="noopener">
@@ -513,6 +546,7 @@
     </div>
 
     <div class="panel right">
+      <p class="section-label">friends</p>
       <div class="friends-row">
         <div class="card-wrap">
           <a class="card" href="https://soundcloud.com/ihateyouclaus" target="_blank" rel="noopener">
@@ -567,6 +601,12 @@
   <div class="shirt-wrap" id="shirt-wrap">
     <canvas id="shirt-3d"></canvas>
     <canvas id="shirt2-3d"></canvas>
+  </div>
+
+  <div class="wax-seal-wrap appear">
+    <div class="wax-seal-line"></div>
+    <img class="wax-seal" src="https://i.imgur.com/xY9nxGM.png" alt="wax seal">
+    <div class="wax-seal-line"></div>
   </div>
 
   <div class="guestbook appear">
@@ -661,7 +701,9 @@
     const lcam = new THREE.PerspectiveCamera(40, lc.clientWidth / lc.clientHeight, 0.1, 100);
     lcam.position.set(0, 0, 4);
     const lctrl = makeControls(lcam, lc);
-    loadGLB(ls, 'https://danieljgunning.github.io/chrome/chrome.glb');
+    loadGLB(ls, 'https://danieljgunning.github.io/chrome/chrome.glb', () => {
+      if (window.__revealLogo) window.__revealLogo();
+    });
     window.addEventListener('resize', () => {
       const w = lc.clientWidth, h = lc.clientHeight;
       lr.setSize(w, h);
@@ -672,20 +714,9 @@
     window.dispatchEvent(new Event('resize'));
     reg(lc, () => { lctrl.update(); lr.render(ls, lcam); });
 
-    // shirts — reveal label + each canvas only once the GLB is in the scene
-    let shirtsLoaded = 0;
-    function onShirtReady(canvas) {
-      canvas.style.opacity = '1';
-      shirtsLoaded++;
-      if (shirtsLoaded === 2) {
-        const label = document.getElementById('shirt-label');
-        label.style.opacity   = '1';
-        label.style.transform = 'translateY(0) scale(1)';
-      }
-    }
-
+    // shirts
     function makeShirt(id, exposure, url, withLights) {
-      const sz = innerWidth <= 480 ? Math.min(innerWidth - 40, 280) : 300;
+      const sz = innerWidth <= 480 ? Math.min(innerWidth - 40, 200) : 220;
       const canvas = document.getElementById(id);
       canvas.width = canvas.height = sz;
       const r = makeRenderer(canvas, exposure);
@@ -699,7 +730,7 @@
         const f = new THREE.DirectionalLight(0xffffff, 0.9); f.position.set(-2,0,-2); s.add(f);
       }
       const ctrl = makeControls(cam, canvas);
-      loadGLB(s, url, () => onShirtReady(canvas));
+      loadGLB(s, url, () => window.__shirtLoaded && window.__shirtLoaded(canvas));
       reg(canvas, () => { ctrl.update(); r.render(s, cam); });
     }
     makeShirt('shirt-3d',  1.2, 'https://danieljgunning.github.io/shirt/shirt.glb',           true);
@@ -707,12 +738,129 @@
   </script>
 
   <script>
+    // ── single choreographed reveal ──
+    // Nothing is visible until the logo GLB is ready.
+    // Once it is, everything plays as one composed sequence.
+    // Shirts reveal separately when their GLBs are ready, but never before the main sequence.
+
+    let mainSequenceDone = false;
+    let shirtsPending = [];
+
+    function revealEl(el, delay, duration) {
+      setTimeout(() => {
+        el.style.transition = `opacity ${duration}s cubic-bezier(0.22,1,0.36,1), transform ${duration}s cubic-bezier(0.22,1,0.36,1)`;
+        el.style.opacity   = '1';
+        el.style.transform = 'translateY(0) scale(1)';
+      }, delay);
+    }
+
+    function runMainSequence() {
+      // 0ms   — logo fades in
+      revealEl(document.querySelector('.appear-slow'), 0, 1.0);
+      // 400ms — platforms + columns together
+      setTimeout(() => {
+        document.querySelectorAll('.appear').forEach(el => revealEl(el, 0, 0.9));
+      }, 400);
+      // 900ms — mark sequence done, reveal any shirts already loaded
+      setTimeout(() => {
+        mainSequenceDone = true;
+        shirtsPending.forEach(fn => fn());
+        shirtsPending = [];
+      }, 900);
+    }
+
+    // Logo signals readiness from the module script
+    window.__revealLogo = runMainSequence;
+
+    // Shirt reveal — queued until after main sequence if needed
+    window.__revealShirt = function(canvas) {
+      const fn = () => {
+        canvas.style.transition = 'opacity 0.9s cubic-bezier(0.22,1,0.36,1)';
+        canvas.style.opacity = '1';
+      };
+      if (mainSequenceDone) fn();
+      else shirtsPending.push(fn);
+    };
+
+    // Shirt label reveals once both shirts are done
+    let shirtsReady = 0;
+    window.__shirtLoaded = function(canvas) {
+      window.__revealShirt(canvas);
+      shirtsReady++;
+      if (shirtsReady === 2) {
+        const label = document.getElementById('shirt-label');
+        const fn = () => revealEl(label, 100, 0.9);
+        if (mainSequenceDone) fn();
+        else shirtsPending.push(fn);
+      }
+    };
+
+    // Safety fallback — if logo GLB never loads, reveal everything after 6s
+    setTimeout(() => {
+      if (!mainSequenceDone) runMainSequence();
+    }, 6000);
+
     // ── torchlight ──
     const torch = document.getElementById('torch');
     document.addEventListener('mousemove', e => {
       torch.style.setProperty('--tx', e.clientX + 'px');
       torch.style.setProperty('--ty', e.clientY + 'px');
     });
+
+    // ── shirt cursor proximity ──
+    (function () {
+      const shirts = [
+        document.getElementById('shirt-3d'),
+        document.getElementById('shirt2-3d'),
+      ];
+      const vals = shirts.map(() => ({ scale: 1, target: 1 }));
+      const RADIUS = 260;
+      let mx = -9999, my = -9999;
+      document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+      shirts.forEach(s => {
+        s.style.transition = 'none';
+        s.style.transformOrigin = 'center center';
+      });
+      (function loop() {
+        requestAnimationFrame(loop);
+        shirts.forEach((s, i) => {
+          const rect = s.getBoundingClientRect();
+          const cx = rect.left + rect.width  / 2;
+          const cy = rect.top  + rect.height / 2;
+          const dist = Math.hypot(mx - cx, my - cy);
+          vals[i].target = 1 + Math.max(0, 1 - dist / RADIUS) * 0.07;
+          vals[i].scale += (vals[i].target - vals[i].scale) * 0.07;
+          s.style.transform = `scale(${vals[i].scale.toFixed(4)})`;
+        });
+      })();
+    })();
+    (function () {
+      const spotify    = document.querySelector('.platforms a[href*="spotify"]');
+      const soundcloud = document.querySelector('.platforms a[href*="soundcloud"]');
+      const links = [
+        { el: spotify,    r: [30,215,96],  glow: 0, target: 0 },
+        { el: soundcloud, r: [255,95,0],   glow: 0, target: 0 },
+      ];
+      const RADIUS = 220;
+      let mx = -9999, my = -9999;
+      document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+      (function loop() {
+        requestAnimationFrame(loop);
+        for (const l of links) {
+          if (!l.el) continue;
+          const rect = l.el.getBoundingClientRect();
+          const cx = rect.left + rect.width  / 2;
+          const cy = rect.top  + rect.height / 2;
+          const dist = Math.hypot(mx - cx, my - cy);
+          l.target = Math.max(0, 1 - dist / RADIUS);
+          l.glow  += (l.target - l.glow) * 0.07;
+          const spread = 8  + l.glow * 22;
+          const alpha  = 0.15 + l.glow * 0.5;
+          l.el.style.textShadow = `0 0 ${spread.toFixed(1)}px rgba(${l.r},${alpha.toFixed(2)})`;
+          l.el.style.filter = `brightness(${(1 + l.glow * 0.4).toFixed(3)})`;
+        }
+      })();
+    })();
 
     // ── fireflies ──
     (function () {
@@ -926,7 +1074,7 @@
           node.replaceWith(span);
         });
       }
-      document.querySelectorAll('.friends-row .card-caption, .shirt-label').forEach(animate);
+      document.querySelectorAll('.friends-row .card-caption, .shirt-label, .section-label').forEach(animate);
     })();
   </script>
 
