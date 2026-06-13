@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>blvi</title>
+  <script>
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Almendra&family=Spectral:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
@@ -88,7 +91,19 @@
     .appear      { opacity: 0; transform: translateY(24px) scale(0.9); }
     .appear-slow { opacity: 0; transform: translateY(24px) scale(0.9); }
 
-    /* ── logo ── */
+    /* ── veil ── */
+    .veil {
+      position: fixed;
+      inset: 0;
+      background: #060706;
+      z-index: 10000;
+      pointer-events: none;
+      transition: opacity 1.2s cubic-bezier(0.4,0,0.2,1);
+      will-change: opacity;
+    }
+    .veil.dissolve { opacity: 0; }
+
+    /* ── logo flight ── */
     .logo-wrap {
       display: flex;
       align-items: center;
@@ -350,9 +365,7 @@
       margin: 0 1rem;
       opacity: 0.9;
       filter: grayscale(1) brightness(1.4);
-      transition: opacity 0.4s ease, transform 0.4s ease;
     }
-    .wax-seal:hover { opacity: 1; transform: scale(1.08); }
     .guestbook { width: 100%; max-width: 560px; margin-top: 0; }
     .guestbook-form { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2.5rem; }
     .guestbook-form input, .guestbook-form textarea {
@@ -489,6 +502,7 @@
   <div class="bg-overlay"></div>
   <div class="vignette"></div>
   <div id="torch" class="torch"></div>
+  <div id="veil" class="veil"></div>
 
   <div class="logo-wrap appear-slow">
     <canvas id="logo-3d"></canvas>
@@ -701,9 +715,8 @@
     const lcam = new THREE.PerspectiveCamera(40, lc.clientWidth / lc.clientHeight, 0.1, 100);
     lcam.position.set(0, 0, 4);
     const lctrl = makeControls(lcam, lc);
-    loadGLB(ls, 'https://danieljgunning.github.io/chrome/chrome.glb', () => {
-      if (window.__revealLogo) window.__revealLogo();
-    });
+    window.__setLogoSpin = spd => { lctrl.autoRotateSpeed = spd; };
+    loadGLB(ls, 'https://danieljgunning.github.io/chrome/chrome.glb');
     window.addEventListener('resize', () => {
       const w = lc.clientWidth, h = lc.clientHeight;
       lr.setSize(w, h);
@@ -738,11 +751,11 @@
   </script>
 
   <script>
-    // ── single choreographed reveal ──
-    // Nothing is visible until the logo GLB is ready.
-    // Once it is, everything plays as one composed sequence.
-    // Shirts reveal separately when their GLBs are ready, but never before the main sequence.
+    // force top of page immediately, before any content renders
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    window.scrollTo(0, 0);
 
+    // ── choreographed reveal with logo flight ──
     let mainSequenceDone = false;
     let shirtsPending = [];
 
@@ -755,22 +768,101 @@
     }
 
     function runMainSequence() {
-      // 0ms   — logo fades in
-      revealEl(document.querySelector('.appear-slow'), 0, 1.0);
-      // 400ms — platforms + columns together
-      setTimeout(() => {
-        document.querySelectorAll('.appear').forEach(el => revealEl(el, 0, 0.9));
-      }, 400);
-      // 900ms — mark sequence done, reveal any shirts already loaded
-      setTimeout(() => {
-        mainSequenceDone = true;
-        shirtsPending.forEach(fn => fn());
-        shirtsPending = [];
-      }, 900);
-    }
+      window.scrollTo(0, 0);
+      const veil     = document.getElementById('veil');
+      const logoWrap = document.querySelector('.logo-wrap');
 
-    // Logo signals readiness from the module script
-    window.__revealLogo = runMainSequence;
+      // measure the logo's home position (its natural spot in the flow)
+      const homeRect = logoWrap.getBoundingClientRect();
+      const homeX    = homeRect.left + homeRect.width  / 2;
+      const homeY    = homeRect.top  + homeRect.height / 2;
+      const vw = window.innerWidth, vh = window.innerHeight;
+
+      // the logo NEVER leaves the document flow — we only ever transform it.
+      // its layout space is always reserved, so the page can never shift.
+      logoWrap.classList.remove('appear-slow');
+      logoWrap.style.zIndex = '10001';
+      logoWrap.style.position = 'relative';
+      logoWrap.style.willChange = 'transform';
+      logoWrap.style.opacity = '0';
+
+      const startDX = (vw / 2) - homeX;
+      const startDY = (vh / 2) - homeY;
+      logoWrap.style.transform = `translate(${startDX}px, ${startDY}px) scale(0.7)`;
+
+      setTimeout(() => {
+        logoWrap.style.transition = 'opacity 0.5s ease';
+        logoWrap.style.opacity = '1';
+      }, 80);
+
+      const P0 = { x: vw / 2,    y: vh / 2 };
+      const P1 = { x: vw * 0.82, y: vh * 0.72 };
+      const P2 = { x: vw * 0.65, y: vh * 0.08 };
+      const P3 = { x: homeX,     y: homeY };
+
+      function bezier(p0, p1, p2, p3, t) {
+        const u = 1 - t;
+        return {
+          x: u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x,
+          y: u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y,
+        };
+      }
+      function ease(t) {
+        return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,3)/2;
+      }
+
+      const FLIGHT_MS    = 1400;
+      const FLIGHT_START = 600;
+
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        veil.classList.add('dissolve');
+
+        setTimeout(() => {
+          document.querySelectorAll('.appear').forEach(el => revealEl(el, 0, 0.9));
+        }, 300);
+        setTimeout(() => {
+          mainSequenceDone = true;
+          shirtsPending.forEach(fn => fn());
+          shirtsPending = [];
+        }, 800);
+
+        if (window.__setLogoSpin) window.__setLogoSpin(28);
+
+        logoWrap.style.transition = 'none';
+        const t0 = performance.now();
+
+        function fly(now) {
+          const raw = Math.min((now - t0) / FLIGHT_MS, 1);
+          const t   = ease(raw);
+          const pos = bezier(P0, P1, P2, P3, t);
+
+          if (window.__setLogoSpin) {
+            const spinSpeed = 28 * (1 - t) + 1.5 * t + Math.sin(raw * 18) * 6 * (1 - t);
+            window.__setLogoSpin(spinSpeed);
+          }
+
+          const dx = pos.x - homeX;
+          const dy = pos.y - homeY;
+          const scale = 0.7 + 0.3 * Math.min(t * 1.5, 1);
+          logoWrap.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${scale.toFixed(3)})`;
+
+          if (raw < 1) {
+            requestAnimationFrame(fly);
+          } else {
+            if (window.__setLogoSpin) window.__setLogoSpin(1.5);
+            // at t=1 the bezier point IS home, so dx=dy=0 and scale=1 —
+            // clearing the transform changes nothing visually. no snap.
+            logoWrap.style.transform = 'none';
+            logoWrap.style.zIndex = '';
+            logoWrap.style.position = '';
+            logoWrap.style.willChange = '';
+            setTimeout(() => veil.remove(), 1300);
+          }
+        }
+        requestAnimationFrame(fly);
+      }, FLIGHT_START);
+    }
 
     // Shirt reveal — queued until after main sequence if needed
     window.__revealShirt = function(canvas) {
@@ -795,10 +887,12 @@
       }
     };
 
-    // Safety fallback — if logo GLB never loads, reveal everything after 6s
-    setTimeout(() => {
-      if (!mainSequenceDone) runMainSequence();
-    }, 6000);
+    // Start the reveal once the page is ready — independent of GLB loading
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', () => setTimeout(runMainSequence, 400));
+    } else {
+      setTimeout(runMainSequence, 400);
+    }
 
     // ── torchlight ──
     const torch = document.getElementById('torch');
