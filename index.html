@@ -56,6 +56,26 @@
       z-index: -1;
       pointer-events: none;
     }
+    /* ── constellation veil (spells "blvi") — hidden until seal pressed ── */
+    .constellation {
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      background: radial-gradient(ellipse 90% 70% at 50% 45%, #0a1426 0%, #070d1a 45%, #04060c 100%);
+      z-index: 11000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1.4s cubic-bezier(0.4,0,0.2,1);
+      will-change: opacity;
+    }
+    .constellation.lit { opacity: 1; }
+    #galaxy-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .constellation svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; }
+    .const-line { stroke: rgba(210,225,255,0.18); stroke-width: 1; }
+    .const-star {
+      fill: #eaf1ff;
+      filter: drop-shadow(0 0 3px rgba(210,225,255,0.95)) drop-shadow(0 0 8px rgba(150,185,255,0.55));
+    }
     @media (max-width: 768px) {
       .bg-wrap, .bg-overlay, .vignette { display: none; }
       html { background: #0d0f0d; }
@@ -268,6 +288,12 @@
       transition: background-position 0.9s ease;
     }
     .card:hover .card-photo.polaroid::after { background-position: -80% 0; }
+    .petal-flower {
+      position: absolute;
+      pointer-events: none;
+      z-index: 4;
+      opacity: 0.9;
+    }
     .card-photo.polaroid .card-caption {
       font-family: 'Almendra', serif;
       font-size: 0.82rem;
@@ -517,6 +543,7 @@
   </video>
   <div class="bg-overlay"></div>
   <div class="vignette"></div>
+  <div id="constellation" class="constellation"><canvas id="galaxy-canvas"></canvas><svg id="constellation-svg" preserveAspectRatio="xMidYMid meet"></svg></div>
   <div id="torch" class="torch"></div>
   <div id="veil" class="veil"></div>
 
@@ -585,81 +612,6 @@
       </div>
     </div>
 
-    <div class="panel right">
-      <p class="section-label">friends</p>
-      <div class="friends-row">
-        <div class="card-wrap">
-          <a class="card" href="https://soundcloud.com/ihateyouclaus" target="_blank" rel="noopener">
-            <div class="card-photo square">
-              <img src="https://i1.sndcdn.com/avatars-tDzeTt2fvol1G0G7-zF6jrQ-t1080x1080.jpg" alt="ihateyouclaus">
-            </div>
-            <div class="card-caption">ihateyouclaus</div>
-          </a>
-        </div>
-        <div class="card-wrap">
-          <a class="card" href="https://soundcloud.com/t3rryy" target="_blank" rel="noopener">
-            <div class="card-photo square">
-              <img src="https://i1.sndcdn.com/avatars-FZgjkf3XjaAdxLkP-XZv29g-t1080x1080.jpg" alt="terry">
-            </div>
-            <div class="card-caption">terry</div>
-          </a>
-        </div>
-      </div>
-      <div class="friends-row">
-        <div class="card-wrap">
-          <a class="card" href="https://soundcloud.com/5ume" target="_blank" rel="noopener">
-            <div class="card-photo square">
-              <img src="https://i1.sndcdn.com/avatars-vVJZ51ofo3f7E9s3-T0401A-t1080x1080.jpg" alt="5ume">
-            </div>
-            <div class="card-caption">5ume</div>
-          </a>
-        </div>
-        <div class="card-wrap">
-          <a class="card" href="https://soundcloud.com/sojuxxxcigs" target="_blank" rel="noopener">
-            <div class="card-photo square">
-              <img src="https://i1.sndcdn.com/avatars-bAoPKwoIUwcQgyFP-UUIFnQ-t1080x1080.jpg" alt="SojuN'Cigs">
-            </div>
-            <div class="card-caption">SojuN'Cigs</div>
-          </a>
-        </div>
-      </div>
-      <div class="friends-row">
-        <div class="card-wrap">
-          <a class="card" href="https://soundcloud.com/r3mes" target="_blank" rel="noopener">
-            <div class="card-photo square">
-              <img src="https://i1.sndcdn.com/avatars-sUsdew8TDg1NegIY-x0neTw-t1080x1080.jpg" alt="reme">
-            </div>
-            <div class="card-caption">reme</div>
-          </a>
-        </div>
-        <div class="card-wrap">
-          <a class="card" href="https://soundcloud.com/ivuo2" target="_blank" rel="noopener">
-            <div class="card-photo square">
-              <img src="https://i1.sndcdn.com/avatars-qmmvjzWe4tAUT7xV-ngFCxQ-t1080x1080.jpg" alt="ivu">
-            </div>
-            <div class="card-caption">ivu</div>
-          </a>
-        </div>
-      </div>
-      <div class="friends-row">
-        <div class="card-wrap">
-          <a class="card" href="https://soundcloud.com/yourse1f" target="_blank" rel="noopener">
-            <div class="card-photo square">
-              <img src="https://i1.sndcdn.com/avatars-z6258YSTkviU64rS-5piiRA-t1080x1080.jpg" alt="yourself">
-            </div>
-            <div class="card-caption">yourself</div>
-          </a>
-        </div>
-        <div class="card-wrap">
-          <a class="card" href="https://soundcloud.com/oxiplus" target="_blank" rel="noopener">
-            <div class="card-photo square">
-              <img src="https://i1.sndcdn.com/avatars-QwwQ82k3gwHy9t0T-B5ojNg-t1080x1080.jpg" alt="oxi">
-            </div>
-            <div class="card-caption">oxi</div>
-          </a>
-        </div>
-      </div>
-    </div>
 
   </div>
 
@@ -1007,52 +959,31 @@
       })();
     })();
 
-    // ── fireflies + ember storm (seal spawns permanent rainbow flies) ──
+    // ── fireflies ──
     (function () {
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      const FLEE = 140;
+      const N = 13, FLEE = 140;
       let mx = -9999, my = -9999;
       document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
 
-      let rainbow = false;        // flips on permanently when the seal is broken
-      const flies = [];
-
-      // factory — `opts.launch` makes it fly out ballistically before settling
-      function makeFly(opts = {}) {
+      const flies = Array.from({ length: N }, () => {
         const el = document.createElement('div');
         el.className = 'ff';
         el.style.opacity = '0';
         document.body.appendChild(el);
-
-        const bx = opts.bx != null ? opts.bx : Math.random() * innerWidth;
-        const by = opts.by != null ? opts.by : innerHeight * (0.15 + Math.random() * 0.7);
-        const startX = opts.startX != null ? opts.startX : bx;
-        const startY = opts.startY != null ? opts.startY : by;
-
-        const f = {
+        const bx = Math.random() * innerWidth;
+        const by = innerHeight * (0.15 + Math.random() * 0.7);
+        return {
           el, bx, by,
-          x: startX, y: startY,
-          a1: 60 + Math.random()*140, f1: 0.05+Math.random()*0.10, p1: Math.random()*6.28,
-          a2: 40 + Math.random()* 90, f2: 0.13+Math.random()*0.15, p2: Math.random()*6.28,
-          a3: 50 + Math.random()*120, f3: 0.04+Math.random()*0.09, p3: Math.random()*6.28,
-          a4: 30 + Math.random()* 80, f4: 0.11+Math.random()*0.16, p4: Math.random()*6.28,
+          x: bx, y: by,
+          a1: 60  + Math.random()*140, f1: 0.05+Math.random()*0.10, p1: Math.random()*6.28,
+          a2: 40  + Math.random()* 90, f2: 0.13+Math.random()*0.15, p2: Math.random()*6.28,
+          a3: 50  + Math.random()*120, f3: 0.04+Math.random()*0.09, p3: Math.random()*6.28,
+          a4: 30  + Math.random()* 80, f4: 0.11+Math.random()*0.16, p4: Math.random()*6.28,
           pulseSpeed: 2.2 + Math.random() * 3.5,
           pulseOffset: Math.random() * Math.PI * 2,
-          hue: Math.random() * 360,
-          hueSpeed: 20 + Math.random() * 40,
-          lastBucket: '',
-          // launch state — when launching, the fly ignores wander until it slows
-          launching: !!opts.launch,
-          vx: opts.vx || 0,
-          vy: opts.vy || 0,
         };
-        flies.push(f);
-        return f;
-      }
-
-      // initial resident swarm
-      const N = 13;
-      for (let i = 0; i < N; i++) makeFly();
+      });
 
       window.addEventListener('resize', () => {
         flies.forEach(f => {
@@ -1061,68 +992,24 @@
         });
       });
 
-      // breaking the seal: spawn a burst that becomes permanent rainbow fireflies
-      window.__emberStorm = function (ox, oy) {
-        rainbow = true;
-        const COUNT = 34;
-        for (let i = 0; i < COUNT; i++) {
-          const ang = Math.random() * Math.PI * 2;
-          const spd = 13 + Math.random() * 20;
-          // their eventual wander home is spread across the page
-          makeFly({
-            startX: ox, startY: oy,
-            bx: Math.random() * innerWidth,
-            by: innerHeight * (0.12 + Math.random() * 0.76),
-            launch: true,
-            vx: Math.cos(ang) * spd,
-            vy: Math.sin(ang) * spd - 4,
-          });
-        }
-      };
-
       (function loop() {
         requestAnimationFrame(loop);
         if (document.hidden) return;
         const t = performance.now() * 0.001;
-
-        for (let fi = 0; fi < flies.length; fi++) {
-          const f = flies[fi];
-
-          if (f.launching) {
-            // ballistic flight outward from the seal
-            f.vy += 0.03;
-            f.vx *= 0.96; f.vy *= 0.96;
-            f.x += f.vx; f.y += f.vy;
-            // once the blast has spent its energy, hand off to normal wandering
-            if (Math.hypot(f.vx, f.vy) < 1.2) f.launching = false;
-          } else {
-            // normal lissajous wander + cursor flee
-            let tx = f.bx + f.a1*Math.sin(t*f.f1*6.28+f.p1) + f.a2*Math.sin(t*f.f2*6.28+f.p2);
-            let ty = f.by + f.a3*Math.sin(t*f.f3*6.28+f.p3) + f.a4*Math.sin(t*f.f4*6.28+f.p4);
-            const dx = tx - mx, dy = ty - my;
-            const dist = Math.hypot(dx, dy);
-            if (dist < FLEE && dist > 0.01) {
-              const push = (FLEE - dist) * 1.4;
-              tx += (dx/dist)*push; ty += (dy/dist)*push;
-            }
-            f.x += (tx - f.x) * 0.035;
-            f.y += (ty - f.y) * 0.035;
+        for (const f of flies) {
+          let tx = f.bx + f.a1*Math.sin(t*f.f1*6.28+f.p1) + f.a2*Math.sin(t*f.f2*6.28+f.p2);
+          let ty = f.by + f.a3*Math.sin(t*f.f3*6.28+f.p3) + f.a4*Math.sin(t*f.f4*6.28+f.p4);
+          const dx = tx - mx, dy = ty - my;
+          const dist = Math.hypot(dx, dy);
+          if (dist < FLEE && dist > 0.01) {
+            const push = (FLEE - dist) * 1.4;
+            tx += (dx/dist)*push; ty += (dy/dist)*push;
           }
-
+          f.x += (tx - f.x) * 0.035;
+          f.y += (ty - f.y) * 0.035;
           const pulse = 0.1 + 0.85 * (0.5 + 0.5*Math.sin(t / f.pulseSpeed * Math.PI * 2 + f.pulseOffset));
           f.el.style.transform = `translate(${f.x}px,${f.y}px)`;
           f.el.style.opacity   = pulse.toFixed(3);
-
-          // permanent rainbow once the seal is broken — recolour only on bucket change
-          if (rainbow) {
-            const hue = (f.hue + t * f.hueSpeed) % 360;
-            const bucket = Math.round(hue / 8);
-            if (bucket !== f.lastBucket) {
-              f.lastBucket = bucket;
-              f.el.style.background = `hsl(${hue.toFixed(0)},88%,64%)`;
-              f.el.style.boxShadow = `0 0 6px 2px hsla(${hue.toFixed(0)},88%,64%,0.5), 0 0 16px 6px hsla(${hue.toFixed(0)},80%,60%,0.16)`;
-            }
-          }
         }
       })();
     })();
@@ -1287,22 +1174,388 @@
       document.querySelectorAll('.friends-row .card-caption, .shirt-label, .section-label').forEach(animate);
     })();
 
-    // ── secret: breaking the seal unleashes an ember storm ──
+    // ── scatter tiny flowers (with leaves) around the polaroid edges ──
+    (function () {
+      // richer, more saturated petals so they read against the cream paper
+      const cols = [['%23d96aa0','%23ffd95e'], ['%239b6dd6','%23ffd95e'], ['%23e0699a','%23f6e08a'], ['%237fa8e0','%23ffd95e'], ['%23c76fc4','%23f6e08a']];
+      function flowerSVG(petal, centre) {
+        return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E"
+          + "%3Cg fill='%234e8a3e'%3E%3Cellipse cx='6' cy='20' rx='4.5' ry='2.4' transform='rotate(-35 6 20)'/%3E%3Cellipse cx='22' cy='21' rx='4.5' ry='2.4' transform='rotate(35 22 21)'/%3E%3C/g%3E"
+          + "%3Cg fill='" + petal + "'%3E%3Cellipse cx='14' cy='7' rx='3' ry='4.6'/%3E%3Cellipse cx='21' cy='13' rx='4.6' ry='3'/%3E%3Cellipse cx='14' cy='19' rx='3' ry='4.6'/%3E%3Cellipse cx='7' cy='13' rx='4.6' ry='3'/%3E%3C/g%3E"
+          + "%3Ccircle cx='14' cy='13' r='2.7' fill='" + centre + "'/%3E%3C/svg%3E";
+      }
+      document.querySelectorAll('.card-photo.polaroid').forEach(p => {
+        const n = 2 + Math.floor(Math.random() * 2);   // 2–3 per polaroid
+        for (let i = 0; i < n; i++) {
+          const f = document.createElement('div');
+          f.className = 'petal-flower';
+          const c = cols[(Math.random()*cols.length)|0];
+          const size = 14 + Math.random() * 8;
+          f.style.width = f.style.height = size + 'px';
+          f.style.background = "no-repeat center/contain url(\"" + flowerSVG(c[0], c[1]) + "\")";
+          f.style.transform = `rotate(${(Math.random()*60-30).toFixed(0)}deg)`;
+          f.style.opacity = (0.9 + Math.random()*0.1).toFixed(2);
+          const edge = (Math.random()*4)|0, pos = (10 + Math.random()*80) + '%';
+          if (edge === 0)      { f.style.top = '-9px';    f.style.left = pos; }
+          else if (edge === 1) { f.style.bottom = '-9px'; f.style.left = pos; }
+          else if (edge === 2) { f.style.left = '-9px';   f.style.top = pos; }
+          else                 { f.style.right = '-9px';  f.style.top = pos; }
+          p.appendChild(f);
+        }
+      });
+    })();
+
+    // ── secret: pressing the seal raises a veil with the constellation ──
     (function () {
       const seal = document.getElementById('wax-seal');
-      if (!seal) return;
-      let cooling = false;
+      const wrap = document.getElementById('constellation');
+      if (!seal || !wrap) return;
+      let busy = false;
+
       seal.addEventListener('click', () => {
-        if (cooling) return;
-        cooling = true;
-        const r = seal.getBoundingClientRect();
-        const ox = r.left + r.width / 2;
-        const oy = r.top  + r.height / 2;
-        if (window.__emberStorm) window.__emberStorm(ox, oy);
-        seal.style.transform = 'scale(0.9)';
-        setTimeout(() => { seal.style.transform = ''; }, 200);
-        setTimeout(() => { cooling = false; }, 2400);
+        if (busy) return;
+        busy = true;
+        if (window.__constellationBuild) window.__constellationBuild();
+        if (window.__resetShoot) window.__resetShoot();
+        wrap.classList.add('lit');
+        setTimeout(() => {
+          wrap.classList.remove('lit');
+          setTimeout(() => { busy = false; }, 1500);
+        }, 3000);
       });
+    })();
+
+    // ── constellation spelling "blvi" ──
+    (function () {
+      const wrap = document.getElementById('constellation');
+      const svg  = document.getElementById('constellation-svg');
+      const canvas = document.getElementById('galaxy-canvas');
+      if (!wrap || !svg) return;
+      const SVGNS = 'http://www.w3.org/2000/svg';
+
+      // each letter on a grid; points are stars, pairs are connecting lines.
+      // coords in "letter units": x within letter, y top(0) → bottom(6).
+      // letters drawn as flowing, slightly irregular constellations — stems
+      // gently curve and points sit a touch off-axis so they feel celestial,
+      // hand-traced across the sky rather than mechanical.
+      const letters = [
+        { // b — curving ascender flowing into a teardrop bowl
+          pts: [
+            [0.15,0],[0.05,1.5],[0.0,3.0],[0.08,4.5],[0.25,6.0], // 0-4 stem (subtle S-curve)
+            [1.05,3.15],[1.95,3.95],[2.15,5.0],[1.5,5.9],[0.55,6.05] // 5-9 bowl
+          ],
+          lines: [[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[6,7],[7,8],[8,9],[9,4]],
+        },
+        { // l — tall sweeping stem with a flourish foot
+          pts: [[0.3,0],[0.15,1.6],[0.05,3.2],[0.05,4.7],[0.25,6.0],[1.3,5.75]],
+          lines: [[0,1],[1,2],[2,3],[3,4],[4,5]],
+        },
+        { // v — asymmetric strokes meeting at an off-centre point, like a comet's tail
+          pts: [[0.0,1.9],[0.45,3.2],[0.85,4.5],[1.35,6.05],[1.75,4.4],[2.15,3.0],[2.5,1.85]],
+          lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6]],
+        },
+        { // i — a bright lone star above a gently curved stem
+          pts: [[0.45,0],[0.55,2.5],[0.5,4.0],[0.5,6.0]],
+          lines: [[1,2],[2,3]],   // 0 = the dot, stays separate
+        },
+      ];
+      const letterWidths = [2.2, 1.3, 2.5, 1];
+
+      const stars = [];
+      const lineRefs = [];   // {el, a, b} referencing star indices
+      function build() {
+        svg.innerHTML = '';
+        stars.length = 0; lineRefs.length = 0;
+        const vw = innerWidth, vh = innerHeight;
+        const unit = Math.min(vw, vh) * 0.038;
+        const letterGap = unit * 2.6;
+        let totalW = 0;
+        letterWidths.forEach(w => totalW += w * unit);
+        totalW += letterGap * (letters.length - 1);
+
+        const startX = (vw - totalW) / 2;
+        const baseY  = vh / 2 - (6 * unit) / 2;   // vertically centre the word
+
+        let penX = startX;
+        const offs = [];
+        for (let li = 0; li < letters.length; li++) { offs.push(penX); penX += letterWidths[li]*unit + letterGap; }
+
+        // lines drawn first (behind stars); we keep references to reposition them
+        letters.forEach((L, li) => {
+          const ox = offs[li];
+          const starBase = stars.length;   // index where this letter's stars begin
+
+          // pre-register this letter's star home positions
+          L.pts.forEach(p => {
+            stars.push({
+              el: null,
+              hx: ox + p[0]*unit,           // home x
+              hy: baseY + p[1]*unit,        // home y
+              x: ox + p[0]*unit, y: baseY + p[1]*unit,
+              baseR: 1.1 + Math.random() * 0.9,   // a touch smaller
+              tw: 1.5 + Math.random()*2.5, twOff: Math.random()*6.28,
+              // gentle independent drift — small radius, slow, each unique
+              dr: unit * (0.12 + Math.random()*0.18),
+              dsx: 0.05 + Math.random()*0.07, dsy: 0.04 + Math.random()*0.06,
+              dpx: Math.random()*6.28, dpy: Math.random()*6.28,
+            });
+          });
+
+          // create line elements, referencing the global star indices
+          L.lines.forEach(([a, b]) => {
+            const line = document.createElementNS(SVGNS, 'line');
+            line.setAttribute('class', 'const-line');
+            svg.appendChild(line);
+            lineRefs.push({ el: line, a: starBase + a, b: starBase + b });
+          });
+        });
+
+        // create star circles on top
+        for (const s of stars) {
+          const cdot = document.createElementNS(SVGNS, 'circle');
+          cdot.setAttribute('class', 'const-star');
+          cdot.setAttribute('r', s.baseR);
+          svg.appendChild(cdot);
+          s.el = cdot;
+        }
+      }
+
+      build();
+      window.__constellationBuild = build;   // re-measure when the seal triggers it
+
+      // ── galaxy: cool blue Milky Way band + scattered background stars ──
+      const ctx = canvas ? canvas.getContext('2d') : null;
+      let bgStars = [];
+      let dpr = 1;
+
+      function buildGalaxy() {
+        if (!ctx) return;
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = innerWidth, h = innerHeight;
+        canvas.width  = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+
+        // scatter background stars, denser along the diagonal galactic band
+        bgStars = [];
+        const COUNT = Math.round((w * h) / 5500);   // density scales with screen
+        const bandAngle = -0.5;                      // radians, diagonal tilt
+        for (let i = 0; i < COUNT; i++) {
+          let x = Math.random() * w;
+          let y = Math.random() * h;
+          // perpendicular distance from the band centre line through screen centre
+          const dxc = x - w/2, dyc = y - h/2;
+          const perp = Math.abs(-Math.sin(bandAngle)*dxc + Math.cos(bandAngle)*dyc);
+          const inBand = Math.exp(-(perp*perp) / (2 * (h*0.22)*(h*0.22)));
+          // bias some stars toward the band by resampling
+          if (Math.random() > 0.45 + inBand*0.5 && Math.random() > 0.3) { i--; continue; }
+          const r = Math.random();
+          bgStars.push({
+            x, y,
+            size: r < 0.85 ? 0.4 + Math.random()*0.9 : 1.1 + Math.random()*1.1,
+            base: 0.25 + Math.random()*0.6,
+            tw: 2 + Math.random()*4,
+            off: Math.random()*6.28,
+            // faint colour: mostly cool white, a few warm
+            warm: Math.random() < 0.12,
+          });
+        }
+
+        // colour sprouts — small pockets of hue tucked into the nebula band
+        sprouts = [];
+        const palette = [
+          [120,90,200],   // violet
+          [80,140,220],   // bright blue
+          [200,90,160],   // rose-magenta
+          [90,180,200],   // teal
+          [180,120,210],  // lilac
+        ];
+        const dirx = Math.cos(bandAngle), diry = Math.sin(bandAngle);
+        const SPN = 9;
+        for (let i = 0; i < SPN; i++) {
+          const f = (Math.random() - 0.5);
+          const along = (Math.random() - 0.5) * h * 0.5;   // jitter along perpendicular
+          const bx = w/2 + dirx * f * w * 1.0 - Math.sin(bandAngle)*along;
+          const by = h/2 + diry * f * w * 1.0 + Math.cos(bandAngle)*along;
+          const col = palette[(Math.random()*palette.length)|0];
+          sprouts.push({
+            x: bx, y: by,
+            rad: Math.max(w,h) * (0.05 + Math.random()*0.07),
+            col,
+            amp: 0.05 + Math.random()*0.06,
+            sp: 0.08 + Math.random()*0.12,
+            ph: Math.random()*6.28,
+          });
+        }
+      }
+      let sprouts = [];
+      buildGalaxy();
+
+      // ── colourful shooting star ──
+      let shoot = null;
+      let nextShoot = 1.5;   // seconds until the first one after the veil opens
+      window.__resetShoot = function () { shoot = null; nextShoot = 0.8 + Math.random()*0.6; };
+      function spawnShoot(t) {
+        const w = innerWidth, h = innerHeight;
+        // start somewhere in the upper region, streak diagonally down-across
+        const fromLeft = Math.random() < 0.5;
+        const sx = fromLeft ? -40 : w + 40;
+        const sy = Math.random() * h * 0.5;
+        const ang = fromLeft ? (0.35 + Math.random()*0.3) : (Math.PI - 0.35 - Math.random()*0.3);
+        const speed = 900 + Math.random()*500;   // px per second
+        // a colourful hue for the trail
+        const hue = Math.random() * 360;
+        shoot = {
+          x: sx, y: sy,
+          vx: Math.cos(ang) * speed,
+          vy: Math.sin(ang) * speed,
+          life: 1, t0: t,
+          dur: 0.9 + Math.random()*0.5,
+          hue,
+        };
+      }
+
+      function drawShoot(t, dt) {
+        if (!ctx) return;
+        const w = innerWidth, h = innerHeight;
+        if (!shoot) {
+          nextShoot -= dt;
+          if (nextShoot <= 0 && wrap.classList.contains('lit')) spawnShoot(t);
+          return;
+        }
+        // advance
+        shoot.x += shoot.vx * dt;
+        shoot.y += shoot.vy * dt;
+        shoot.life -= dt / shoot.dur;
+        if (shoot.life <= 0 || shoot.x < -80 || shoot.x > w+80 || shoot.y > h+80) {
+          shoot = null;
+          nextShoot = 2.5 + Math.random()*3;   // gap before the next
+          return;
+        }
+        // trail behind the head
+        const tailLen = 180;
+        const tx = shoot.x - shoot.vx/Math.hypot(shoot.vx,shoot.vy)*tailLen;
+        const ty = shoot.y - shoot.vy/Math.hypot(shoot.vx,shoot.vy)*tailLen;
+        ctx.globalCompositeOperation = 'lighter';
+        const grad = ctx.createLinearGradient(shoot.x, shoot.y, tx, ty);
+        const a = Math.min(1, shoot.life*1.3);
+        grad.addColorStop(0,   `hsla(${shoot.hue},100%,75%,${a})`);
+        grad.addColorStop(0.4, `hsla(${(shoot.hue+40)%360},100%,65%,${a*0.5})`);
+        grad.addColorStop(1,   `hsla(${(shoot.hue+80)%360},100%,60%,0)`);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 2.2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(shoot.x, shoot.y);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+        // bright head
+        const hg = ctx.createRadialGradient(shoot.x, shoot.y, 0, shoot.x, shoot.y, 7);
+        hg.addColorStop(0, `hsla(${shoot.hue},100%,92%,${a})`);
+        hg.addColorStop(1, `hsla(${shoot.hue},100%,70%,0)`);
+        ctx.fillStyle = hg;
+        ctx.beginPath();
+        ctx.arc(shoot.x, shoot.y, 7, 0, 6.2832);
+        ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+      }
+
+      function drawGalaxy(t) {
+        if (!ctx) return;
+        const w = innerWidth, h = innerHeight;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+
+        // soft nebula band — layered radial glows along the diagonal
+        const cx = w/2, cy = h/2;
+        const ang = -0.5;
+        const dirx = Math.cos(ang), diry = Math.sin(ang);
+        ctx.globalCompositeOperation = 'lighter';
+        const blobs = 7;
+        for (let i = 0; i < blobs; i++) {
+          const f = (i/(blobs-1) - 0.5);           // -0.5 → 0.5 along the band
+          const bx = cx + dirx * f * w * 1.1;
+          const by = cy + diry * f * w * 1.1;
+          const rad = Math.max(w, h) * (0.20 + 0.06*Math.sin(i*1.3 + t*0.1));
+          const g = ctx.createRadialGradient(bx, by, 0, bx, by, rad);
+          // cool blue nebula tones, very soft
+          g.addColorStop(0,   'rgba(70,110,190,0.10)');
+          g.addColorStop(0.4, 'rgba(45,75,150,0.05)');
+          g.addColorStop(1,   'rgba(20,30,60,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(bx, by, rad, 0, 6.2832);
+          ctx.fill();
+        }
+        // a faint brighter core to the band
+        const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w,h)*0.5);
+        core.addColorStop(0, 'rgba(120,160,230,0.06)');
+        core.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = core;
+        ctx.fillRect(0,0,w,h);
+
+        // colour sprouts — small pockets of hue breathing within the band
+        for (const sp of sprouts) {
+          const a = sp.amp * (0.6 + 0.4*Math.sin(t * sp.sp * 6.28 + sp.ph));
+          const g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, sp.rad);
+          g.addColorStop(0, `rgba(${sp.col[0]},${sp.col[1]},${sp.col[2]},${a.toFixed(3)})`);
+          g.addColorStop(1, `rgba(${sp.col[0]},${sp.col[1]},${sp.col[2]},0)`);
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, sp.rad, 0, 6.2832);
+          ctx.fill();
+        }
+
+        // background stars
+        for (const s of bgStars) {
+          const tw = s.base * (0.5 + 0.5*Math.sin(t / s.tw * 6.2832 + s.off));
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.size, 0, 6.2832);
+          ctx.fillStyle = s.warm
+            ? `rgba(255,225,190,${tw.toFixed(3)})`
+            : `rgba(205,225,255,${tw.toFixed(3)})`;
+          ctx.fill();
+        }
+        ctx.globalCompositeOperation = 'source-over';
+      }
+
+      let rebuildTimer;
+      addEventListener('resize', () => {
+        clearTimeout(rebuildTimer);
+        rebuildTimer = setTimeout(() => { build(); buildGalaxy(); }, 200);
+      });
+
+      let lastT = performance.now() * 0.001;
+      (function twinkle() {
+        requestAnimationFrame(twinkle);
+        if (document.hidden) return;
+        const t = performance.now() * 0.001;
+        const dt = Math.min(t - lastT, 0.05);
+        lastT = t;
+
+        // only paint the galaxy while the veil is visible (saves work when hidden)
+        if (wrap.classList.contains('lit')) { drawGalaxy(t); drawShoot(t, dt); }
+
+        // each point drifts gently and independently around its home position
+        for (const s of stars) {
+          s.x = s.hx + Math.sin(t * s.dsx * 6.28 + s.dpx) * s.dr;
+          s.y = s.hy + Math.cos(t * s.dsy * 6.28 + s.dpy) * s.dr;
+          s.el.setAttribute('cx', s.x.toFixed(1));
+          s.el.setAttribute('cy', s.y.toFixed(1));
+          const glow = 0.5 + 0.5 * Math.sin(t / s.tw * Math.PI * 2 + s.twOff);
+          s.el.setAttribute('r', (s.baseR * (0.7 + glow * 0.55)).toFixed(2));
+          s.el.setAttribute('opacity', (0.35 + glow * 0.65).toFixed(2));
+        }
+        // lines follow their endpoint stars
+        for (const L of lineRefs) {
+          const a = stars[L.a], b = stars[L.b];
+          L.el.setAttribute('x1', a.x.toFixed(1));
+          L.el.setAttribute('y1', a.y.toFixed(1));
+          L.el.setAttribute('x2', b.x.toFixed(1));
+          L.el.setAttribute('y2', b.y.toFixed(1));
+        }
+      })();
     })();
 
   </script>
