@@ -163,8 +163,13 @@
       color: rgb(255,95,0);
       text-shadow: 0 0 8px rgba(255,95,0,0.15);
     }
+    .platforms a[href*="instagram"] {
+      color: rgb(225,72,151);
+      text-shadow: 0 0 8px rgba(225,72,151,0.15);
+    }
     .platform-float { animation: letterFloat 3.2s ease-in-out infinite; display: flex; align-items: center; gap: 0.5rem; }
     .platforms a[href*="soundcloud"] .platform-float { animation-delay: -1.6s; }
+    .platforms a[href*="instagram"] .platform-float { animation-delay: -0.8s; }
     .platforms img { width: 15px; height: 15px; object-fit: contain; }
 
     /* ── two-column layout ── */
@@ -558,6 +563,9 @@
     <a href="https://soundcloud.com/blvi" target="_blank" rel="noopener">
       <span class="platform-float"><img src="https://i.imgur.com/pFJR1qV.png" alt=""> soundcloud</span>
     </a>
+    <a href="https://instagram.com/danieljgunning" target="_blank" rel="noopener">
+      <span class="platform-float"><img src="https://i.imgur.com/a58bJft.png" alt=""> instagram</span>
+    </a>
   </div>
 
   <div class="columns appear">
@@ -934,9 +942,11 @@
     (function () {
       const spotify    = document.querySelector('.platforms a[href*="spotify"]');
       const soundcloud = document.querySelector('.platforms a[href*="soundcloud"]');
+      const instagram  = document.querySelector('.platforms a[href*="instagram"]');
       const links = [
         { el: spotify,    r: [30,215,96],  glow: 0, target: 0 },
         { el: soundcloud, r: [255,95,0],   glow: 0, target: 0 },
+        { el: instagram,  r: [225,72,151], glow: 0, target: 0 },
       ];
       const RADIUS = 220;
       let mx = -9999, my = -9999;
