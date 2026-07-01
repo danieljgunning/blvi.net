@@ -77,7 +77,7 @@
       filter: drop-shadow(0 0 3px rgba(210,225,255,0.95)) drop-shadow(0 0 8px rgba(150,185,255,0.55));
     }
     @media (max-width: 768px) {
-      .bg-wrap, .bg-overlay, .vignette { display: none; }
+      .bg-overlay, .vignette { display: none; }
       html { background: #0d0f0d; }
     }
 
@@ -167,10 +167,21 @@
       color: rgb(225,72,151);
       text-shadow: 0 0 8px rgba(225,72,151,0.15);
     }
+    .platforms a[href*="youtube"] {
+      color: rgb(240,78,72);
+      text-shadow: 0 0 8px rgba(240,78,72,0.15);
+    }
+    .platforms a[href*="shop.blvi"] {
+      color: rgb(122,197,90);
+      text-shadow: 0 0 8px rgba(122,197,90,0.15);
+    }
     .platform-float { animation: letterFloat 3.2s ease-in-out infinite; display: flex; align-items: center; gap: 0.5rem; }
     .platforms a[href*="soundcloud"] .platform-float { animation-delay: -1.6s; }
     .platforms a[href*="instagram"] .platform-float { animation-delay: -0.8s; }
+    .platforms a[href*="youtube"] .platform-float { animation-delay: -2.4s; }
+    .platforms a[href*="shop.blvi"] .platform-float { animation-delay: -3.1s; }
     .platforms img { width: 15px; height: 15px; object-fit: contain; }
+    .platforms svg { width: 16px; height: 16px; }
 
     /* ── two-column layout ── */
     .columns {
@@ -190,14 +201,13 @@
     }
 
     /* ── card rows ── */
-    .polaroid-row, .friends-row {
+    .polaroid-row {
       display: flex;
       gap: 2.5rem;
       margin-bottom: 2rem;
       align-items: flex-start;
     }
-    .polaroid-row .card-wrap:nth-child(even),
-    .friends-row  .card-wrap:nth-child(even) { margin-top: 20px; }
+    .polaroid-row .card-wrap:nth-child(even) { margin-top: 20px; }
 
     .card-wrap {
       display: inline-block;
@@ -219,14 +229,6 @@
     .polaroid-row:nth-of-type(2) .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.2s both, float3 22s ease-in-out 2s infinite; }
     .polaroid-row:nth-of-type(2) .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.4s both, float4 26s ease-in-out 2s infinite; }
     .polaroid-row:nth-of-type(3) .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.6s both, float1 23s ease-in-out 2s infinite; }
-    .friends-row:nth-of-type(1)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 0.9s both, float2 22s ease-in-out 2s infinite; }
-    .friends-row:nth-of-type(1)  .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.1s both, float3 25s ease-in-out 2s infinite; }
-    .friends-row:nth-of-type(2)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.3s both, float1 20s ease-in-out 2s infinite; }
-    .friends-row:nth-of-type(2)  .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.5s both, float4 23s ease-in-out 2s infinite; }
-    .friends-row:nth-of-type(3)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.7s both, float2 21s ease-in-out 2s infinite; }
-    .friends-row:nth-of-type(3)  .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 1.9s both, float3 24s ease-in-out 2s infinite; }
-    .friends-row:nth-of-type(4)  .card-wrap:nth-child(1) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 2.1s both, float1 22s ease-in-out 2s infinite; }
-    .friends-row:nth-of-type(4)  .card-wrap:nth-child(2) .card { animation: appear 1s cubic-bezier(0.22,1,0.36,1) 2.3s both, float4 25s ease-in-out 2s infinite; }
 
     /* card rotations */
     .polaroid-row:nth-of-type(1) .card-wrap:nth-child(1) .card-photo { transform: rotate(-4deg);   }
@@ -234,14 +236,6 @@
     .polaroid-row:nth-of-type(2) .card-wrap:nth-child(1) .card-photo { transform: rotate(2.5deg);  }
     .polaroid-row:nth-of-type(2) .card-wrap:nth-child(2) .card-photo { transform: rotate(-3deg);   }
     .polaroid-row:nth-of-type(3) .card-wrap:nth-child(1) .card-photo { transform: rotate(-3deg);   }
-    .friends-row:nth-of-type(1)  .card-wrap:nth-child(1) .card-photo { transform: rotate(-4deg);   }
-    .friends-row:nth-of-type(1)  .card-wrap:nth-child(2) .card-photo { transform: rotate(3deg);    }
-    .friends-row:nth-of-type(2)  .card-wrap:nth-child(1) .card-photo { transform: rotate(2.5deg);  }
-    .friends-row:nth-of-type(2)  .card-wrap:nth-child(2) .card-photo { transform: rotate(-3deg);   }
-    .friends-row:nth-of-type(3)  .card-wrap:nth-child(1) .card-photo { transform: rotate(-3.5deg); }
-    .friends-row:nth-of-type(3)  .card-wrap:nth-child(2) .card-photo { transform: rotate(3deg);    }
-    .friends-row:nth-of-type(4)  .card-wrap:nth-child(1) .card-photo { transform: rotate(-2.5deg); }
-    .friends-row:nth-of-type(4)  .card-wrap:nth-child(2) .card-photo { transform: rotate(3.5deg);  }
 
     @keyframes float1 {
       0%,100% { transform: translate(0,0); }    25% { transform: translate(6px,-10px); }
@@ -293,12 +287,6 @@
       transition: background-position 0.9s ease;
     }
     .card:hover .card-photo.polaroid::after { background-position: -80% 0; }
-    .petal-flower {
-      position: absolute;
-      pointer-events: none;
-      z-index: 4;
-      opacity: 0.9;
-    }
     .card-photo.polaroid .card-caption {
       font-family: 'Almendra', serif;
       font-size: 0.82rem;
@@ -308,12 +296,6 @@
       letter-spacing: 0.02em;
       opacity: 0.85;
       transition: opacity 0.4s ease;
-    }
-    .card-photo.square img {
-      display: block;
-      width: 130px; height: 130px;
-      object-fit: cover;
-      transition: filter 0.8s ease;
     }
     .card-caption {
       font-family: 'Spectral', serif;
@@ -342,34 +324,6 @@
       .card:hover .card-caption   { color: rgba(240,236,228,0.6); }
       .card:hover .card-photo.polaroid .card-caption { opacity: 0.85; }
     }
-
-    /* ── shirts ── */
-    .shirt-label {
-      font-family: 'Spectral', serif;
-      font-size: 0.78rem;
-      letter-spacing: 0.04em;
-      color: var(--muted);
-      text-align: center;
-      margin-top: 3rem;
-      margin-bottom: 0.5rem;
-      opacity: 0;
-      transform: translateY(24px) scale(0.9);
-      transition: opacity 1s cubic-bezier(0.22,1,0.36,1), transform 1s cubic-bezier(0.22,1,0.36,1);
-    }
-    .shirt-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 2rem;
-    }
-    #shirt-3d, #shirt2-3d {
-      width: 220px; height: 220px;
-      display: block;
-      cursor: grab;
-      opacity: 0;
-      transition: opacity 0.9s cubic-bezier(0.22,1,0.36,1);
-    }
-    #shirt-3d:active, #shirt2-3d:active { cursor: grabbing; }
 
     /* ── section labels ── */
     .section-label {
@@ -530,14 +484,11 @@
       .platforms { gap: 1.2rem; margin-bottom: 1.5rem; }
       .columns { gap: 1.5rem; }
       .panel { max-width: 360px; }
-      .polaroid-row, .friends-row { gap: 1.5rem; margin-bottom: 1.5rem; }
+      .polaroid-row { gap: 1.5rem; margin-bottom: 1.5rem; }
       .card-photo.polaroid img { width: 110px; }
       .card-photo.polaroid { padding: 7px 7px 0 7px; }
       .card-photo.polaroid .card-caption { font-size: 0.8rem; padding: 4px 3px 8px; }
-      .card-photo.square img { width: 110px; height: 110px; }
       .card-caption { font-size: 0.72rem; margin-top: 5px; }
-      .shirt-wrap { flex-direction: column; gap: 2rem; }
-      #shirt-3d, #shirt2-3d { width: 240px; height: 240px; }
     }
   </style>
 </head>
@@ -565,6 +516,12 @@
     </a>
     <a href="https://instagram.com/danieljgunning" target="_blank" rel="noopener">
       <span class="platform-float"><img src="https://i.imgur.com/a58bJft.png" alt=""> instagram</span>
+    </a>
+    <a href="https://youtube.com/@danieljgunning" target="_blank" rel="noopener">
+      <span class="platform-float"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.8-.5-5.6a2.9 2.9 0 0 0-2-2C18.7 4 12 4 12 4s-6.7 0-8.5.4a2.9 2.9 0 0 0-2 2C1 8.2 1 12 1 12s0 3.8.5 5.6a2.9 2.9 0 0 0 2 2C5.3 20 12 20 12 20s6.7 0 8.5-.4a2.9 2.9 0 0 0 2-2C23 15.8 23 12 23 12zM9.8 15.3V8.7l5.7 3.3z"/></svg> youtube</span>
+    </a>
+    <a href="https://shop.blvi.net" target="_blank" rel="noopener">
+      <span class="platform-float"><img src="https://i.imgur.com/zCdRP2b.png" alt=""> shop</span>
     </a>
   </div>
 
@@ -621,12 +578,6 @@
     </div>
 
 
-  </div>
-
-  <p class="shirt-label" id="shirt-label">coming soon</p>
-  <div class="shirt-wrap" id="shirt-wrap">
-    <canvas id="shirt-3d"></canvas>
-    <canvas id="shirt2-3d"></canvas>
   </div>
 
   <div class="wax-seal-wrap appear">
@@ -699,12 +650,6 @@
 
     // shared RAF — only render when canvas is visible
     const renderables = [];
-    new IntersectionObserver(entries => {
-      for (const e of entries) {
-        const r = renderables.find(x => x.canvas === e.target);
-        if (r) r.on = e.isIntersecting;
-      }
-    }).observe; // note: we call observe per-canvas below
     const io = new IntersectionObserver(entries => {
       for (const e of entries) {
         const r = renderables.find(x => x.canvas === e.target);
@@ -737,28 +682,6 @@
     // fire once on load to catch mobile size
     window.dispatchEvent(new Event('resize'));
     reg(lc, () => { lctrl.update(); lr.render(ls, lcam); });
-
-    // shirts
-    function makeShirt(id, exposure, url, withLights) {
-      const sz = innerWidth <= 480 ? Math.min(innerWidth - 40, 200) : 220;
-      const canvas = document.getElementById(id);
-      canvas.width = canvas.height = sz;
-      const r = makeRenderer(canvas, exposure);
-      r.setSize(sz, sz);
-      const s = makeEnv(r);
-      const cam = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-      cam.position.set(0, 0, 4);
-      if (withLights) {
-        s.add(new THREE.AmbientLight(0xffffff, 1.6));
-        const d = new THREE.DirectionalLight(0xffffff, 2.0); d.position.set(2,3,4); s.add(d);
-        const f = new THREE.DirectionalLight(0xffffff, 0.9); f.position.set(-2,0,-2); s.add(f);
-      }
-      const ctrl = makeControls(cam, canvas);
-      loadGLB(s, url, () => window.__shirtLoaded && window.__shirtLoaded(canvas));
-      reg(canvas, () => { ctrl.update(); r.render(s, cam); });
-    }
-    makeShirt('shirt-3d',  1.2, 'https://danieljgunning.github.io/shirt/shirt.glb',           true);
-    makeShirt('shirt2-3d', 0.9, 'https://danieljgunning.github.io/greenshirt/greenshirt.glb', false);
   </script>
 
   <script>
@@ -768,7 +691,6 @@
 
     // ── choreographed reveal with logo flight ──
     let mainSequenceDone = false;
-    let shirtsPending = [];
 
     function revealEl(el, delay, duration) {
       setTimeout(() => {
@@ -834,8 +756,6 @@
         }, 300);
         setTimeout(() => {
           mainSequenceDone = true;
-          shirtsPending.forEach(fn => fn());
-          shirtsPending = [];
         }, 800);
 
         if (window.__setLogoSpin) window.__setLogoSpin(28);
@@ -875,29 +795,6 @@
       }, FLIGHT_START);
     }
 
-    // Shirt reveal — queued until after main sequence if needed
-    window.__revealShirt = function(canvas) {
-      const fn = () => {
-        canvas.style.transition = 'opacity 0.9s cubic-bezier(0.22,1,0.36,1)';
-        canvas.style.opacity = '1';
-      };
-      if (mainSequenceDone) fn();
-      else shirtsPending.push(fn);
-    };
-
-    // Shirt label reveals once both shirts are done
-    let shirtsReady = 0;
-    window.__shirtLoaded = function(canvas) {
-      window.__revealShirt(canvas);
-      shirtsReady++;
-      if (shirtsReady === 2) {
-        const label = document.getElementById('shirt-label');
-        const fn = () => revealEl(label, 100, 0.9);
-        if (mainSequenceDone) fn();
-        else shirtsPending.push(fn);
-      }
-    };
-
     // Start the reveal once the page is ready — independent of GLB loading
     if (document.readyState === 'loading') {
       window.addEventListener('DOMContentLoaded', () => setTimeout(runMainSequence, 400));
@@ -912,41 +809,18 @@
       torch.style.setProperty('--ty', e.clientY + 'px');
     });
 
-    // ── shirt cursor proximity ──
-    (function () {
-      const shirts = [
-        document.getElementById('shirt-3d'),
-        document.getElementById('shirt2-3d'),
-      ];
-      const vals = shirts.map(() => ({ scale: 1, target: 1 }));
-      const RADIUS = 260;
-      let mx = -9999, my = -9999;
-      document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-      shirts.forEach(s => {
-        s.style.transition = 'none';
-        s.style.transformOrigin = 'center center';
-      });
-      (function loop() {
-        requestAnimationFrame(loop);
-        shirts.forEach((s, i) => {
-          const rect = s.getBoundingClientRect();
-          const cx = rect.left + rect.width  / 2;
-          const cy = rect.top  + rect.height / 2;
-          const dist = Math.hypot(mx - cx, my - cy);
-          vals[i].target = 1 + Math.max(0, 1 - dist / RADIUS) * 0.07;
-          vals[i].scale += (vals[i].target - vals[i].scale) * 0.07;
-          s.style.transform = `scale(${vals[i].scale.toFixed(4)})`;
-        });
-      })();
-    })();
     (function () {
       const spotify    = document.querySelector('.platforms a[href*="spotify"]');
       const soundcloud = document.querySelector('.platforms a[href*="soundcloud"]');
       const instagram  = document.querySelector('.platforms a[href*="instagram"]');
+      const youtube    = document.querySelector('.platforms a[href*="youtube"]');
+      const shop       = document.querySelector('.platforms a[href*="shop.blvi"]');
       const links = [
         { el: spotify,    r: [30,215,96],  glow: 0, target: 0 },
         { el: soundcloud, r: [255,95,0],   glow: 0, target: 0 },
         { el: instagram,  r: [225,72,151], glow: 0, target: 0 },
+        { el: youtube,    r: [240,78,72], glow: 0, target: 0 },
+        { el: shop,       r: [122,197,90], glow: 0, target: 0 },
       ];
       const RADIUS = 220;
       let mx = -9999, my = -9999;
@@ -1163,7 +1037,7 @@
       });
     })();
 
-    // ── living letters on friend names + shirt label ──
+    // ── living letters on friend names + section labels ──
     (function () {
       function animate(el) {
         el.childNodes.forEach(node => {
@@ -1181,40 +1055,8 @@
           node.replaceWith(span);
         });
       }
-      document.querySelectorAll('.friends-row .card-caption, .shirt-label, .section-label').forEach(animate);
+      document.querySelectorAll('.section-label').forEach(animate);
     })();
-
-    // ── scatter tiny flowers (with leaves) around the polaroid edges ──
-    (function () {
-      // richer, more saturated petals so they read against the cream paper
-      const cols = [['%23d96aa0','%23ffd95e'], ['%239b6dd6','%23ffd95e'], ['%23e0699a','%23f6e08a'], ['%237fa8e0','%23ffd95e'], ['%23c76fc4','%23f6e08a']];
-      function flowerSVG(petal, centre) {
-        return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E"
-          + "%3Cg fill='%234e8a3e'%3E%3Cellipse cx='6' cy='20' rx='4.5' ry='2.4' transform='rotate(-35 6 20)'/%3E%3Cellipse cx='22' cy='21' rx='4.5' ry='2.4' transform='rotate(35 22 21)'/%3E%3C/g%3E"
-          + "%3Cg fill='" + petal + "'%3E%3Cellipse cx='14' cy='7' rx='3' ry='4.6'/%3E%3Cellipse cx='21' cy='13' rx='4.6' ry='3'/%3E%3Cellipse cx='14' cy='19' rx='3' ry='4.6'/%3E%3Cellipse cx='7' cy='13' rx='4.6' ry='3'/%3E%3C/g%3E"
-          + "%3Ccircle cx='14' cy='13' r='2.7' fill='" + centre + "'/%3E%3C/svg%3E";
-      }
-      document.querySelectorAll('.card-photo.polaroid').forEach(p => {
-        const n = 2 + Math.floor(Math.random() * 2);   // 2–3 per polaroid
-        for (let i = 0; i < n; i++) {
-          const f = document.createElement('div');
-          f.className = 'petal-flower';
-          const c = cols[(Math.random()*cols.length)|0];
-          const size = 14 + Math.random() * 8;
-          f.style.width = f.style.height = size + 'px';
-          f.style.background = "no-repeat center/contain url(\"" + flowerSVG(c[0], c[1]) + "\")";
-          f.style.transform = `rotate(${(Math.random()*60-30).toFixed(0)}deg)`;
-          f.style.opacity = (0.9 + Math.random()*0.1).toFixed(2);
-          const edge = (Math.random()*4)|0, pos = (10 + Math.random()*80) + '%';
-          if (edge === 0)      { f.style.top = '-9px';    f.style.left = pos; }
-          else if (edge === 1) { f.style.bottom = '-9px'; f.style.left = pos; }
-          else if (edge === 2) { f.style.left = '-9px';   f.style.top = pos; }
-          else                 { f.style.right = '-9px';  f.style.top = pos; }
-          p.appendChild(f);
-        }
-      });
-    })();
-
     // ── secret: pressing the seal raises a veil with the constellation ──
     (function () {
       const seal = document.getElementById('wax-seal');
