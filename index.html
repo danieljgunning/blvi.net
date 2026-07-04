@@ -31,7 +31,7 @@
 
     /* ── background ── */
     html { background: #080a08; }
-    html, body { overflow-x: hidden; }   /* the wheel's edge cards clip at the screen edge, not a box */
+    html, body { overflow-x: hidden; }   /* carousel edge cards clip at the viewport */
     body { background: transparent; }
     .bg-video {
       position: fixed;
@@ -185,13 +185,10 @@
     .platforms a[href*="youtube"] .platform-float { animation-delay: -2.4s; }
     .platforms a[href*="shop.blvi"] .platform-float { animation-delay: -3.1s; }
     .platforms img { width: 15px; height: 15px; object-fit: contain; }
-    .platforms svg { width: 16px; height: 16px; }
 
-    /* ══ the wheel — a circular carousel of songs ══
-       five cards standing on an invisible turntable. the front
-       card faces the light; its neighbours angle away into the
-       dark; the far side vanishes until it swings back around.
-       drag to spin — endlessly, in either direction. */
+    /* ── the wheel — 3d circular carousel of songs ──
+       cards stand on a rotating ring; the front card is fully lit,
+       neighbours darken with angle, the far side fades out entirely. */
     .deck {
       width: 100%;
       max-width: 900px;
@@ -235,11 +232,9 @@
     .deck-card.is-front { cursor: pointer; }
     .deck-stage.dragging .deck-card { cursor: grabbing; }
 
-    /* each polaroid drifts gently inside its slot on the wheel.
-       amplitudes are small and phases staggered (set in js) so
-       neighbours never wander into one another in step; a brief
-       soft overlap reads as loose paper, and the wheel's own
-       depth sorting keeps the front card on top. */
+    /* each polaroid drifts gently inside its slot. amplitudes are small
+       and phases are staggered in js, so neighbours never move in step;
+       the ring's depth sorting handles any brief overlap. */
     .card-float { will-change: transform; }
     .deck-ring .deck-card:nth-child(4n+1) .card-float { animation: driftA 20s ease-in-out infinite; }
     .deck-ring .deck-card:nth-child(4n+2) .card-float { animation: driftB 24s ease-in-out infinite; }
@@ -262,15 +257,14 @@
       55%     { transform: translate(5px,4px); } 80% { transform: translate(-3px,5px); }
     }
 
-    /* signature tilts, keyed to the song (a 5-cycle, so each song's
-       twin on the far side of the wheel carries the same lean) */
+    /* per-song tilts on a 5-cycle, so each song's clone matches */
     .deck-ring .deck-card:nth-child(5n+1) .card-photo { --tilt: -4deg;   }
     .deck-ring .deck-card:nth-child(5n+2) .card-photo { --tilt: 3.5deg;  }
     .deck-ring .deck-card:nth-child(5n+3) .card-photo { --tilt: 2.5deg;  }
     .deck-ring .deck-card:nth-child(5n+4) .card-photo { --tilt: -3deg;   }
     .deck-ring .deck-card:nth-child(5n)   .card-photo { --tilt: -3deg;   }
 
-    /* ember glow pooled beneath the lit card — firefly light, breathing */
+    /* warm glow beneath the front card */
     .deck-glow {
       position: absolute;
       left: 50%; bottom: 14px;
@@ -336,8 +330,8 @@
       }
     }
 
-    /* spotify badge — pops up on hover so the click's destination is
-       clear; on touch screens it sits quietly on the lit card instead */
+    /* spotify badge — shown on hover; on touch devices it sits on the
+       front card instead, since hover doesn't exist there */
     .spot-badge {
       position: absolute;
       top: 16px; right: 16px;
@@ -356,19 +350,6 @@
     .deck-card:hover .spot-badge { opacity: 1; transform: scale(1); }
     @media (hover: none) {
       .deck-card.is-front .spot-badge { opacity: 0.85; transform: scale(1); }
-    }
-
-    /* ── section labels ── */
-    .section-label {
-      font-family: 'Spectral', serif;
-      font-size: 0.72rem;
-      letter-spacing: 0.04em;
-      color: #b9bfc9;
-      text-shadow: 0 0 8px rgba(210,220,235,0.28);
-      text-transform: lowercase;
-      margin-bottom: 1.2rem;
-      align-self: center;
-      text-align: center;
     }
 
     /* ── wax seal divider ── */
@@ -704,8 +685,6 @@
     window.scrollTo(0, 0);
 
     // ── choreographed reveal with logo flight ──
-    let mainSequenceDone = false;
-
     function revealEl(el, delay, duration) {
       setTimeout(() => {
         el.style.transition = `opacity ${duration}s cubic-bezier(0.22,1,0.36,1), transform ${duration}s cubic-bezier(0.22,1,0.36,1)`;
@@ -769,9 +748,8 @@
           document.querySelectorAll('.appear').forEach(el => revealEl(el, 0, 0.9));
         }, 300);
         setTimeout(() => {
-          mainSequenceDone = true;
-          if (window.__dealDeck) window.__dealDeck();               // release the wheel
-          if (window.__releaseFireflies) window.__releaseFireflies();   // and the fireflies within it
+          if (window.__startWheel) window.__startWheel();
+          if (window.__releaseFireflies) window.__releaseFireflies();
         }, 800);
 
         if (window.__setLogoSpin) window.__setLogoSpin(28);
@@ -859,7 +837,7 @@
       })();
     })();
 
-    // ── fireflies — born from the heart of the wheel ──
+    // ── fireflies ──
     (function () {
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const N = 13, FLEE = 140;
@@ -876,8 +854,8 @@
         return {
           el, bx, by,
           x: bx, y: by,
-          releaseAt: Infinity,    // held inside the wheel until the opening
-          boost: 0,               // extra urgency as they escape, fading to a drift
+          releaseAt: Infinity,    // hidden until the reveal releases them
+          boost: 0,               // extra speed while escaping, decays to a drift
           a1: 60  + Math.random()*140, f1: 0.05+Math.random()*0.10, p1: Math.random()*6.28,
           a2: 40  + Math.random()* 90, f2: 0.13+Math.random()*0.15, p2: Math.random()*6.28,
           a3: 50  + Math.random()*120, f3: 0.04+Math.random()*0.09, p3: Math.random()*6.28,
@@ -887,9 +865,8 @@
         };
       });
 
-      // the opening: fireflies pour out of the carousel's centre one after
-      // another, then scatter to their wandering posts across the page —
-      // the same thirteen that live there for the rest of the visit.
+      // opening: the fireflies emerge from the carousel's centre one by
+      // one, staggered, then scatter to their usual wandering positions
       let released = false;
       window.__releaseFireflies = () => {
         if (released) return;
@@ -929,7 +906,7 @@
             const push = (FLEE - dist) * 1.4;
             tx += (dx/dist)*push; ty += (dy/dist)*push;
           }
-          // fresh escapees dart, settled ones drift
+          // fresh escapees move faster, settled ones drift
           f.boost *= 0.985;
           const ease = 0.035 + 0.075 * f.boost;
           f.x += (tx - f.x) * ease;
@@ -942,28 +919,25 @@
       })();
     })();
 
-    // ══ the wheel — infinite circular carousel ══
+    // ── the wheel — infinite circular carousel ──
     (function () {
       const stage = document.getElementById('deck-stage');
       const ring  = document.getElementById('deck-ring');
 
-      // each song rides the wheel twice, on opposite sides — this doubles
-      // the slots to ten, so neighbouring cards face the viewer at a
-      // readable angle and the stage holds five visible polaroids instead
-      // of one. the duplicates are 180° apart, so no song is ever seen
-      // twice at once, and the loop order stays true.
+      // each song appears twice on the ring, 180° apart: ten slots at 36°
+      // means neighbours face the viewer at a readable angle, five cards
+      // are visible at once, and no song is ever on screen twice.
       const anchors = Array.from(ring.querySelectorAll('.deck-card'));
 
-      // wrap each card's contents in a float layer — the anchor belongs
-      // to the wheel (js transform), the float layer drifts (css), and
-      // the photo inside tilts and grows on hover. three transforms on
-      // three elements, so none of them fight.
+      // three transforms on three elements so none of them conflict:
+      // the anchor carries the ring position (js), .card-float carries
+      // the drift (css animation), .card-photo carries tilt + hover scale.
       anchors.forEach(a => {
         const f = document.createElement('div');
         f.className = 'card-float';
         while (a.firstChild) f.appendChild(a.firstChild);
         a.appendChild(f);
-        // spotify badge, tucked into the photo's corner
+        a.querySelector('img').draggable = false;
         a.querySelector('.card-photo').insertAdjacentHTML('beforeend',
           '<span class="spot-badge"><svg viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.56.3z"/></svg></span>');
       });
@@ -974,14 +948,12 @@
       const N = cards.length, STEP = 360 / N;
       const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      // stagger the drift phases so neighbours never wander in step
+      // stagger drift phases so neighbours never move in step
       cards.forEach((c, i) => {
-        const f = c.querySelector('.card-float');
-        if (f) f.style.animationDelay = `${(-i * 2.3).toFixed(1)}s`;
+        c.querySelector('.card-float').style.animationDelay = `${(-i * 2.3).toFixed(1)}s`;
       });
 
-      // R is the wheel's rotation in degrees — unbounded, so the wheel
-      // spins forever in either direction and the songs form a closed ring.
+      // R is the ring rotation in degrees, unbounded in both directions
       let R = 0;
       let targetR = R;
       let dragging = false, moved = false;
@@ -994,7 +966,7 @@
       // fold any angle into (-180, 180]
       const norm = a => { a = ((a % 360) + 360) % 360; return a > 180 ? a - 360 : a; };
 
-      // each card stands on the turntable, facing outward
+      // place each card on the ring, facing outward
       function layout() {
         const p = params();
         cards.forEach((c, i) => {
@@ -1007,10 +979,9 @@
       function render() {
         ring.style.transform = `rotateY(${R.toFixed(2)}deg)`;
         for (let i = 0; i < N; i++) {
-          const th  = norm(i * STEP + R);              // 0 = facing the viewer
+          const th  = norm(i * STEP + R);   // 0 = facing the viewer
           const cos = Math.cos(th * Math.PI / 180);
-          // candlelight falloff — cards darken as they turn away,
-          // then dissolve before they reach the far side of the wheel
+          // darken with angle, dissolve before reaching the far side
           cards[i].style.filter  = `brightness(${(0.3 + 0.7 * Math.max(0, cos)).toFixed(3)})`;
           cards[i].style.opacity = Math.max(0, Math.min(1, cos * 1.6)).toFixed(3);
           cards[i].style.pointerEvents = cos > 0.15 ? '' : 'none';
@@ -1018,14 +989,17 @@
         }
       }
 
-      // ── idle turn — the wheel rotates slowly on its own, like the
-      // chrome logo above it. it pauses under the cursor, rests after
-      // any interaction, and never fights a drag or a fling.
-      const IDLE_SPEED = 3.2;                    // degrees per second
+      // idle turn — a slow constant rotation, paused while the cursor is
+      // over the stage and while a drag/fling is settling. hover tracking
+      // is skipped on touch devices, where a tap fires mouseenter but no
+      // mouseleave and would freeze the wheel permanently.
+      const IDLE_SPEED = 3.2;   // degrees per second
       let hovering = false;
-      let restUntil = Infinity;                  // idling begins after the opening
-      stage.addEventListener('mouseenter', () => { hovering = true; });
-      stage.addEventListener('mouseleave', () => { hovering = false; });
+      let restUntil = Infinity; // idling begins once the reveal fires
+      if (matchMedia('(hover: hover)').matches) {
+        stage.addEventListener('mouseenter', () => { hovering = true; });
+        stage.addEventListener('mouseleave', () => { hovering = false; });
+      }
 
       let frameT = performance.now();
       (function loop() {
@@ -1037,7 +1011,7 @@
         if (!dragging) {
           const settled = Math.abs(targetR - R) < 0.5;
           if (settled && !hovering && now > restUntil && !reduced) {
-            targetR -= IDLE_SPEED * dt;          // the slow, patient turn
+            targetR -= IDLE_SPEED * dt;
           }
           R += (targetR - R) * (reduced ? 1 : 0.09);
           if (Math.abs(targetR - R) < 0.01) R = targetR;
@@ -1045,10 +1019,9 @@
         render();
       })();
 
-      // the reveal simply lets the idle turn begin — the wheel fades in
-      // with the page, already drifting
-      window.__dealDeck = () => { restUntil = 0; };
-      setTimeout(() => { restUntil = 0; }, 4500);   // fallback
+      // the reveal starts the idle turn; the wheel is already in position
+      window.__startWheel = () => { restUntil = 0; };
+      setTimeout(() => { restUntil = 0; }, 4500);   // fallback if the reveal never fires
 
       // drag to spin — no clamps, no ends
       stage.addEventListener('pointerdown', e => {
@@ -1072,16 +1045,16 @@
         if (!dragging) return;
         dragging = false;
         stage.classList.remove('dragging');
-        // let a fling carry the wheel through several songs, then settle
+        // project the fling forward, then snap to the nearest slot
         const flung = R + vel * 110 * params().degPerPx;
         targetR = Math.round(flung / STEP) * STEP;
       }
       document.addEventListener('pointerup', release);
       document.addEventListener('pointercancel', release);
 
-      // press a shadowed card to turn it forward; press the lit card to play.
-      // the idle drift means the front card is rarely at exactly 0°, so
-      // anything within half a slot of centre counts as "the lit card".
+      // click a side card to bring it to the front; click the front card
+      // to follow its link. the idle drift means the front card is rarely
+      // at exactly 0°, so anything within half a slot counts as front.
       cards.forEach((card, i) => {
         card.addEventListener('click', e => {
           if (moved) { e.preventDefault(); moved = false; return; }
@@ -1110,12 +1083,12 @@
 
     async function loadMessages() {
       try {
-        const data = await fetch(`${API}?select=name,message,created_at&order=created_at.desc`, { headers: HDR }).then(r => r.json());
+        const data = await fetch(`${API}?select=name,message&order=created_at.desc`, { headers: HDR }).then(r => r.json());
         const box = document.getElementById('gb-messages');
         box.innerHTML = data.length
           ? data.map((m,i) => `<div class="guestbook-message" style="animation-delay:${i*0.12}s"><div class="guestbook-message-name">${esc(m.name)}</div><div class="guestbook-message-text">${esc(m.message)}</div></div>`).join('')
           : '<p class="guestbook-empty">no messages yet</p>';
-        // each signature becomes living letters
+        // names get the living-letters treatment; torch-ink re-registers
         box.querySelectorAll('.guestbook-message-name').forEach(el => window.__animateLetters && window.__animateLetters(el));
         if (window.__registerTorchInk) window.__registerTorchInk();
       } catch(e) { console.error(e); }
@@ -1137,17 +1110,17 @@
     document.getElementById('gb-submit').addEventListener('click', submitMessage);
     loadMessages();
 
-    // ── torch-ink — the cursor's flame illuminates the writing it nears ──
+    // ── torch-ink — messages brighten as the cursor nears them ──
     (function () {
       if (!matchMedia('(hover: hover)').matches) return;
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       let mx = -9999, my = -9999, entries = [];
       document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
 
-      // called after each guestbook render
+      // re-registered after each guestbook render
       window.__registerTorchInk = () => {
         entries = Array.from(document.querySelectorAll('.guestbook-message'))
-          .slice(0, 40)   // plenty, and keeps the loop cheap
+          .slice(0, 40)   // cap keeps the loop cheap
           .map(el => ({ el, txt: el.querySelector('.guestbook-message-text'), g: 0 }));
       };
 
@@ -1157,13 +1130,11 @@
         if (document.hidden || !entries.length) return;
         for (const m of entries) {
           const r = m.el.getBoundingClientRect();
-          if (r.bottom < -100 || r.top > innerHeight + 100) continue;   // off-screen: leave it be
+          if (r.bottom < -100 || r.top > innerHeight + 100) continue;   // off-screen
           const dist = Math.hypot(mx - (r.left + Math.min(r.width, 320) / 2), my - (r.top + r.height / 2));
           const t = Math.max(0, 1 - dist / R);
           m.g += (t - m.g) * 0.08;
-          // the rule beside the entry catches the flame first…
           m.el.style.borderLeftColor = `rgba(255,205,145,${(0.10 + m.g * 0.4).toFixed(3)})`;
-          // …then the ink itself brightens under the light
           if (m.txt) {
             m.txt.style.opacity = (0.7 + m.g * 0.3).toFixed(3);
             m.txt.style.textShadow = `0 0 ${(m.g * 10).toFixed(1)}px rgba(255,205,145,${(m.g * 0.22).toFixed(3)})`;
@@ -1177,7 +1148,8 @@
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       document.addEventListener('pointerdown', e => {
         if (e.target.closest('input,textarea')) return;
-        for (let i = 0; i < 6 + Math.random()*4|0; i++) {
+        const count = 6 + ((Math.random() * 4) | 0);
+        for (let i = 0; i < count; i++) {
           const s = document.createElement('span');
           s.className = 'burst-spark';
           const sz = 3 + Math.random()*3, a = Math.random()*Math.PI*2, d = 24+Math.random()*44;
@@ -1190,7 +1162,7 @@
       });
     })();
 
-    // ── living letters on friend names + section labels ──
+    // ── living letters — used by the guestbook signatures ──
     (function () {
       function animate(el) {
         el.childNodes.forEach(node => {
@@ -1208,9 +1180,9 @@
           node.replaceWith(span);
         });
       }
-      document.querySelectorAll('.section-label').forEach(animate);
-      window.__animateLetters = animate;   // guestbook signatures use this too
+      window.__animateLetters = animate;
     })();
+
     // ── secret: pressing the seal raises a veil with the constellation ──
     (function () {
       const seal = document.getElementById('wax-seal');
