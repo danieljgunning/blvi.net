@@ -57,7 +57,9 @@
       z-index: -1;
       pointer-events: none;
     }
-    /* ── constellation veil (spells "blvi") — hidden until seal pressed ── */
+    /* ── constellation veil (spells "blvi") — hidden until seal pressed ──
+       the whole sky begins pulled back a touch and drifts slowly inward
+       while lit, like the viewer is falling gently toward the stars. */
     .constellation {
       position: fixed;
       inset: 0;
@@ -66,16 +68,27 @@
       z-index: 11000;
       pointer-events: none;
       opacity: 0;
-      transition: opacity 1.4s cubic-bezier(0.4,0,0.2,1);
-      will-change: opacity;
+      transform: scale(1.06);
+      transition: opacity 1.4s cubic-bezier(0.4,0,0.2,1), transform 9s cubic-bezier(0.22,1,0.36,1);
+      will-change: opacity, transform;
     }
-    .constellation.lit { opacity: 1; }
+    .constellation.lit { opacity: 1; transform: scale(1); }
     #galaxy-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
     .constellation svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; }
     .const-line { stroke: rgba(210,225,255,0.18); stroke-width: 1; }
     .const-star {
       fill: #eaf1ff;
       filter: drop-shadow(0 0 3px rgba(210,225,255,0.95)) drop-shadow(0 0 8px rgba(150,185,255,0.55));
+    }
+    /* diffraction spikes on the brightest stars — a thin + shaped glint */
+    .const-flare {
+      stroke: rgba(225,238,255,0.7);
+      stroke-width: 0.55;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 2px rgba(190,215,255,0.5));
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .constellation { transform: none; transition: opacity 1.4s cubic-bezier(0.4,0,0.2,1); }
     }
     @media (max-width: 768px) {
       .bg-overlay, .vignette { display: none; }
@@ -1193,13 +1206,20 @@
       seal.addEventListener('click', () => {
         if (busy) return;
         busy = true;
-        if (window.__constellationBuild) window.__constellationBuild();
+        if (window.__constellationBuild)  window.__constellationBuild();
+        if (window.__constellationIgnite) window.__constellationIgnite();
         if (window.__resetShoot) window.__resetShoot();
+        // each viewing begins pulled slightly back; the slow zoom then
+        // drifts in over the whole show. reset instantly before lighting.
+        wrap.style.transition = 'none';
+        wrap.style.transform = '';
+        void wrap.offsetWidth;
+        wrap.style.transition = '';
         wrap.classList.add('lit');
         setTimeout(() => {
           wrap.classList.remove('lit');
-          setTimeout(() => { busy = false; }, 1500);
-        }, 3000);
+          setTimeout(() => { busy = false; }, 1600);
+        }, 7200);
       });
     })();
 
@@ -1210,6 +1230,7 @@
       const canvas = document.getElementById('galaxy-canvas');
       if (!wrap || !svg) return;
       const SVGNS = 'http://www.w3.org/2000/svg';
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       // each letter on a grid; points are stars, pairs are connecting lines.
       // coords in "letter units": x within letter, y top(0) → bottom(6).
@@ -1240,10 +1261,14 @@
       const letterWidths = [2.2, 1.3, 2.5, 1];
 
       const stars = [];
-      const lineRefs = [];   // {el, a, b} referencing star indices
+      const lineRefs = [];   // {el, a, b, birth} referencing star indices
+      const flares  = [];    // {h, v, s} diffraction spikes on hero stars
+      let shimmerStart = Infinity;   // when the post-formation glint sweep begins
+      let visibleUntil = 0;          // star work stops once the veil is fully hidden
+
       function build() {
         svg.innerHTML = '';
-        stars.length = 0; lineRefs.length = 0;
+        stars.length = 0; lineRefs.length = 0; flares.length = 0;
         const vw = innerWidth, vh = innerHeight;
         const unit = Math.min(vw, vh) * 0.038;
         const letterGap = unit * 2.6;
@@ -1264,13 +1289,18 @@
           const starBase = stars.length;   // index where this letter's stars begin
 
           // pre-register this letter's star home positions
-          L.pts.forEach(p => {
+          L.pts.forEach((p, pi) => {
+            const baseR = 1.1 + Math.random() * 0.9;   // a touch smaller
             stars.push({
               el: null,
               hx: ox + p[0]*unit,           // home x
               hy: baseY + p[1]*unit,        // home y
               x: ox + p[0]*unit, y: baseY + p[1]*unit,
-              baseR: 1.1 + Math.random() * 0.9,   // a touch smaller
+              baseR,
+              // heroes carry diffraction spikes; the i's dot always qualifies
+              hero: (li === 3 && pi === 0) || baseR > 1.78,
+              birth: Infinity,              // ignition time, set on each seal press
+              _f: 0, _w: 0, _g: 0,          // per-frame flash / wave / glow, read by the flares
               tw: 1.5 + Math.random()*2.5, twOff: Math.random()*6.28,
               // gentle independent drift — small radius, slow, each unique
               dr: unit * (0.12 + Math.random()*0.18),
@@ -1284,11 +1314,11 @@
             const line = document.createElementNS(SVGNS, 'line');
             line.setAttribute('class', 'const-line');
             svg.appendChild(line);
-            lineRefs.push({ el: line, a: starBase + a, b: starBase + b });
+            lineRefs.push({ el: line, a: starBase + a, b: starBase + b, birth: Infinity });
           });
         });
 
-        // create star circles on top
+        // create star circles on top of the lines
         for (const s of stars) {
           const cdot = document.createElementNS(SVGNS, 'circle');
           cdot.setAttribute('class', 'const-star');
@@ -1296,10 +1326,57 @@
           svg.appendChild(cdot);
           s.el = cdot;
         }
+
+        // diffraction spikes above everything, one thin + per hero star
+        for (const s of stars) {
+          if (!s.hero) continue;
+          const h = document.createElementNS(SVGNS, 'line');
+          const v = document.createElementNS(SVGNS, 'line');
+          h.setAttribute('class', 'const-flare');
+          v.setAttribute('class', 'const-flare');
+          svg.appendChild(h); svg.appendChild(v);
+          flares.push({ h, v, s });
+        }
+
+        // a resize mid-show rebuilds everything; relight it instantly
+        if (wrap.classList.contains('lit')) {
+          const now = performance.now() * 0.001;
+          stars.forEach(s => s.birth = now);
+          lineRefs.forEach(L => L.birth = now);
+        }
       }
 
       build();
       window.__constellationBuild = build;   // re-measure when the seal triggers it
+
+      // ── ignition — stars wake letter by letter, stroke by stroke ──
+      // each star flares brightly as it's born; the lines then trace
+      // themselves between lit pairs, hand-drawing the word in the sky.
+      window.__constellationIgnite = function () {
+        const t0 = performance.now() * 0.001;
+        let idx = 0;
+        letters.forEach((L, li) => {
+          const base = reduced ? 0 : 0.5 + li * 0.55;
+          L.pts.forEach((p, pi) => {
+            stars[idx++].birth = t0 + base + (reduced ? 0 : pi * 0.13 + Math.random() * 0.06);
+          });
+        });
+        for (const Lr of lineRefs) {
+          Lr.birth = Math.max(stars[Lr.a].birth, stars[Lr.b].birth) + (reduced ? 0 : 0.1);
+        }
+        // once the word is whole, a glint sweeps through it left to right
+        shimmerStart = reduced ? Infinity : t0 + 0.5 + letters.length * 0.55 + 1.4;
+      };
+
+      // ── parallax — the sky leans away from the cursor in two layers ──
+      const parallax = matchMedia('(hover: hover)').matches && !reduced;
+      let px = 0, py = 0, ptx = 0, pty = 0;
+      if (parallax) {
+        document.addEventListener('mousemove', e => {
+          ptx = e.clientX / innerWidth  - 0.5;
+          pty = e.clientY / innerHeight - 0.5;
+        });
+      }
 
       // ── galaxy: cool blue Milky Way band + scattered background stars ──
       const ctx = canvas ? canvas.getContext('2d') : null;
@@ -1329,51 +1406,97 @@
           // bias some stars toward the band by resampling
           if (Math.random() > 0.45 + inBand*0.5 && Math.random() > 0.3) { i--; continue; }
           const r = Math.random();
+          // real skies aren't monochrome: most stars run ice-white, but
+          // scattered among them are gold, rose, teal and lilac points
+          const tints = ['205,225,255','255,222,180','255,195,215','175,255,230','210,190,255','255,240,200'];
+          const cr = Math.random();
+          const col = cr < 0.55 ? tints[0] : tints[1 + ((Math.random() * (tints.length - 1)) | 0)];
           bgStars.push({
             x, y,
             size: r < 0.85 ? 0.4 + Math.random()*0.9 : 1.1 + Math.random()*1.1,
             base: 0.25 + Math.random()*0.6,
             tw: 2 + Math.random()*4,
             off: Math.random()*6.28,
-            // faint colour: mostly cool white, a few warm
-            warm: Math.random() < 0.12,
+            col,
           });
         }
 
-        // colour sprouts — small pockets of hue tucked into the nebula band
-        sprouts = [];
-        const palette = [
-          [120,90,200],   // violet
-          [80,140,220],   // bright blue
-          [200,90,160],   // rose-magenta
-          [90,180,200],   // teal
-          [180,120,210],  // lilac
-        ];
+        // ── nebula structure — three layers instead of flat blobs ──
+        // streaks: long soft ellipses of colour flowing along the band;
+        // knots: small saturated cores that breathe and slowly shift hue;
+        // dust: dark lanes carved through the light, giving the band the
+        // mottled depth of a real milky way rather than a smooth wash.
         const dirx = Math.cos(bandAngle), diry = Math.sin(bandAngle);
-        const SPN = 9;
-        for (let i = 0; i < SPN; i++) {
+        const maxD = Math.max(w, h);
+
+        streaks = [];
+        const NSTREAK = 7;
+        for (let i = 0; i < NSTREAK; i++) {
+          const f = (i / (NSTREAK - 1) - 0.5) + (Math.random() - 0.5) * 0.08;
+          const along = (Math.random() - 0.5) * h * 0.34;
+          // mostly blue-violet, with the occasional teal or magenta drift
+          const roll = Math.random();
+          const hue = roll < 0.6 ? 215 + Math.random() * 70
+                    : roll < 0.8 ? 172 + Math.random() * 22
+                    :              300 + Math.random() * 28;
+          const rx = w * (0.16 + Math.random() * 0.14);
+          streaks.push({
+            x: w/2 + dirx * f * w * 1.15 - Math.sin(bandAngle) * along,
+            y: h/2 + diry * f * w * 1.15 + Math.cos(bandAngle) * along,
+            rx, ry: rx * (0.26 + Math.random() * 0.18),
+            tilt: (Math.random() - 0.5) * 0.3,
+            hue, hueSwing: 12 + Math.random() * 16,
+            a: 0.075 + Math.random() * 0.05,
+            sp: 0.02 + Math.random() * 0.03,
+            driftAmp: w * (0.015 + Math.random() * 0.02),
+            ph: Math.random() * 6.28,
+          });
+        }
+
+        knots = [];
+        const knotHues = [265, 210, 330, 185, 282, 28, 152];   // violet blue magenta teal purple amber green
+        const NKNOT = 11;
+        for (let i = 0; i < NKNOT; i++) {
           const f = (Math.random() - 0.5);
-          const along = (Math.random() - 0.5) * h * 0.5;   // jitter along perpendicular
-          const bx = w/2 + dirx * f * w * 1.0 - Math.sin(bandAngle)*along;
-          const by = h/2 + diry * f * w * 1.0 + Math.cos(bandAngle)*along;
-          const col = palette[(Math.random()*palette.length)|0];
-          sprouts.push({
-            x: bx, y: by,
-            rad: Math.max(w,h) * (0.05 + Math.random()*0.07),
-            col,
-            amp: 0.05 + Math.random()*0.06,
-            sp: 0.08 + Math.random()*0.12,
-            ph: Math.random()*6.28,
+          const along = (Math.random() - 0.5) * h * 0.45;
+          knots.push({
+            x: w/2 + dirx * f * w * 1.0 - Math.sin(bandAngle) * along,
+            y: h/2 + diry * f * w * 1.0 + Math.cos(bandAngle) * along,
+            rad: maxD * (0.035 + Math.random() * 0.05),
+            hue: knotHues[(Math.random() * knotHues.length) | 0] + (Math.random() - 0.5) * 14,
+            hueSwing: 10 + Math.random() * 20,
+            hueSp: 0.03 + Math.random() * 0.04,
+            amp: 0.10 + Math.random() * 0.08,
+            sp: 0.08 + Math.random() * 0.12,
+            ph: Math.random() * 6.28,
+          });
+        }
+
+        dust = [];
+        const NDUST = 5;
+        for (let i = 0; i < NDUST; i++) {
+          const f = (i / (NDUST - 1) - 0.5) + (Math.random() - 0.5) * 0.12;
+          const along = (Math.random() - 0.5) * h * 0.22;
+          const rx = w * (0.09 + Math.random() * 0.10);
+          dust.push({
+            x: w/2 + dirx * f * w * 0.95 - Math.sin(bandAngle) * along,
+            y: h/2 + diry * f * w * 0.95 + Math.cos(bandAngle) * along,
+            rx, ry: rx * (0.24 + Math.random() * 0.16),
+            tilt: (Math.random() - 0.5) * 0.35,
+            a: 0.22 + Math.random() * 0.14,
+            sp: 0.015 + Math.random() * 0.025,
+            driftAmp: w * (0.01 + Math.random() * 0.015),
+            ph: Math.random() * 6.28,
           });
         }
       }
-      let sprouts = [];
+      let streaks = [], knots = [], dust = [];
       buildGalaxy();
 
       // ── colourful shooting star ──
       let shoot = null;
       let nextShoot = 1.5;   // seconds until the first one after the veil opens
-      window.__resetShoot = function () { shoot = null; nextShoot = 0.8 + Math.random()*0.6; };
+      window.__resetShoot = function () { shoot = null; nextShoot = 2.4 + Math.random()*0.8; };
       function spawnShoot(t) {
         const w = innerWidth, h = innerHeight;
         // start somewhere in the upper region, streak diagonally down-across
@@ -1408,7 +1531,7 @@
         shoot.life -= dt / shoot.dur;
         if (shoot.life <= 0 || shoot.x < -80 || shoot.x > w+80 || shoot.y > h+80) {
           shoot = null;
-          nextShoot = 2.5 + Math.random()*3;   // gap before the next
+          nextShoot = 1.8 + Math.random()*2.2;   // gap before the next
           return;
         }
         // trail behind the head
@@ -1439,33 +1562,62 @@
         ctx.globalCompositeOperation = 'source-over';
       }
 
+      // an elliptical glow — a unit radial gradient stretched and rotated,
+      // which is how the streaks and dust lanes get their elongated shape
+      function glowE(x, y, rx, ry, rot, c0, c1) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rot);
+        ctx.scale(rx, ry);
+        const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+        g.addColorStop(0, c0);
+        g.addColorStop(1, c1);
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(0, 0, 1, 0, 6.2832);
+        ctx.fill();
+        ctx.restore();
+      }
+
       function drawGalaxy(t) {
         if (!ctx) return;
         const w = innerWidth, h = innerHeight;
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, w, h);
 
-        // soft nebula band — layered radial glows along the diagonal
         const cx = w/2, cy = h/2;
         const ang = -0.5;
         const dirx = Math.cos(ang), diry = Math.sin(ang);
         ctx.globalCompositeOperation = 'lighter';
-        const blobs = 7;
-        for (let i = 0; i < blobs; i++) {
-          const f = (i/(blobs-1) - 0.5);           // -0.5 → 0.5 along the band
-          const bx = cx + dirx * f * w * 1.1;
-          const by = cy + diry * f * w * 1.1;
-          const rad = Math.max(w, h) * (0.20 + 0.06*Math.sin(i*1.3 + t*0.1));
-          const g = ctx.createRadialGradient(bx, by, 0, bx, by, rad);
-          // cool blue nebula tones, very soft
-          g.addColorStop(0,   'rgba(70,110,190,0.10)');
-          g.addColorStop(0.4, 'rgba(45,75,150,0.05)');
-          g.addColorStop(1,   'rgba(20,30,60,0)');
+
+        // streaks — long soft ribbons of colour flowing along the band,
+        // each drifting slowly and leaning through neighbouring hues
+        for (const st of streaks) {
+          const drift = Math.sin(t * st.sp * 6.28 + st.ph) * st.driftAmp;
+          const x = st.x + dirx * drift;
+          const y = st.y + diry * drift;
+          const hue = st.hue + Math.sin(t * 0.05 * 6.28 + st.ph) * st.hueSwing;
+          const breathe = 1 + 0.08 * Math.sin(t * 0.11 * 6.28 + st.ph * 1.7);
+          glowE(x, y, st.rx * breathe, st.ry * breathe, ang + st.tilt,
+                `hsla(${hue.toFixed(0)},70%,60%,${st.a.toFixed(3)})`,
+                `hsla(${hue.toFixed(0)},70%,50%,0)`);
+        }
+
+        // knots — small saturated cores that breathe and cycle hue,
+        // the jewel-tones scattered through the nebula
+        for (const k of knots) {
+          const a   = k.amp * (0.55 + 0.45 * Math.sin(t * k.sp * 6.28 + k.ph));
+          const hue = k.hue + Math.sin(t * k.hueSp * 6.28 + k.ph) * k.hueSwing;
+          const g = ctx.createRadialGradient(k.x, k.y, 0, k.x, k.y, k.rad);
+          g.addColorStop(0,   `hsla(${hue.toFixed(0)},80%,64%,${a.toFixed(3)})`);
+          g.addColorStop(0.5, `hsla(${hue.toFixed(0)},75%,55%,${(a * 0.4).toFixed(3)})`);
+          g.addColorStop(1,   `hsla(${hue.toFixed(0)},70%,50%,0)`);
           ctx.fillStyle = g;
           ctx.beginPath();
-          ctx.arc(bx, by, rad, 0, 6.2832);
+          ctx.arc(k.x, k.y, k.rad, 0, 6.2832);
           ctx.fill();
         }
+
         // a faint brighter core to the band
         const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w,h)*0.5);
         core.addColorStop(0, 'rgba(120,160,230,0.06)');
@@ -1473,26 +1625,47 @@
         ctx.fillStyle = core;
         ctx.fillRect(0,0,w,h);
 
-        // colour sprouts — small pockets of hue breathing within the band
-        for (const sp of sprouts) {
-          const a = sp.amp * (0.6 + 0.4*Math.sin(t * sp.sp * 6.28 + sp.ph));
-          const g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, sp.rad);
-          g.addColorStop(0, `rgba(${sp.col[0]},${sp.col[1]},${sp.col[2]},${a.toFixed(3)})`);
-          g.addColorStop(1, `rgba(${sp.col[0]},${sp.col[1]},${sp.col[2]},0)`);
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.arc(sp.x, sp.y, sp.rad, 0, 6.2832);
-          ctx.fill();
+        // aurora — two faint curtains breathing at the sky's edges,
+        // teal along the horizon and violet high above the word
+        const ribbons = [
+          { y0: h * 0.80, amp: h * 0.050, col: '80,210,180',  sp: 0.20, k: 0.0042, a: 0.062, rad: h * 0.16 },
+          { y0: h * 0.16, amp: h * 0.045, col: '160,115,235', sp: 0.15, k: 0.0036, a: 0.052, rad: h * 0.15 },
+        ];
+        for (const rb of ribbons) {
+          const steps = 11;
+          for (let i = 0; i <= steps; i++) {
+            const x = (i / steps) * w;
+            const y = rb.y0 + Math.sin(x * rb.k + t * rb.sp * 6.28) * rb.amp;
+            const al = rb.a * (0.65 + 0.35 * Math.sin(t * 0.35 + i * 0.9));
+            const g = ctx.createRadialGradient(x, y, 0, x, y, rb.rad);
+            g.addColorStop(0, `rgba(${rb.col},${al.toFixed(3)})`);
+            g.addColorStop(1, `rgba(${rb.col},0)`);
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(x, y, rb.rad, 0, 6.2832);
+            ctx.fill();
+          }
         }
 
-        // background stars
+        // dust lanes — dark elongated patches drawn over the light,
+        // carving the mottled structure that makes a nebula feel deep
+        ctx.globalCompositeOperation = 'source-over';
+        for (const d of dust) {
+          const drift = Math.sin(t * d.sp * 6.28 + d.ph) * d.driftAmp;
+          const x = d.x + dirx * drift;
+          const y = d.y + diry * drift;
+          glowE(x, y, d.rx, d.ry, ang + d.tilt,
+                `rgba(5,9,20,${d.a.toFixed(3)})`,
+                'rgba(5,9,20,0)');
+        }
+
+        // background stars on top of everything
+        ctx.globalCompositeOperation = 'lighter';
         for (const s of bgStars) {
           const tw = s.base * (0.5 + 0.5*Math.sin(t / s.tw * 6.2832 + s.off));
           ctx.beginPath();
           ctx.arc(s.x, s.y, s.size, 0, 6.2832);
-          ctx.fillStyle = s.warm
-            ? `rgba(255,225,190,${tw.toFixed(3)})`
-            : `rgba(205,225,255,${tw.toFixed(3)})`;
+          ctx.fillStyle = `rgba(${s.col},${tw.toFixed(3)})`;
           ctx.fill();
         }
         ctx.globalCompositeOperation = 'source-over';
@@ -1505,6 +1678,7 @@
       });
 
       let lastT = performance.now() * 0.001;
+      const easeOut = p => 1 - Math.pow(1 - p, 3);
       (function twinkle() {
         requestAnimationFrame(twinkle);
         if (document.hidden) return;
@@ -1513,25 +1687,69 @@
         lastT = t;
 
         // only paint the galaxy while the veil is visible (saves work when hidden)
-        if (wrap.classList.contains('lit')) { drawGalaxy(t); drawShoot(t, dt); }
+        const lit = wrap.classList.contains('lit');
+        if (lit) { visibleUntil = t + 1.6; drawGalaxy(t); drawShoot(t, dt); }
+        if (t > visibleUntil) return;   // fully hidden — skip all star work
+
+        // parallax — the letters sway a touch more than the sky behind them
+        if (parallax) {
+          px += (ptx - px) * 0.05;
+          py += (pty - py) * 0.05;
+          svg.style.transform    = `translate(${(-px * 26).toFixed(1)}px, ${(-py * 18).toFixed(1)}px)`;
+          canvas.style.transform = `translate(${(-px * 10).toFixed(1)}px, ${(-py * 7).toFixed(1)}px) scale(1.03)`;
+        }
 
         // each point drifts gently and independently around its home position
         for (const s of stars) {
+          const age = t - s.birth;
+          if (age < 0) { s.el.setAttribute('opacity', '0'); s._f = 0; s._w = 0; s._g = 0; continue; }
           s.x = s.hx + Math.sin(t * s.dsx * 6.28 + s.dpx) * s.dr;
           s.y = s.hy + Math.cos(t * s.dsy * 6.28 + s.dpy) * s.dr;
           s.el.setAttribute('cx', s.x.toFixed(1));
           s.el.setAttribute('cy', s.y.toFixed(1));
           const glow = 0.5 + 0.5 * Math.sin(t / s.tw * Math.PI * 2 + s.twOff);
-          s.el.setAttribute('r', (s.baseR * (0.7 + glow * 0.55)).toFixed(2));
-          s.el.setAttribute('opacity', (0.35 + glow * 0.65).toFixed(2));
+          // ignition flash — a bright overshoot that settles within a second
+          let flash = 0;
+          if (!reduced && age < 0.9) {
+            const k = age / 0.9;
+            flash = Math.sin(Math.min(k * 3, 1) * Math.PI) * (1 - k * 0.5);
+          }
+          // shimmer — once the word is whole, a glint sweeps through it
+          let wave = 0;
+          if (t > shimmerStart) {
+            wave = Math.pow(Math.max(0, Math.sin((t - shimmerStart) * 1.5 - s.hx * 0.008)), 12) * 0.9;
+          }
+          s._f = flash; s._w = wave; s._g = glow;
+          s.el.setAttribute('r', (s.baseR * (0.7 + glow * 0.55) * (1 + flash * 1.1 + wave * 0.35)).toFixed(2));
+          s.el.setAttribute('opacity', Math.min(1, 0.35 + glow * 0.65 + flash * 0.8 + wave * 0.5).toFixed(2));
         }
-        // lines follow their endpoint stars
+
+        // lines trace themselves from star to star once both ends are lit
         for (const L of lineRefs) {
           const a = stars[L.a], b = stars[L.b];
+          const p = reduced ? (t > L.birth ? 1 : 0)
+                            : Math.max(0, Math.min(1, (t - L.birth) / 0.5));
+          const e = easeOut(p);
           L.el.setAttribute('x1', a.x.toFixed(1));
           L.el.setAttribute('y1', a.y.toFixed(1));
-          L.el.setAttribute('x2', b.x.toFixed(1));
-          L.el.setAttribute('y2', b.y.toFixed(1));
+          L.el.setAttribute('x2', (a.x + (b.x - a.x) * e).toFixed(1));
+          L.el.setAttribute('y2', (a.y + (b.y - a.y) * e).toFixed(1));
+          L.el.setAttribute('opacity', e.toFixed(2));
+        }
+
+        // diffraction spikes ride their star: bold at birth, then a faint
+        // resting glint that swells again when the shimmer wave passes
+        for (const F of flares) {
+          const s = F.s;
+          if (t < s.birth) { F.h.setAttribute('opacity', '0'); F.v.setAttribute('opacity', '0'); continue; }
+          const len = 2.5 + s._f * 10 + s._w * 5 + s._g * 1.5;
+          const op  = Math.min(1, 0.08 + s._f * 0.6 + s._w * 0.4 + s._g * 0.07);
+          F.h.setAttribute('x1', (s.x - len).toFixed(1)); F.h.setAttribute('y1', s.y.toFixed(1));
+          F.h.setAttribute('x2', (s.x + len).toFixed(1)); F.h.setAttribute('y2', s.y.toFixed(1));
+          F.v.setAttribute('x1', s.x.toFixed(1)); F.v.setAttribute('y1', (s.y - len).toFixed(1));
+          F.v.setAttribute('x2', s.x.toFixed(1)); F.v.setAttribute('y2', (s.y + len).toFixed(1));
+          F.h.setAttribute('opacity', op.toFixed(2));
+          F.v.setAttribute('opacity', op.toFixed(2));
         }
       })();
     })();
