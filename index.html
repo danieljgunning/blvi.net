@@ -460,18 +460,43 @@
     }
     .guestbook-empty { font-family: 'Spectral', serif; font-size: 0.8rem; color: var(--muted); text-align: center; }
 
-    /* ── the quill — handwritten replies inked over the message itself ── */
+    /* ── the quill — handwritten replies inked over the message itself ──
+       wide screens overlay the ink exactly where it was written. narrow
+       screens, where re-wrapped text would misplace an overlay, show the
+       trimmed ink as a small note beneath the comment instead; writing
+       and erasing stay desktop-only. */
     .gb-reply {
       position: absolute;
-      inset: 0;
+      top: 0; left: 0;
+      width: 100%;
       pointer-events: none;   /* the comment beneath stays selectable */
     }
-    .gb-reply img {
-      display: block;
+    .gb-reply img { display: block; }
+    .gb-reply.v2 img { position: absolute; height: auto; }
+    .gb-reply.full { height: 100%; }
+    .gb-reply.full img {
       width: 100%;
       height: 100%;
       object-fit: contain;
-      object-position: left top;   /* keeps ink aligned with the words it was written over */
+      object-position: left top;
+    }
+    @media (max-width: 620px) {
+      .quill-tools, .quill-login { display: none; }
+      .gb-reply {
+        position: static;
+        width: auto;
+        height: auto;
+        margin-top: 0.5rem;
+        aspect-ratio: auto !important;
+      }
+      .gb-reply img {
+        position: static !important;
+        left: auto !important; top: auto !important;
+        width: auto !important;
+        height: auto !important;
+        max-width: 82%;
+        max-height: 60px;
+      }
     }
     .quill-btn {
       font-family: 'Spectral', serif;
@@ -580,11 +605,17 @@
       #logo-3d { width: 280px; height: 120px; }
       .platforms { gap: 1.2rem 1.6rem; margin-bottom: 1.5rem; }
       .platform-break { display: block; flex-basis: 100%; height: 0; }
-      .deck-stage { --pw: 124px; --ph: 143px; height: 240px; perspective: 1000px; }
-      .deck-glow { width: 240px; height: 70px; bottom: 10px; }
-      .card-photo.polaroid img { width: 110px; }
-      .card-photo.polaroid { padding: 7px 7px 0 7px; }
-      .card-photo.polaroid .card-caption { font-size: 0.8rem; padding: 4px 3px 8px; }
+      .deck-stage {
+        --pw: 106px; --ph: 122px; height: 215px; perspective: 1150px;
+        /* fade the wheel toward the edges so cards dissolve out of view
+           instead of being sliced off hard at the screen boundary */
+        mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
+      }
+      .deck-glow { width: 200px; height: 58px; bottom: 8px; }
+      .card-photo.polaroid img { width: 90px; }
+      .card-photo.polaroid { padding: 6px 6px 0 6px; }
+      .card-photo.polaroid .card-caption { font-size: 0.75rem; padding: 4px 3px 7px; }
     }
   </style>
 </head>
@@ -1045,7 +1076,7 @@
       let startX = 0, lastX = 0, lastT = 0, startR = 0, vel = 0;
 
       const params = () => innerWidth <= 480
-        ? { r: 235, degPerPx: 0.28 }
+        ? { r: 210, degPerPx: 0.3 }
         : { r: 275, degPerPx: 0.22 };
 
       // fold any angle into (-180, 180]
@@ -1177,10 +1208,31 @@
         const box = document.getElementById('gb-messages');
         box.innerHTML = data.length
           ? data.map((m,i) => {
-              const hasInk = typeof m.reply === 'string' && m.reply.startsWith('data:image/');
-              const reply = hasInk
-                ? `<div class="gb-reply"><img src="${m.reply}" alt="handwritten reply from blvi"></div>`
-                : '';
+              // replies are stored either as a bare data-url (older full-canvas
+              // format) or as json carrying the trimmed ink plus where on the
+              // comment it was written
+              let ink = null;
+              if (typeof m.reply === 'string' && m.reply.startsWith('data:image/')) {
+                ink = { full: true, img: m.reply };
+              } else if (typeof m.reply === 'string' && m.reply.startsWith('{')) {
+                try {
+                  const p = JSON.parse(m.reply);
+                  const nums = [p.cw, p.ch, p.bx, p.by, p.bw, p.bh].map(Number);
+                  if (typeof p.img === 'string' && p.img.startsWith('data:image/') && nums.every(isFinite) && nums[0] > 0 && nums[1] > 0) {
+                    ink = { img: p.img, cw: nums[0], ch: nums[1], bx: nums[2], by: nums[3], bw: nums[4], bh: nums[5] };
+                  }
+                } catch(_) {}
+              }
+              const hasInk = !!ink;
+              let reply = '';
+              if (ink && ink.full) {
+                reply = `<div class="gb-reply full"><img src="${ink.img}" alt="handwritten reply from blvi"></div>`;
+              } else if (ink) {
+                const l  = (ink.bx / ink.cw * 100).toFixed(2);
+                const t  = (ink.by / ink.ch * 100).toFixed(2);
+                const wd = (ink.bw / ink.cw * 100).toFixed(2);
+                reply = `<div class="gb-reply v2" style="aspect-ratio:${ink.cw.toFixed(1)}/${ink.ch.toFixed(1)}"><img src="${ink.img}" style="left:${l}%;top:${t}%;width:${wd}%" alt="handwritten reply from blvi"></div>`;
+              }
               const tools = quillToken
                 ? `<div class="quill-tools"><button class="quill-btn" data-quill="${m.id}">${hasInk ? 'redraw' : 'reply with the quill'}</button>${hasInk ? `<button class="quill-btn" data-erase="${m.id}">erase</button>` : ''}</div>`
                 : '';
@@ -1190,6 +1242,52 @@
         // names get the living-letters treatment; torch-ink re-registers
         box.querySelectorAll('.guestbook-message-name').forEach(el => window.__animateLetters && window.__animateLetters(el));
         if (window.__registerTorchInk) window.__registerTorchInk();
+
+        // older full-canvas replies carry their ink somewhere inside a big
+        // transparent canvas. trim them in the browser and convert to the
+        // positioned format, so they overlay correctly on wide screens and
+        // stack as just the handwriting on narrow ones.
+        box.querySelectorAll('.gb-reply.full img').forEach(img => {
+          const convert = () => {
+            const iw = img.naturalWidth, ih = img.naturalHeight;
+            if (!iw || !ih) return;
+            const c = document.createElement('canvas');
+            c.width = iw; c.height = ih;
+            const cc = c.getContext('2d');
+            cc.drawImage(img, 0, 0);
+            let d;
+            try { d = cc.getImageData(0, 0, iw, ih).data; } catch(_) { return; }
+            let minX = iw, minY = ih, maxX = -1, maxY = -1;
+            for (let y = 0; y < ih; y++) {
+              for (let x = 0; x < iw; x++) {
+                if (d[(y * iw + x) * 4 + 3] > 0) {
+                  if (x < minX) minX = x;
+                  if (x > maxX) maxX = x;
+                  if (y < minY) minY = y;
+                  if (y > maxY) maxY = y;
+                }
+              }
+            }
+            if (maxX < 0) return;   // blank drawing — leave as-is
+            const pad = 3;
+            minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+            maxX = Math.min(iw - 1, maxX + pad); maxY = Math.min(ih - 1, maxY + pad);
+            const tw = maxX - minX + 1, th = maxY - minY + 1;
+            const out = document.createElement('canvas');
+            out.width = tw; out.height = th;
+            out.getContext('2d').drawImage(c, minX, minY, tw, th, 0, 0, tw, th);
+            const wrap = img.closest('.gb-reply');
+            wrap.classList.remove('full');
+            wrap.classList.add('v2');
+            wrap.style.aspectRatio = `${iw}/${ih}`;
+            img.style.left  = (minX / iw * 100).toFixed(2) + '%';
+            img.style.top   = (minY / ih * 100).toFixed(2) + '%';
+            img.style.width = (tw / iw * 100).toFixed(2) + '%';
+            img.src = out.toDataURL('image/png');
+          };
+          if (img.complete) convert();
+          else img.addEventListener('load', convert, { once: true });
+        });
       } catch(e) { console.error(e); }
     }
     async function submitMessage() {
@@ -1276,6 +1374,34 @@
         setTimeout(() => { btn.textContent = 'take up the quill'; }, 1600);
       }
 
+      // crop a finished drawing to just the inked pixels, returning the
+      // trimmed image and where it sat on the canvas (in css pixels)
+      function trimInk(canvas, dpr) {
+        const c = canvas.getContext('2d');
+        const cw = canvas.width, ch = canvas.height;
+        const data = c.getImageData(0, 0, cw, ch).data;
+        let minX = cw, minY = ch, maxX = -1, maxY = -1;
+        for (let y = 0; y < ch; y++) {
+          for (let x = 0; x < cw; x++) {
+            if (data[(y * cw + x) * 4 + 3] > 0) {
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+        if (maxX < 0) return null;   // nothing drawn
+        const pad = Math.round(2 * dpr);
+        minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+        maxX = Math.min(cw - 1, maxX + pad); maxY = Math.min(ch - 1, maxY + pad);
+        const tw = maxX - minX + 1, th = maxY - minY + 1;
+        const out = document.createElement('canvas');
+        out.width = tw; out.height = th;
+        out.getContext('2d').drawImage(canvas, minX, minY, tw, th, 0, 0, tw, th);
+        return { img: out.toDataURL('image/png'), bx: minX / dpr, by: minY / dpr, bw: tw / dpr, bh: th / dpr };
+      }
+
       // ── the writing pad — an ink canvas under the chosen message ──
       function openPad(btn) {
         document.querySelectorAll('.quill-pad').forEach(p => p.remove());
@@ -1359,9 +1485,20 @@
         });
         pad.querySelector('[data-act="save"]').addEventListener('click', async () => {
           if (!marked) return;
+          const trimmed = trimInk(canvas, dpr);
+          if (!trimmed) return;   // canvas was cleared — nothing to seal
           const saveBtn = pad.querySelector('[data-act="save"]');
           saveBtn.textContent = 'sealing...'; saveBtn.disabled = true;
-          await saveReply(id, canvas.toDataURL('image/png'));
+          await saveReply(id, JSON.stringify({
+            v: 2,
+            img: trimmed.img,
+            cw: Math.round(w * 10) / 10,
+            ch: Math.round(h * 10) / 10,
+            bx: Math.round(trimmed.bx * 10) / 10,
+            by: Math.round(trimmed.by * 10) / 10,
+            bw: Math.round(trimmed.bw * 10) / 10,
+            bh: Math.round(trimmed.bh * 10) / 10,
+          }));
         });
       }
 
