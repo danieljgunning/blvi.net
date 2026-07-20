@@ -432,6 +432,7 @@
     .guestbook-submit:hover { color: var(--text); border-bottom-color: rgba(255,255,255,0.4); }
     .guestbook-messages { display: flex; flex-direction: column; gap: 1.25rem; }
     .guestbook-message {
+      position: relative;   /* anchors the quill ink overlay */
       border-left: 1px solid rgba(255,255,255,0.1);
       padding: 0.5rem 0 0.5rem 1rem;
       opacity: 0;
@@ -458,6 +459,102 @@
       letter-spacing: 0.03em;
     }
     .guestbook-empty { font-family: 'Spectral', serif; font-size: 0.8rem; color: var(--muted); text-align: center; }
+
+    /* ── the quill — handwritten replies inked over the message itself ──
+       wide screens overlay the ink exactly where it was written. narrow
+       screens, where re-wrapped text would misplace an overlay, show the
+       trimmed ink as a small note beneath the comment instead; writing
+       and erasing stay desktop-only. */
+    .gb-reply {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      pointer-events: none;   /* the comment beneath stays selectable */
+    }
+    .gb-reply img { display: block; }
+    .gb-reply.v2 img { position: absolute; height: auto; }
+    .gb-reply.full { height: 100%; }
+    .gb-reply.full img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: left top;
+    }
+    @media (max-width: 620px) {
+      .quill-tools, .quill-login { display: none; }
+      .gb-reply {
+        position: static;
+        width: auto;
+        height: auto;
+        margin-top: 0.5rem;
+        aspect-ratio: auto !important;
+      }
+      .gb-reply img {
+        position: static !important;
+        left: auto !important; top: auto !important;
+        width: auto !important;
+        height: auto !important;
+        max-width: 82%;
+        max-height: 60px;
+      }
+    }
+    .quill-btn {
+      font-family: 'Spectral', serif;
+      font-size: 0.7rem;
+      color: var(--muted);
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      padding: 0.15rem 0;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
+    .quill-btn:hover { color: var(--text); border-bottom-color: rgba(255,255,255,0.4); }
+    .quill-tools { display: flex; gap: 1.25rem; margin-top: 0.5rem; }
+    .quill-pad { margin-top: 0.6rem; }
+    .quill-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      border: 1px dashed rgba(240,236,228,0.25);
+      background: transparent;   /* write directly over the visible comment */
+      touch-action: none;
+      cursor: crosshair;
+    }
+    .quill-login {
+      position: fixed;
+      bottom: 1.2rem; right: 1.2rem;
+      z-index: 9500;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      width: 220px;
+      padding: 1rem 1.1rem;
+      background: rgba(8,10,8,0.88);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .quill-login input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      color: var(--text);
+      font-family: 'Spectral', serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      padding: 0.4rem 0;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.3s ease;
+    }
+    .quill-login input::placeholder { color: var(--muted); letter-spacing: 0.06em; }
+    .quill-login input:focus { border-bottom-color: rgba(255,255,255,0.4); }
+    .quill-login p {
+      font-family: 'Spectral', serif;
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
 
     /* ── click sparks ── */
     .burst-spark {
@@ -508,11 +605,18 @@
       #logo-3d { width: 280px; height: 120px; }
       .platforms { gap: 1.2rem 1.6rem; margin-bottom: 1.5rem; }
       .platform-break { display: block; flex-basis: 100%; height: 0; }
-      .deck-stage { --pw: 124px; --ph: 143px; height: 240px; perspective: 1000px; }
-      .deck-glow { width: 240px; height: 70px; bottom: 10px; }
-      .card-photo.polaroid img { width: 110px; }
-      .card-photo.polaroid { padding: 7px 7px 0 7px; }
-      .card-photo.polaroid .card-caption { font-size: 0.8rem; padding: 4px 3px 8px; }
+      .deck-stage {
+        --pw: 106px; --ph: 122px; height: 215px; perspective: 1150px;
+        /* fade the wheel toward the edges so cards dissolve out of view
+           instead of being sliced off hard at the screen boundary */
+        mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
+      }
+      .deck-glow { width: 200px; height: 58px; bottom: 8px; }
+      .card-photo.polaroid img { width: 90px; }
+      .card-photo.polaroid { padding: 6px 6px 0 6px; }
+      .card-photo.polaroid .card-caption { font-size: 0.75rem; padding: 4px 3px 7px; }
+      .guestbook-form input, .guestbook-form textarea { font-size: 16px; }
     }
   </style>
 </head>
@@ -973,7 +1077,7 @@
       let startX = 0, lastX = 0, lastT = 0, startR = 0, vel = 0;
 
       const params = () => innerWidth <= 480
-        ? { r: 235, degPerPx: 0.28 }
+        ? { r: 210, degPerPx: 0.3 }
         : { r: 275, degPerPx: 0.22 };
 
       // fold any angle into (-180, 180]
@@ -1094,16 +1198,97 @@
     const HDR = { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` };
     const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+    // owner session for handwritten replies — set by the quill sign-in below.
+    // real security lives in supabase row level security: the public key can
+    // read and sign, but only an authenticated session may write a reply.
+    let quillToken = sessionStorage.getItem('quill_token') || null;
+
     async function loadMessages() {
       try {
-        const data = await fetch(`${API}?select=name,message&order=created_at.desc`, { headers: HDR }).then(r => r.json());
+        const data = await fetch(`${API}?select=id,name,message,reply&order=created_at.desc`, { headers: HDR }).then(r => r.json());
         const box = document.getElementById('gb-messages');
         box.innerHTML = data.length
-          ? data.map((m,i) => `<div class="guestbook-message" style="animation-delay:${i*0.12}s"><div class="guestbook-message-name">${esc(m.name)}</div><div class="guestbook-message-text">${esc(m.message)}</div></div>`).join('')
+          ? data.map((m,i) => {
+              // replies are stored either as a bare data-url (older full-canvas
+              // format) or as json carrying the trimmed ink plus where on the
+              // comment it was written
+              let ink = null;
+              if (typeof m.reply === 'string' && m.reply.startsWith('data:image/')) {
+                ink = { full: true, img: m.reply };
+              } else if (typeof m.reply === 'string' && m.reply.startsWith('{')) {
+                try {
+                  const p = JSON.parse(m.reply);
+                  const nums = [p.cw, p.ch, p.bx, p.by, p.bw, p.bh].map(Number);
+                  if (typeof p.img === 'string' && p.img.startsWith('data:image/') && nums.every(isFinite) && nums[0] > 0 && nums[1] > 0) {
+                    ink = { img: p.img, cw: nums[0], ch: nums[1], bx: nums[2], by: nums[3], bw: nums[4], bh: nums[5] };
+                  }
+                } catch(_) {}
+              }
+              const hasInk = !!ink;
+              let reply = '';
+              if (ink && ink.full) {
+                reply = `<div class="gb-reply full"><img src="${ink.img}" alt="handwritten reply from blvi"></div>`;
+              } else if (ink) {
+                const l  = (ink.bx / ink.cw * 100).toFixed(2);
+                const t  = (ink.by / ink.ch * 100).toFixed(2);
+                const wd = (ink.bw / ink.cw * 100).toFixed(2);
+                reply = `<div class="gb-reply v2" style="aspect-ratio:${ink.cw.toFixed(1)}/${ink.ch.toFixed(1)}"><img src="${ink.img}" style="left:${l}%;top:${t}%;width:${wd}%" alt="handwritten reply from blvi"></div>`;
+              }
+              const tools = quillToken
+                ? `<div class="quill-tools"><button class="quill-btn" data-quill="${m.id}">${hasInk ? 'redraw' : 'reply with the quill'}</button>${hasInk ? `<button class="quill-btn" data-erase="${m.id}">erase</button>` : ''}</div>`
+                : '';
+              return `<div class="guestbook-message" style="animation-delay:${i*0.12}s"><div class="guestbook-message-name">${esc(m.name)}</div><div class="guestbook-message-text">${esc(m.message)}</div>${reply}${tools}</div>`;
+            }).join('')
           : '<p class="guestbook-empty">no messages yet</p>';
         // names get the living-letters treatment; torch-ink re-registers
         box.querySelectorAll('.guestbook-message-name').forEach(el => window.__animateLetters && window.__animateLetters(el));
         if (window.__registerTorchInk) window.__registerTorchInk();
+
+        // older full-canvas replies carry their ink somewhere inside a big
+        // transparent canvas. trim them in the browser and convert to the
+        // positioned format, so they overlay correctly on wide screens and
+        // stack as just the handwriting on narrow ones.
+        box.querySelectorAll('.gb-reply.full img').forEach(img => {
+          const convert = () => {
+            const iw = img.naturalWidth, ih = img.naturalHeight;
+            if (!iw || !ih) return;
+            const c = document.createElement('canvas');
+            c.width = iw; c.height = ih;
+            const cc = c.getContext('2d');
+            cc.drawImage(img, 0, 0);
+            let d;
+            try { d = cc.getImageData(0, 0, iw, ih).data; } catch(_) { return; }
+            let minX = iw, minY = ih, maxX = -1, maxY = -1;
+            for (let y = 0; y < ih; y++) {
+              for (let x = 0; x < iw; x++) {
+                if (d[(y * iw + x) * 4 + 3] > 0) {
+                  if (x < minX) minX = x;
+                  if (x > maxX) maxX = x;
+                  if (y < minY) minY = y;
+                  if (y > maxY) maxY = y;
+                }
+              }
+            }
+            if (maxX < 0) return;   // blank drawing — leave as-is
+            const pad = 3;
+            minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+            maxX = Math.min(iw - 1, maxX + pad); maxY = Math.min(ih - 1, maxY + pad);
+            const tw = maxX - minX + 1, th = maxY - minY + 1;
+            const out = document.createElement('canvas');
+            out.width = tw; out.height = th;
+            out.getContext('2d').drawImage(c, minX, minY, tw, th, 0, 0, tw, th);
+            const wrap = img.closest('.gb-reply');
+            wrap.classList.remove('full');
+            wrap.classList.add('v2');
+            wrap.style.aspectRatio = `${iw}/${ih}`;
+            img.style.left  = (minX / iw * 100).toFixed(2) + '%';
+            img.style.top   = (minY / ih * 100).toFixed(2) + '%';
+            img.style.width = (tw / iw * 100).toFixed(2) + '%';
+            img.src = out.toDataURL('image/png');
+          };
+          if (img.complete) convert();
+          else img.addEventListener('load', convert, { once: true });
+        });
       } catch(e) { console.error(e); }
     }
     async function submitMessage() {
@@ -1122,6 +1307,229 @@
     }
     document.getElementById('gb-submit').addEventListener('click', submitMessage);
     loadMessages();
+
+    // ── the quill — sign in at #quill, then handwrite replies in ink ──
+    (function () {
+      const AUTH = `${SUPA_URL}/auth/v1`;
+
+      // ── sign-in panel, revealed only by visiting the page with #quill ──
+      function showLogin() {
+        if (document.getElementById('quill-login')) return;
+        const panel = document.createElement('div');
+        panel.className = 'quill-login';
+        panel.id = 'quill-login';
+        if (quillToken) {
+          panel.innerHTML = `<p>the quill is in your hand</p>
+            <button class="quill-btn" id="quill-out">set it down</button>`;
+        } else {
+          panel.innerHTML = `<input id="quill-email" type="email" placeholder="email" autocomplete="username">
+            <input id="quill-pass" type="password" placeholder="password" autocomplete="current-password">
+            <button class="quill-btn" id="quill-in">take up the quill</button>`;
+        }
+        document.body.appendChild(panel);
+
+        const inBtn  = document.getElementById('quill-in');
+        const outBtn = document.getElementById('quill-out');
+        if (inBtn) {
+          inBtn.addEventListener('click', signIn);
+          panel.addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
+        }
+        if (outBtn) outBtn.addEventListener('click', () => {
+          quillToken = null;
+          sessionStorage.removeItem('quill_token');
+          panel.remove();
+          history.replaceState(null, '', location.pathname + location.search);
+          loadMessages();
+        });
+      }
+      function closeLogin() {
+        const panel = document.getElementById('quill-login');
+        if (panel) panel.remove();
+      }
+      if (location.hash === '#quill') showLogin();
+      window.addEventListener('hashchange', () => { if (location.hash === '#quill') showLogin(); });
+
+      async function signIn() {
+        const email = document.getElementById('quill-email').value.trim();
+        const pass  = document.getElementById('quill-pass').value;
+        const btn   = document.getElementById('quill-in');
+        if (!email || !pass) return;
+        btn.textContent = 'reaching...'; btn.disabled = true;
+        try {
+          const r = await fetch(`${AUTH}/token?grant_type=password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY },
+            body: JSON.stringify({ email, password: pass })
+          });
+          const d = await r.json().catch(() => ({}));
+          if (d.access_token) {
+            quillToken = d.access_token;
+            sessionStorage.setItem('quill_token', quillToken);
+            closeLogin();
+            history.replaceState(null, '', location.pathname + location.search);
+            await loadMessages();
+            return;
+          }
+        } catch(e) { console.error(e); }
+        btn.textContent = 'wrong words'; btn.disabled = false;
+        setTimeout(() => { btn.textContent = 'take up the quill'; }, 1600);
+      }
+
+      // crop a finished drawing to just the inked pixels, returning the
+      // trimmed image and where it sat on the canvas (in css pixels)
+      function trimInk(canvas, dpr) {
+        const c = canvas.getContext('2d');
+        const cw = canvas.width, ch = canvas.height;
+        const data = c.getImageData(0, 0, cw, ch).data;
+        let minX = cw, minY = ch, maxX = -1, maxY = -1;
+        for (let y = 0; y < ch; y++) {
+          for (let x = 0; x < cw; x++) {
+            if (data[(y * cw + x) * 4 + 3] > 0) {
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+        if (maxX < 0) return null;   // nothing drawn
+        const pad = Math.round(2 * dpr);
+        minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+        maxX = Math.min(cw - 1, maxX + pad); maxY = Math.min(ch - 1, maxY + pad);
+        const tw = maxX - minX + 1, th = maxY - minY + 1;
+        const out = document.createElement('canvas');
+        out.width = tw; out.height = th;
+        out.getContext('2d').drawImage(canvas, minX, minY, tw, th, 0, 0, tw, th);
+        return { img: out.toDataURL('image/png'), bx: minX / dpr, by: minY / dpr, bw: tw / dpr, bh: th / dpr };
+      }
+
+      // ── the writing pad — an ink canvas under the chosen message ──
+      function openPad(btn) {
+        document.querySelectorAll('.quill-pad').forEach(p => p.remove());
+        document.querySelectorAll('.gb-reply, .quill-tools').forEach(el => el.style.display = '');
+        const msgEl = btn.closest('.guestbook-message');
+        const id = btn.dataset.quill;
+
+        // writing happens directly over the comment: hide any existing ink
+        // and this message's tool row, and size the canvas to end exactly
+        // at the bottom of the comment text
+        const oldInk   = msgEl.querySelector('.gb-reply');
+        const rowTools = btn.closest('.quill-tools');
+        if (oldInk)   oldInk.style.display   = 'none';
+        if (rowTools) rowTools.style.display = 'none';
+        const txt = msgEl.querySelector('.guestbook-message-text');
+        const contentH = txt.offsetTop + txt.offsetHeight;
+
+        const pad = document.createElement('div');
+        pad.className = 'quill-pad';
+        pad.innerHTML = `<canvas class="quill-canvas"></canvas>
+          <div class="quill-tools">
+            <button class="quill-btn" data-act="save">seal it</button>
+            <button class="quill-btn" data-act="clear">start over</button>
+            <button class="quill-btn" data-act="close">never mind</button>
+          </div>`;
+        msgEl.appendChild(pad);
+
+        const canvas = pad.querySelector('canvas');
+        canvas.style.height = contentH + 'px';
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        canvas.width  = w * dpr;
+        canvas.height = h * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#ffffff';
+
+        let drawing = false, marked = false, lx = 0, ly = 0;
+        const pos = ev => {
+          const r = canvas.getBoundingClientRect();
+          return [ev.clientX - r.left, ev.clientY - r.top];
+        };
+        canvas.addEventListener('pointerdown', ev => {
+          ev.preventDefault();
+          canvas.setPointerCapture(ev.pointerId);
+          drawing = true; marked = true;
+          [lx, ly] = pos(ev);
+          // a dot for taps
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(lx, ly);
+          ctx.lineTo(lx + 0.1, ly + 0.1);
+          ctx.stroke();
+        });
+        canvas.addEventListener('pointermove', ev => {
+          if (!drawing) return;
+          const [x, y] = pos(ev);
+          // ink weight varies with speed — quick strokes run thinner
+          const d = Math.hypot(x - lx, y - ly);
+          ctx.lineWidth = Math.max(0.7, 2.0 - d * 0.05);
+          ctx.beginPath();
+          ctx.moveTo(lx, ly);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+          lx = x; ly = y;
+        });
+        const stop = () => { drawing = false; };
+        canvas.addEventListener('pointerup', stop);
+        canvas.addEventListener('pointercancel', stop);
+
+        pad.querySelector('[data-act="clear"]').addEventListener('click', () => {
+          ctx.clearRect(0, 0, w, h);
+          marked = false;
+        });
+        pad.querySelector('[data-act="close"]').addEventListener('click', () => {
+          pad.remove();
+          if (oldInk)   oldInk.style.display   = '';
+          if (rowTools) rowTools.style.display = '';
+        });
+        pad.querySelector('[data-act="save"]').addEventListener('click', async () => {
+          if (!marked) return;
+          const trimmed = trimInk(canvas, dpr);
+          if (!trimmed) return;   // canvas was cleared — nothing to seal
+          const saveBtn = pad.querySelector('[data-act="save"]');
+          saveBtn.textContent = 'sealing...'; saveBtn.disabled = true;
+          await saveReply(id, JSON.stringify({
+            v: 2,
+            img: trimmed.img,
+            cw: Math.round(w * 10) / 10,
+            ch: Math.round(h * 10) / 10,
+            bx: Math.round(trimmed.bx * 10) / 10,
+            by: Math.round(trimmed.by * 10) / 10,
+            bw: Math.round(trimmed.bw * 10) / 10,
+            bh: Math.round(trimmed.bh * 10) / 10,
+          }));
+        });
+      }
+
+      async function saveReply(id, dataUrl) {
+        try {
+          const r = await fetch(`${API}?id=eq.${encodeURIComponent(id)}`, {
+            method: 'PATCH',
+            headers: { ...HDR, Authorization: `Bearer ${quillToken}`, Prefer: 'return=minimal' },
+            body: JSON.stringify({ reply: dataUrl })
+          });
+          if (!r.ok) throw new Error(`reply rejected (${r.status})`);
+          await loadMessages();
+        } catch (e) {
+          console.error(e);
+          // the session has likely expired — set the quill down and ask again
+          quillToken = null;
+          sessionStorage.removeItem('quill_token');
+          await loadMessages();
+          showLogin();
+        }
+      }
+
+      // one delegated listener survives every guestbook re-render
+      document.getElementById('gb-messages').addEventListener('click', e => {
+        const eraseBtn = e.target.closest('[data-erase]');
+        if (eraseBtn) { saveReply(eraseBtn.dataset.erase, null); return; }
+        const penBtn = e.target.closest('[data-quill]');
+        if (penBtn) openPad(penBtn);
+      });
+    })();
 
     // ── torch-ink — messages brighten as the cursor nears them ──
     (function () {
@@ -1161,6 +1569,7 @@
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       document.addEventListener('pointerdown', e => {
         if (e.target.closest('input,textarea')) return;
+        if (e.target.closest('.quill-canvas')) return;   // no sparks while writing
         const count = 6 + ((Math.random() * 4) | 0);
         for (let i = 0; i < count; i++) {
           const s = document.createElement('span');
