@@ -118,11 +118,8 @@
       will-change: transform, opacity;
     }
 
-    /* ── entrance animation ── */
-    @keyframes appear {
-      from { opacity: 0; transform: translateY(24px) scale(0.9); }
-      to   { opacity: 1; transform: translateY(0)    scale(1);   }
-    }
+    /* ── entrance animation — initial state; reveal itself is driven by
+       revealEl()'s inline transition in the main script, not this keyframe ── */
     .appear      { opacity: 0; transform: translateY(24px) scale(0.9); }
     .appear-slow { opacity: 0; transform: translateY(24px) scale(0.9); }
 
@@ -798,7 +795,7 @@
 
   <script>
     // force top of page immediately, before any content renders
-    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    // (scrollRestoration itself is already set in <head>, before parsing)
     window.scrollTo(0, 0);
 
     // ── choreographed reveal with logo flight ──
@@ -938,6 +935,7 @@
       document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
       (function loop() {
         requestAnimationFrame(loop);
+        if (document.hidden) return;
         for (const l of links) {
           if (!l.el) continue;
           const rect = l.el.getBoundingClientRect();
