@@ -31,7 +31,9 @@
 
     /* ── background ── */
     html { background: #080a08; }
-    html, body { overflow-x: hidden; }   /* carousel edge cards clip at the viewport */
+    /* carousel edge cards clip at the viewport. clip, not hidden —
+       hidden would break the tornado's sticky pin */
+    html, body { overflow-x: hidden; overflow-x: clip; }
     body { background: transparent; }
     .bg-video {
       position: fixed;
@@ -119,9 +121,13 @@
     }
 
     /* ── entrance animation — initial state; reveal itself is driven by
-       revealEl()'s inline transition in the main script, not this keyframe ── */
-    .appear      { opacity: 0; transform: translateY(24px) scale(0.9); }
-    .appear-slow { opacity: 0; transform: translateY(24px) scale(0.9); }
+       revealEl()'s inline transition in the main script, not this keyframe ──
+       .reveal-scroll shares the same pre-state but is revealed the first
+       time it scrolls into view instead of once at page load, so the
+       tornado, wax seal, and guestbook fade in as the page reaches them */
+    .appear        { opacity: 0; transform: translateY(24px) scale(0.9); }
+    .appear-slow   { opacity: 0; transform: translateY(24px) scale(0.9); }
+    .reveal-scroll { opacity: 0; transform: translateY(24px) scale(0.9); }
 
     /* ── veil ── */
     .veil {
@@ -362,6 +368,93 @@
       .deck-card.is-front .spot-badge { opacity: 0.85; transform: scale(1); }
     }
 
+    /* ── the tornado — soundcloud tracks wound down a scroll-pinned helix ──
+       the wrapper is tall (height set in js) and the pin inside sticks
+       to the viewport, so the page appears to hold still while the
+       scroll twists the funnel from the first track to the last, then
+       carries on down the page. the card facing the viewer hangs
+       centred and full-size, ready to play; the rest scatter above and
+       below it — shrunken, dimmed, blurred and turned edge-on. */
+    .spiral {
+      position: relative;
+      width: 100%;
+    }
+    /* sized to its content (stage height + this padding), not to the
+       viewport. the card is always dead-centre in the pin no matter
+       how tall the stage box is — a bigger stage doesn't add breathing
+       room, it just puts more empty space between the stage's own
+       edges and the (always-centred) card. the only way to shrink the
+       gap against the wheel and the wax seal is to shrink the pin
+       itself. (a negative margin on .spiral to pull the section up
+       instead would push the pin's box on top of the wheel above it,
+       and since it comes later in the DOM it would paint over the
+       wheel and steal its clicks — don't do that again either.) */
+    .spiral-pin {
+      position: sticky;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 0;
+    }
+    .spiral-stage {
+      --sw: 190px;              /* card outer width  */
+      --sh: 226px;              /* card outer height */
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      height: 340px;
+      perspective: 1200px;
+    }
+    .spiral-ring {
+      position: absolute;
+      left: 50%; top: 50%;
+    }
+    .spiral-card {
+      position: absolute;
+      left: calc(var(--sw) / -2);
+      top: calc(var(--sh) / -2);
+      width: var(--sw);
+      will-change: transform, filter, opacity;
+    }
+    .spiral-ring .spiral-card:nth-child(5n+1) .card-photo { --tilt: -3deg;   }
+    .spiral-ring .spiral-card:nth-child(5n+2) .card-photo { --tilt: 2.5deg;  }
+    .spiral-ring .spiral-card:nth-child(5n+3) .card-photo { --tilt: 2deg;    }
+    .spiral-ring .spiral-card:nth-child(5n+4) .card-photo { --tilt: -2.5deg; }
+    .spiral-ring .spiral-card:nth-child(5n)   .card-photo { --tilt: -2deg;   }
+    .spiral-card.is-front .card-photo {
+      box-shadow: 0 24px 70px rgba(0,0,0,0.8), 0 6px 18px rgba(0,0,0,0.55);
+    }
+    /* the widget's own "privacy policy" strip sits at a fixed offset from
+       its bottom edge — rendering the iframe taller than the visible
+       window and anchoring it to the top pushes that strip out of view
+       without touching anything soundcloud actually renders */
+    .spiral-embed-wrap {
+      position: relative;
+      width: 100%;
+      height: 150px;
+      border-radius: 1px;
+      overflow: hidden;
+      background: rgba(0,0,0,0.15);
+    }
+    .spiral-embed-wrap iframe {
+      display: block;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 190px;
+      border: 0;
+    }
+    .spiral-catch { position: absolute; inset: 0; z-index: 2; cursor: pointer; }
+    .spiral-card.is-front .spiral-catch { pointer-events: none; }
+    @media (max-width: 480px) {
+      .spiral-pin { padding: 1.25rem 0; }
+      .spiral-stage { --sw: 132px; --sh: 168px; height: 260px; }
+      .spiral-embed-wrap { height: 100px; }
+      .spiral-embed-wrap iframe { height: 128px; }
+    }
+
     /* ── wax seal divider ── */
     .wax-seal-wrap {
       display: flex;
@@ -369,7 +462,13 @@
       width: 100%;
       max-width: 560px;
       gap: 0;
-      margin-top: 3rem;
+      /* the stage now fills almost the whole pinned viewport (see
+         .spiral-stage), so there's little margin left to close here —
+         a negative pull big enough to matter would land this box
+         inside .spiral-scroll's own (very tall) scroll range while the
+         tornado is still pinned, overlapping its cards the same way it
+         once overlapped the wheel above. leave it be. */
+      margin-top: 0.25rem;
       margin-bottom: 3rem;
     }
     .wax-seal-line {
@@ -689,13 +788,21 @@
     </div>
   </div>
 
-  <div class="wax-seal-wrap appear">
+  <div class="spiral" id="spiral-scroll">
+    <div class="spiral-pin">
+      <div class="spiral-stage reveal-scroll" id="spiral-stage">
+        <div class="spiral-ring" id="spiral-ring"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wax-seal-wrap reveal-scroll">
     <div class="wax-seal-line"></div>
     <img class="wax-seal" id="wax-seal" src="Icons/waxseal.png" alt="wax seal">
     <div class="wax-seal-line"></div>
   </div>
 
-  <div class="guestbook appear">
+  <div class="guestbook reveal-scroll">
     <div class="guestbook-form">
       <input id="gb-name" type="text" placeholder="your name" maxlength="50">
       <textarea id="gb-message" placeholder="your message" maxlength="300"></textarea>
@@ -806,6 +913,22 @@
         el.style.transform = 'translateY(0) scale(1)';
       }, delay);
     }
+
+    // ── reveal on scroll — the tornado, wax seal, and guestbook fade in
+    // the first time the page reaches them, rather than sitting fully
+    // visible from load like the .appear elements above the fold ──
+    (function () {
+      const els = document.querySelectorAll('.reveal-scroll');
+      if (!els.length) return;
+      const io = new IntersectionObserver(entries => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          revealEl(e.target, 0, 0.9);
+          io.unobserve(e.target);
+        }
+      }, { threshold: 0.15 });
+      els.forEach(el => io.observe(el));
+    })();
 
     function runMainSequence() {
       window.scrollTo(0, 0);
@@ -1104,17 +1227,10 @@
         }
       }
 
-      // idle turn — a slow constant rotation, paused while the cursor is
-      // over the stage and while a drag/fling is settling. hover tracking
-      // is skipped on touch devices, where a tap fires mouseenter but no
-      // mouseleave and would freeze the wheel permanently.
+      // idle turn — a slow constant rotation, paused only by an active
+      // drag/fling, not by hovering
       const IDLE_SPEED = 3.2;   // degrees per second
-      let hovering = false;
       let restUntil = Infinity; // idling begins once the reveal fires
-      if (matchMedia('(hover: hover)').matches) {
-        stage.addEventListener('mouseenter', () => { hovering = true; });
-        stage.addEventListener('mouseleave', () => { hovering = false; });
-      }
 
       let frameT = performance.now();
       (function loop() {
@@ -1125,7 +1241,7 @@
         frameT = now;
         if (!dragging) {
           const settled = Math.abs(targetR - R) < 0.5;
-          if (settled && !hovering && now > restUntil && !reduced) {
+          if (settled && now > restUntil && !reduced) {
             targetR -= IDLE_SPEED * dt;
           }
           R += (targetR - R) * (reduced ? 1 : 0.09);
@@ -1186,6 +1302,141 @@
         if (e.key === 'ArrowRight') targetR = Math.round(targetR / STEP) * STEP - STEP;
       });
 
+      render();
+    })();
+
+    // ── the tornado — soundcloud tracks on a scroll-pinned helix ──
+    (function () {
+      const wrap  = document.getElementById('spiral-scroll');
+      const pin   = wrap.querySelector('.spiral-pin');
+      const stage = document.getElementById('spiral-stage');
+      const ring  = document.getElementById('spiral-ring');
+      if (!wrap || !pin || !stage || !ring) return;
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // tracks not already featured in the spotify wheel above
+      const scTracks = [
+        { slug: 'the-fly',          title: 'the fly' },
+        { slug: 'innocence-remix',  title: 'innocence (remix)' },
+        { slug: 'alpha',            title: 'alpha' },
+        { slug: 'fuckboy-remix',    title: 'fuckboy, by brakence (remix)' },
+        { slug: 'end-of-the-world', title: 'end of the world' },
+        { slug: 'allineed',         title: 'all i need' },
+        { slug: 'blvi-2020',        title: 'music' },
+        { slug: 'downtown',         title: 'downtown' },
+        { slug: 'water',            title: 'water (under)' },
+        { slug: 'keepurheadup',     title: 'keepurheadup' },
+        { slug: 'fuckboy',          title: 'fuckboy' },
+        { slug: 'hot',              title: 'up and away' },
+        { slug: 'missyou',          title: 'missyou' },
+      ];
+
+      scTracks.forEach(t => {
+        const url = `https://soundcloud.com/blvi/${t.slug}`;
+        const embedSrc = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`
+          + '&color=%23c9a876&auto_play=false&hide_related=true&show_comments=false'
+          + '&show_user=true&show_reposts=false&show_teaser=false&visual=true';
+        const card = document.createElement('div');
+        card.className = 'spiral-card';
+        card.innerHTML = `<div class="card-photo polaroid">
+          <div class="spiral-embed-wrap">
+            <div class="spiral-catch"></div>
+            <iframe data-src="${embedSrc}" loading="lazy" scrolling="no" frameborder="no" allow="autoplay"></iframe>
+          </div>
+          <div class="card-caption">${t.title}</div>
+        </div>`;
+        ring.appendChild(card);
+      });
+
+      const cards = Array.from(ring.querySelectorAll('.spiral-card'));
+      const N = cards.length;
+      // sway: horizontal reach of the funnel. drop: px between
+      // neighbouring cards. wind: radians of twist per card. lean: how
+      // far a card turns edge-on as it leaves the front. pace: scroll
+      // px it takes to advance one track while the stage is pinned.
+      const params = () => innerWidth <= 480
+        ? { sway: 96,  drop: 76, wind: 0.85, lean: 55, pace: 150 }
+        : { sway: 230, drop: 92, wind: 0.85, lean: 65, pace: 220 };
+
+      // the wrapper is tall and the pin sticks, so the page holds still
+      // while scroll walks the funnel from the first track to the last.
+      // the wrapper's height is the pin's own (content-sized) height
+      // plus the walk distance — not the viewport — so releasing the
+      // pin doesn't leave a stretch of empty scroll before the wax
+      // seal shows up.
+      let startY = 0, spanY = 1;
+      function measure() {
+        const pinH = pin.offsetHeight;
+        wrap.style.height = (pinH + (N - 1) * params().pace) + 'px';
+        startY = wrap.offsetTop;
+        spanY  = wrap.offsetHeight - pinH;
+      }
+      measure();
+      window.addEventListener('resize', measure);
+
+      let pos = 0, targetPos = 0;
+      let loaded = false;
+      const smooth = t => t * t * (3 - 2 * t);
+
+      function render() {
+        const p = params();
+        for (let i = 0; i < N; i++) {
+          const d  = i - pos;                       // whole cards from the front
+          const ad = Math.abs(d);
+          const focus = Math.max(0, 1 - ad);        // 1 at front, 0 a card away
+          const lean  = Math.max(-p.lean, Math.min(p.lean, d * 45));
+          const card  = cards[i];
+          card.style.transform =
+            `translate(${(Math.sin(d * p.wind) * p.sway).toFixed(1)}px, ${(d * p.drop).toFixed(1)}px)` +
+            ` rotateY(${lean.toFixed(1)}deg) scale(${(0.38 + 0.74 * focus).toFixed(3)})`;
+          card.style.zIndex  = 100 - Math.round(ad * 10);
+          card.style.filter  = `brightness(${(0.35 + 0.65 * focus).toFixed(3)}) blur(${(Math.min(ad, 1) * 1.6).toFixed(2)}px)`;
+          card.style.opacity = Math.max(0, Math.min(1, 1.1 - ad * 0.32)).toFixed(3);
+          card.style.visibility = ad > 3.6 ? 'hidden' : '';
+          card.style.pointerEvents = ad > 3 ? 'none' : '';
+          card.classList.toggle('is-front', ad < 0.5);
+        }
+      }
+
+      // embeds load once, the first time the tornado comes into view —
+      // never reloaded afterward, so playback survives cards cycling
+      // away from the front and back
+      const io = new IntersectionObserver(entries => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          measure();   // layout above may have settled since load
+          if (loaded) continue;
+          loaded = true;
+          cards.forEach(c => {
+            const ifr = c.querySelector('iframe');
+            if (ifr.dataset.src) { ifr.src = ifr.dataset.src; delete ifr.dataset.src; }
+          });
+        }
+      }, { rootMargin: '150px' });
+      io.observe(stage);
+
+      // clicking a side card scrolls the page to where that card is
+      // front; the front card's catch overlay is pointer-events:none,
+      // so clicks reach the embed
+      cards.forEach((card, i) => {
+        card.querySelector('.spiral-catch').addEventListener('click', () => {
+          scrollTo({ top: startY + (i / (N - 1)) * spanY, behavior: reduced ? 'auto' : 'smooth' });
+        });
+      });
+
+      (function loop() {
+        requestAnimationFrame(loop);
+        if (document.hidden) return;
+        // scroll progress through the wrapper picks the front track;
+        // each card dwells at the front before flicking to the next
+        const prog = Math.max(0, Math.min(1, (scrollY - startY) / spanY));
+        const pf   = prog * (N - 1);
+        const idx  = Math.floor(pf);
+        targetPos  = idx + smooth(Math.max(0, Math.min(1, (pf - idx - 0.3) / 0.4)));
+        pos += (targetPos - pos) * (reduced ? 1 : 0.09);
+        if (Math.abs(targetPos - pos) < 0.001) pos = targetPos;
+        render();
+      })();
       render();
     })();
 
