@@ -389,18 +389,27 @@
        instead would push the pin's box on top of the wheel above it,
        and since it comes later in the DOM it would paint over the
        wheel and steal its clicks — don't do that again either.) */
+    /* top:0, not top:50% — a centred (top:50% + translateY(-50%)) pin
+       starts sticking as soon as the page scrolls at all, since that
+       trick triggers off the viewport's midpoint rather than its top.
+       with a section this close under the wheel, that meant the pin
+       locked to screen-centre while the wheel was still on screen,
+       rendering on top of it. top:0 only sticks once the wheel has
+       fully scrolled past — no overlap possible, ever — and centring
+       the card still works because the pin is a full viewport tall. */
     .spiral-pin {
       position: sticky;
       top: 0;
+      height: 100vh;
+      height: 100svh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2rem 0;
     }
     .spiral-stage {
       --sw: 190px;              /* card outer width  */
-      --sh: 226px;              /* card outer height */
+      --sh: 180px;              /* card outer height */
       position: relative;
       width: 100%;
       max-width: 900px;
@@ -418,13 +427,17 @@
       width: var(--sw);
       will-change: transform, filter, opacity;
     }
-    .spiral-ring .spiral-card:nth-child(5n+1) .card-photo { --tilt: -3deg;   }
-    .spiral-ring .spiral-card:nth-child(5n+2) .card-photo { --tilt: 2.5deg;  }
-    .spiral-ring .spiral-card:nth-child(5n+3) .card-photo { --tilt: 2deg;    }
-    .spiral-ring .spiral-card:nth-child(5n+4) .card-photo { --tilt: -2.5deg; }
-    .spiral-ring .spiral-card:nth-child(5n)   .card-photo { --tilt: -2deg;   }
-    .spiral-card.is-front .card-photo {
-      box-shadow: 0 24px 70px rgba(0,0,0,0.8), 0 6px 18px rgba(0,0,0,0.55);
+    /* no polaroid paper here — just the embed itself, rounded and
+       shadowed, on the page's own background */
+    .spiral-frame {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 10px 34px rgba(0,0,0,0.55), 0 3px 10px rgba(0,0,0,0.35);
+      transition: box-shadow 0.5s ease;
+    }
+    .spiral-card.is-front .spiral-frame {
+      box-shadow: 0 26px 70px rgba(0,0,0,0.75), 0 6px 18px rgba(0,0,0,0.5);
     }
     /* the widget's own "privacy policy" strip sits at a fixed offset from
        its bottom edge — rendering the iframe taller than the visible
@@ -434,9 +447,7 @@
       position: relative;
       width: 100%;
       height: 150px;
-      border-radius: 1px;
-      overflow: hidden;
-      background: rgba(0,0,0,0.15);
+      background: rgba(0,0,0,0.2);
     }
     .spiral-embed-wrap iframe {
       display: block;
@@ -448,9 +459,17 @@
     }
     .spiral-catch { position: absolute; inset: 0; z-index: 2; cursor: pointer; }
     .spiral-card.is-front .spiral-catch { pointer-events: none; }
+    .spiral-caption {
+      font-family: 'Almendra', serif;
+      font-size: 0.82rem;
+      color: var(--text);
+      text-align: center;
+      letter-spacing: 0.02em;
+      opacity: 0.8;
+      padding-top: 0.55rem;
+    }
     @media (max-width: 480px) {
-      .spiral-pin { padding: 1.25rem 0; }
-      .spiral-stage { --sw: 132px; --sh: 168px; height: 260px; }
+      .spiral-stage { --sw: 132px; --sh: 130px; height: 320px; }
       .spiral-embed-wrap { height: 100px; }
       .spiral-embed-wrap iframe { height: 128px; }
     }
@@ -1338,13 +1357,13 @@
           + '&show_user=true&show_reposts=false&show_teaser=false&visual=true';
         const card = document.createElement('div');
         card.className = 'spiral-card';
-        card.innerHTML = `<div class="card-photo polaroid">
+        card.innerHTML = `<div class="spiral-frame">
           <div class="spiral-embed-wrap">
             <div class="spiral-catch"></div>
             <iframe data-src="${embedSrc}" loading="lazy" scrolling="no" frameborder="no" allow="autoplay"></iframe>
           </div>
-          <div class="card-caption">${t.title}</div>
-        </div>`;
+        </div>
+        <div class="spiral-caption">${t.title}</div>`;
         ring.appendChild(card);
       });
 
@@ -1388,7 +1407,7 @@
           const card  = cards[i];
           card.style.transform =
             `translate(${(Math.sin(d * p.wind) * p.sway).toFixed(1)}px, ${(d * p.drop).toFixed(1)}px)` +
-            ` rotateY(${lean.toFixed(1)}deg) scale(${(0.38 + 0.74 * focus).toFixed(3)})`;
+            ` rotateY(${lean.toFixed(1)}deg) scale(${(0.35 + 1.15 * focus).toFixed(3)})`;
           card.style.zIndex  = 100 - Math.round(ad * 10);
           card.style.filter  = `brightness(${(0.35 + 0.65 * focus).toFixed(3)}) blur(${(Math.min(ad, 1) * 1.6).toFixed(2)}px)`;
           card.style.opacity = Math.max(0, Math.min(1, 1.1 - ad * 0.32)).toFixed(3);
