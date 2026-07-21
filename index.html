@@ -379,29 +379,25 @@
       position: relative;
       width: 100%;
     }
-    /* sized to its content (stage height + this padding), not to the
-       viewport. the card is always dead-centre in the pin no matter
-       how tall the stage box is — a bigger stage doesn't add breathing
-       room, it just puts more empty space between the stage's own
-       edges and the (always-centred) card. the only way to shrink the
-       gap against the wheel and the wax seal is to shrink the pin
-       itself. (a negative margin on .spiral to pull the section up
-       instead would push the pin's box on top of the wheel above it,
-       and since it comes later in the DOM it would paint over the
-       wheel and steal its clicks — don't do that again either.) */
-    /* top:0, not top:50% — a centred (top:50% + translateY(-50%)) pin
-       starts sticking as soon as the page scrolls at all, since that
-       trick triggers off the viewport's midpoint rather than its top.
-       with a section this close under the wheel, that meant the pin
-       locked to screen-centre while the wheel was still on screen,
-       rendering on top of it. top:0 only sticks once the wheel has
-       fully scrolled past — no overlap possible, ever — and centring
-       the card still works because the pin is a full viewport tall. */
+    /* a shorter-than-viewport pin, offset down so the (100vh - height)/2
+       of empty space that a full-height pin puts above and below the
+       centred card is roughly halved. that empty space is what read as
+       a dead gap when scrolling into and out of the section; shrinking
+       the pin brings the wheel above and the wax seal below closer, and
+       the funnel's faded outer cards fill what remains, so the hand-off
+       feels continuous rather than like scrolling through a void.
+       top:15vh keeps the card at viewport centre (15 + 70/2 = 50). a
+       *small positive* top is safe: the pin only sticks once the
+       wheel's bottom edge has scrolled up to that offset, so their
+       boxes meet without overlapping. do NOT use top:50% + a centring
+       translate — that sticks at the viewport midpoint and paints the
+       pin on top of the wheel while it's still on screen. */
     .spiral-pin {
       position: sticky;
-      top: 0;
-      height: 100vh;
-      height: 100svh;
+      top: 15vh;
+      top: 15svh;
+      height: 70vh;
+      height: 70svh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1374,8 +1370,8 @@
       // far a card turns edge-on as it leaves the front. pace: scroll
       // px it takes to advance one track while the stage is pinned.
       const params = () => innerWidth <= 480
-        ? { sway: 96,  drop: 76, wind: 0.85, lean: 55, pace: 150 }
-        : { sway: 230, drop: 92, wind: 0.85, lean: 65, pace: 220 };
+        ? { sway: 96,  drop: 84,  wind: 0.85, lean: 55, pace: 300 }
+        : { sway: 230, drop: 104, wind: 0.85, lean: 65, pace: 300 };
 
       // the wrapper is tall and the pin sticks, so the page holds still
       // while scroll walks the funnel from the first track to the last.
@@ -1386,8 +1382,11 @@
       let startY = 0, spanY = 1;
       function measure() {
         const pinH = pin.offsetHeight;
+        const top = parseFloat(getComputedStyle(pin).top) || 0;
         wrap.style.height = (pinH + (N - 1) * params().pace) + 'px';
-        startY = wrap.offsetTop;
+        // the pin sticks once its `top` offset is reached, i.e. `top`
+        // px of scroll before the wrapper's own top hits the viewport
+        startY = wrap.offsetTop - top;
         spanY  = wrap.offsetHeight - pinH;
       }
       measure();
