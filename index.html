@@ -121,13 +121,17 @@
     }
 
     /* ── entrance animation — initial state; reveal itself is driven by
-       revealEl()'s inline transition in the main script, not this keyframe ──
-       .reveal-scroll shares the same pre-state but is revealed the first
-       time it scrolls into view instead of once at page load, so the
-       tornado, wax seal, and guestbook fade in as the page reaches them */
+       revealEl()'s inline transition in the main script, not this keyframe */
     .appear        { opacity: 0; transform: translateY(24px) scale(0.9); }
     .appear-slow   { opacity: 0; transform: translateY(24px) scale(0.9); }
-    .reveal-scroll { opacity: 0; transform: translateY(24px) scale(0.9); }
+    /* scroll-linked easing (driven per-frame in JS, not a one-shot fade):
+       .ease-fade just fades — used on the vortex stages, so no transform
+       fights the pinned card layout. .ease-rise also rises + settles —
+       used on the flow sections (wax seal, guestbook) so you glide into
+       them. both start hidden; the loop scrubs them in as they cross the
+       lower-middle of the viewport. */
+    .ease-fade { opacity: 0; }
+    .ease-rise { opacity: 0; transform: translateY(46px) scale(0.965); }
 
     /* ── veil ── */
     .veil {
@@ -140,6 +144,59 @@
       will-change: opacity;
     }
     .veil.dissolve { opacity: 0; }
+
+    /* ── section transition veil — a quick dark wash that plays every
+       time you scroll into a section, carrying the section's name in its
+       brand colour for the spotify / soundcloud vortexes (set in JS),
+       wordless for the guestbook. the wash snaps in fast (the "click")
+       then eases out (the "smooth"). pointer-events:none so scrolling
+       continues underneath. ── */
+    .section-veil {
+      position: fixed;
+      inset: 0;
+      z-index: 9700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(ellipse at center, rgba(6,7,6,0.7) 0%, rgba(6,7,6,0.44) 44%, rgba(6,7,6,0) 78%);
+    }
+    .section-veil.show { animation: sectionVeil 1.4s cubic-bezier(0.4,0,0.2,1) forwards; }
+    .section-veil-word {
+      font-family: 'Almendra', serif;
+      font-size: clamp(1.5rem, 4.5vw, 2.6rem);
+      color: #f0ece4;
+      letter-spacing: 0.14em;
+      opacity: 0;
+    }
+    .section-veil.show .section-veil-word { animation: sectionVeilWord 1.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+    @keyframes sectionVeil {
+      0%   { opacity: 0; }
+      9%   { opacity: 1; }   /* snap in — the "click" */
+      55%  { opacity: 1; }
+      100% { opacity: 0; }   /* ease out — the "smooth" */
+    }
+    @keyframes sectionVeilWord {
+      0%   { opacity: 0; transform: translateY(9px) scale(0.8); letter-spacing: 0.03em; }
+      11%  { opacity: 1; transform: translateY(0) scale(1.07); }   /* quick pop */
+      22%  { transform: translateY(0) scale(1); }
+      55%  { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-8px) scale(1.02); letter-spacing: 0.32em; }
+    }
+
+    /* the hero greets you on load — logo + social links fill the first
+       screen, so the vortexes sit below the fold and scroll in one at a
+       time. min-height in svh so mobile browser chrome doesn't clip it. */
+    .hero {
+      width: 100%;
+      min-height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
 
     /* ── logo flight ── */
     .logo-wrap {
@@ -202,132 +259,32 @@
     .platforms a[href*="shop.blvi"] .platform-float { animation-delay: -3.1s; }
     .platforms img { width: 15px; height: 15px; object-fit: contain; }
 
-    /* ── the wheel — 3d circular carousel of songs ──
-       cards stand on a rotating ring; the front card is fully lit,
-       neighbours darken with angle, the far side fades out entirely. */
-    .deck {
-      width: 100%;
-      max-width: 900px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .deck-stage {
-      --pw: 150px;              /* polaroid outer width  */
-      --ph: 172px;              /* polaroid outer height */
-      position: relative;
-      width: 100%;
-      height: 280px;
-      cursor: grab;
-      touch-action: pan-y;
-      user-select: none;
-      -webkit-user-select: none;
-      perspective: 1400px;
-    }
-    .deck-stage.dragging { cursor: grabbing; }
-    .deck-ring {
-      position: absolute;
-      left: 50%; top: 50%;
-      transform-style: preserve-3d;
-      will-change: transform;
-    }
-    .deck-card {
-      position: absolute;
-      left: calc(var(--pw) / -2);
-      top: calc(var(--ph) / -2);
-      width: var(--pw);
-      text-decoration: none;
-      color: var(--text);
-      will-change: filter, opacity;
-      cursor: grab;
-      -webkit-user-drag: none;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-    }
-    .deck-card img { -webkit-user-drag: none; user-select: none; }
-    .deck-card.is-front { cursor: pointer; }
-    .deck-stage.dragging .deck-card { cursor: grabbing; }
-
-    /* each polaroid drifts gently inside its slot. amplitudes are small
-       and phases are staggered in js, so neighbours never move in step;
-       the ring's depth sorting handles any brief overlap. */
-    .card-float { will-change: transform; }
-    .deck-ring .deck-card:nth-child(4n+1) .card-float { animation: driftA 20s ease-in-out infinite; }
-    .deck-ring .deck-card:nth-child(4n+2) .card-float { animation: driftB 24s ease-in-out infinite; }
-    .deck-ring .deck-card:nth-child(4n+3) .card-float { animation: driftC 22s ease-in-out infinite; }
-    .deck-ring .deck-card:nth-child(4n)   .card-float { animation: driftD 26s ease-in-out infinite; }
-    @keyframes driftA {
-      0%,100% { transform: translate(0,0); }    25% { transform: translate(4px,-6px); }
-      50%     { transform: translate(-3px,4px); } 75% { transform: translate(5px,3px); }
-    }
-    @keyframes driftB {
-      0%,100% { transform: translate(0,0); }    25% { transform: translate(-5px,4px); }
-      50%     { transform: translate(3px,-6px); } 75% { transform: translate(-3px,6px); }
-    }
-    @keyframes driftC {
-      0%,100% { transform: translate(0,0); }    30% { transform: translate(5px,-4px); }
-      60%     { transform: translate(-4px,3px); } 80% { transform: translate(3px,5px); }
-    }
-    @keyframes driftD {
-      0%,100% { transform: translate(0,0); }    20% { transform: translate(-5px,-5px); }
-      55%     { transform: translate(5px,4px); } 80% { transform: translate(-3px,5px); }
-    }
-
-    /* per-song tilts on a 5-cycle, so each song's clone matches */
-    .deck-ring .deck-card:nth-child(5n+1) .card-photo { --tilt: -4deg;   }
-    .deck-ring .deck-card:nth-child(5n+2) .card-photo { --tilt: 3.5deg;  }
-    .deck-ring .deck-card:nth-child(5n+3) .card-photo { --tilt: 2.5deg;  }
-    .deck-ring .deck-card:nth-child(5n+4) .card-photo { --tilt: -3deg;   }
-    .deck-ring .deck-card:nth-child(5n)   .card-photo { --tilt: -3deg;   }
-
-    /* warm glow beneath the front card */
-    .deck-glow {
-      position: absolute;
-      left: 50%; bottom: 14px;
-      width: 320px; height: 90px;
-      transform: translateX(-50%);
-      background: radial-gradient(ellipse at center, rgba(255,180,110,0.13), transparent 70%);
-      pointer-events: none;
-      animation: emberBreath 4.5s ease-in-out infinite;
-    }
-    @keyframes emberBreath { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
-
-    /* ── card photo (shared polaroid material) ── */
+    /* ── card photo (polaroid material) — the spotify vortex's cards.
+       the tornado layout/scroll logic lives in the .spiral* rules and
+       initTornado(); this is just the paper look wrapped around an
+       album cover. the soundcloud vortex uses .spiral-frame instead. ── */
     .card-photo {
       position: relative;
-      overflow: hidden;
       box-shadow: 0 6px 28px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.35);
       transform: rotate(var(--tilt, 0deg));
-      transition: transform 0.6s cubic-bezier(0.22,1,0.36,1), box-shadow 0.7s ease;
+      transition: box-shadow 0.7s ease;
     }
     .card-photo.polaroid {
+      display: block;
+      text-decoration: none;
       background:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E"),
         linear-gradient(135deg,#ede8de 0%,#e8e0d0 40%,#ede5d5 70%,#e6dece 100%);
       padding: 10px 10px 0 10px;
-      overflow: visible;
     }
     .card-photo.polaroid img {
       display: block;
-      width: 130px;
+      width: 100%;
       aspect-ratio: 1;
       object-fit: cover;
       outline: 1.5px solid rgba(0,0,0,0.15);
-    }
-    .card-photo.polaroid::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,0.3) 48%, rgba(255,255,255,0.07) 54%, transparent 64%);
-      background-size: 250% 100%;
-      background-position: 180% 0;
-      transition: background-position 0.9s ease;
-    }
-    .deck-card:hover .card-photo.polaroid::after { background-position: -80% 0; }
-    .deck-card:hover .card-photo {
-      transform: rotate(0deg) scale(1.08);
-      box-shadow: 0 22px 64px rgba(0,0,0,0.75), 0 4px 16px rgba(0,0,0,0.5);
+      -webkit-user-drag: none;
+      user-select: none;
     }
     .card-photo.polaroid .card-caption {
       font-family: 'Almendra', serif;
@@ -338,34 +295,14 @@
       letter-spacing: 0.02em;
       opacity: 0.85;
     }
-    @media (hover: none) {
-      .card-photo.polaroid::after { display: none; }
-      .deck-card:hover .card-photo {
-        transform: rotate(var(--tilt, 0deg));
-        box-shadow: 0 6px 28px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.35);
-      }
-    }
-
-    /* spotify badge — shown on hover; on touch devices it sits on the
-       front card instead, since hover doesn't exist there */
-    .spot-badge {
-      position: absolute;
-      top: 16px; right: 16px;
-      z-index: 2;
-      width: 26px; height: 26px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(8,10,8,0.78);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-      opacity: 0;
-      transform: scale(0.6);
-      transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1);
-      pointer-events: none;
-    }
-    .spot-badge svg { width: 15px; height: 15px; fill: #1ed760; }
-    .deck-card:hover .spot-badge { opacity: 1; transform: scale(1); }
-    @media (hover: none) {
-      .deck-card.is-front .spot-badge { opacity: 0.85; transform: scale(1); }
+    /* subtle per-card tilt so the polaroids sit askew in the vortex */
+    .spiral-ring .spiral-card:nth-child(5n+1) .card-photo { --tilt: -3deg;   }
+    .spiral-ring .spiral-card:nth-child(5n+2) .card-photo { --tilt: 2.5deg;  }
+    .spiral-ring .spiral-card:nth-child(5n+3) .card-photo { --tilt: 2deg;    }
+    .spiral-ring .spiral-card:nth-child(5n+4) .card-photo { --tilt: -2.5deg; }
+    .spiral-ring .spiral-card:nth-child(5n)   .card-photo { --tilt: -2deg;   }
+    .spiral-card.is-front .card-photo {
+      box-shadow: 0 24px 70px rgba(0,0,0,0.8), 0 6px 18px rgba(0,0,0,0.55);
     }
 
     /* ── the tornado — soundcloud tracks wound down a scroll-pinned helix ──
@@ -411,6 +348,21 @@
       max-width: 900px;
       height: 340px;
       perspective: 1200px;
+    }
+    /* polaroid cards are taller than the embed frames (image + caption
+       on paper), so the spotify stage needs a taller card box for the
+       ring to centre each card on its true middle */
+    #spotify-stage { --sh: 214px; }
+    /* the spotify vortex is the first section under the hero, so its pin
+       gets a larger top offset (and a matching shorter height to keep the
+       card centred: 30 + 40/2 = 50vh). the bigger offset means it sticks
+       and starts walking the tracks almost as soon as you scroll, instead
+       of after a dead stretch below the hero. safe because a positive
+       margin still separates it from the hero, so the boxes meet without
+       overlap. measure() reads this computed top, so no JS change needed. */
+    #spotify-scroll .spiral-pin {
+      top: 30vh; top: 30svh;
+      height: 40vh; height: 40svh;
     }
     .spiral-ring {
       position: absolute;
@@ -477,14 +429,13 @@
       width: 100%;
       max-width: 560px;
       gap: 0;
-      /* the stage now fills almost the whole pinned viewport (see
-         .spiral-stage), so there's little margin left to close here —
-         a negative pull big enough to matter would land this box
-         inside .spiral-scroll's own (very tall) scroll range while the
-         tornado is still pinned, overlapping its cards the same way it
-         once overlapped the wheel above. leave it be. */
-      margin-top: 0.25rem;
-      margin-bottom: 3rem;
+      /* a generous top margin gives a breathing beat between the tornado
+         releasing and the guestbook — you ease out of the vortex into
+         open space, the seal drifts in, then the guestbook rises. keep
+         this POSITIVE; a negative pull would land this box inside
+         .spiral-scroll's still-pinned scroll range and overlap its cards. */
+      margin-top: 14vh;
+      margin-bottom: 8vh;
     }
     .wax-seal-line {
       flex: 1;
@@ -505,7 +456,7 @@
     .wax-seal:hover { transform: scale(1.06); filter: grayscale(1) brightness(1.6); }
     .wax-seal:active { transform: scale(0.94); }
 
-    .guestbook { width: 100%; max-width: 560px; margin-top: 0; }
+    .guestbook { width: 100%; max-width: 560px; margin-top: 0; padding-bottom: 16vh; }
     .guestbook-form { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2.5rem; }
     .guestbook-form input, .guestbook-form textarea {
       background: transparent;
@@ -708,23 +659,13 @@
     @media (prefers-reduced-motion: reduce) {
       .alive-letter { animation: none; }
       .alive-letter { color: inherit; }
-      .deck-glow { animation: none; opacity: 0.7; }
-      .card-float { animation: none !important; }
     }
     @media (max-width: 480px) {
       body { padding: 0.5rem 1rem 4rem; }
       #logo-3d { width: 280px; height: 120px; }
       .platforms { gap: 1.2rem 1.6rem; margin-bottom: 1.5rem; }
       .platform-break { display: block; flex-basis: 100%; height: 0; }
-      .deck-stage {
-        --pw: 106px; --ph: 122px; height: 215px; perspective: 1150px;
-        /* fade the wheel toward the edges so cards dissolve out of view
-           instead of being sliced off hard at the screen boundary */
-        mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
-        -webkit-mask-image: linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%);
-      }
-      .deck-glow { width: 200px; height: 58px; bottom: 8px; }
-      .card-photo.polaroid img { width: 90px; }
+      #spotify-stage { --sh: 156px; }
       .card-photo.polaroid { padding: 6px 6px 0 6px; }
       .card-photo.polaroid .card-caption { font-size: 0.75rem; padding: 4px 3px 7px; }
       .guestbook-form input, .guestbook-form textarea { font-size: 16px; }
@@ -741,83 +682,56 @@
   <div id="constellation" class="constellation"><canvas id="galaxy-canvas"></canvas><svg id="constellation-svg" preserveAspectRatio="xMidYMid meet"></svg></div>
   <div id="torch" class="torch"></div>
   <div id="veil" class="veil"></div>
+  <div id="section-veil" class="section-veil"><span class="section-veil-word"></span></div>
 
-  <div class="logo-wrap appear-slow">
-    <canvas id="logo-3d"></canvas>
+  <div class="hero">
+    <div class="logo-wrap appear-slow">
+      <canvas id="logo-3d"></canvas>
+    </div>
+
+    <div class="platforms appear">
+      <a href="https://open.spotify.com/artist/7HwF11ILY35YWfO8FTiOQg?si=qTFH5IwkQ3K8F3eNPmn7dA" target="_blank" rel="noopener">
+        <span class="platform-float"><img src="Icons/spotify.png" alt=""> spotify</span>
+      </a>
+      <a href="https://soundcloud.com/blvi" target="_blank" rel="noopener">
+        <span class="platform-float"><img src="Icons/soundcloud.png" alt=""> soundcloud</span>
+      </a>
+      <a href="https://instagram.com/danieljgunning" target="_blank" rel="noopener">
+        <span class="platform-float"><img src="Icons/instagram.png" alt=""> instagram</span>
+      </a>
+      <div class="platform-break"></div>
+      <a href="https://youtube.com/@danieljgunning" target="_blank" rel="noopener">
+        <span class="platform-float"><img src="Icons/youtube.png" alt=""> youtube</span>
+      </a>
+      <a href="https://shop.blvi.net" target="_blank" rel="noopener">
+        <span class="platform-float"><img src="Icons/shopify.png" alt=""> shop</span>
+      </a>
+    </div>
   </div>
 
-  <div class="platforms appear">
-    <a href="https://open.spotify.com/artist/7HwF11ILY35YWfO8FTiOQg?si=qTFH5IwkQ3K8F3eNPmn7dA" target="_blank" rel="noopener">
-      <span class="platform-float"><img src="Icons/spotify.png" alt=""> spotify</span>
-    </a>
-    <a href="https://soundcloud.com/blvi" target="_blank" rel="noopener">
-      <span class="platform-float"><img src="Icons/soundcloud.png" alt=""> soundcloud</span>
-    </a>
-    <a href="https://instagram.com/danieljgunning" target="_blank" rel="noopener">
-      <span class="platform-float"><img src="Icons/instagram.png" alt=""> instagram</span>
-    </a>
-    <div class="platform-break"></div>
-    <a href="https://youtube.com/@danieljgunning" target="_blank" rel="noopener">
-      <span class="platform-float"><img src="Icons/youtube.png" alt=""> youtube</span>
-    </a>
-    <a href="https://shop.blvi.net" target="_blank" rel="noopener">
-      <span class="platform-float"><img src="Icons/shopify.png" alt=""> shop</span>
-    </a>
-  </div>
-
-  <div class="deck appear">
-    <div class="deck-stage" id="deck-stage">
-      <div class="deck-glow"></div>
-      <div class="deck-ring" id="deck-ring">
-      <a class="deck-card" href="https://open.spotify.com/track/0EtqGR1ldAmSQ2ggU3VAQZ?si=90764b80aeb74ca0" target="_blank" rel="noopener">
-        <div class="card-photo polaroid">
-          <img src="Album%20Covers/without.JPG" alt="without">
-          <div class="card-caption">without</div>
-        </div>
-      </a>
-      <a class="deck-card" href="https://open.spotify.com/track/3jA1dfRX5lcQ22i3cM3g6c?si=8bc5d788a7424029" target="_blank" rel="noopener">
-        <div class="card-photo polaroid">
-          <img src="Album%20Covers/worthit.jpg" alt="worth it">
-          <div class="card-caption">worth it</div>
-        </div>
-      </a>
-      <a class="deck-card" href="https://open.spotify.com/track/6GHMWx90X0d1jZeVjFw7Gi?si=7415ecaeeeeb4227" target="_blank" rel="noopener">
-        <div class="card-photo polaroid">
-          <img src="Album%20Covers/skincare.jpg" alt="skin care">
-          <div class="card-caption">skin care</div>
-        </div>
-      </a>
-      <a class="deck-card" href="https://open.spotify.com/track/7MR542qEmj4I85qlc19m9V?si=a68bc037c2b94db7" target="_blank" rel="noopener">
-        <div class="card-photo polaroid">
-          <img src="Album%20Covers/renshawlane.jpg" alt="renshaw lane">
-          <div class="card-caption">renshaw lane</div>
-        </div>
-      </a>
-      <a class="deck-card" href="https://open.spotify.com/track/3gbhm4GgJFXw5ZRQIkcSWV?si=4bb016b43c7f4b11" target="_blank" rel="noopener">
-        <div class="card-photo polaroid">
-          <img src="Album%20Covers/worldeater.jpg" alt="world eater">
-          <div class="card-caption">world eater</div>
-        </div>
-      </a>
+  <div class="spiral" id="spotify-scroll">
+    <div class="spiral-pin">
+      <div class="spiral-stage ease-fade" id="spotify-stage">
+        <div class="spiral-ring" id="spotify-ring"></div>
       </div>
     </div>
   </div>
 
   <div class="spiral" id="spiral-scroll">
     <div class="spiral-pin">
-      <div class="spiral-stage reveal-scroll" id="spiral-stage">
+      <div class="spiral-stage ease-fade" id="spiral-stage">
         <div class="spiral-ring" id="spiral-ring"></div>
       </div>
     </div>
   </div>
 
-  <div class="wax-seal-wrap reveal-scroll">
+  <div class="wax-seal-wrap ease-rise">
     <div class="wax-seal-line"></div>
     <img class="wax-seal" id="wax-seal" src="Icons/waxseal.png" alt="wax seal">
     <div class="wax-seal-line"></div>
   </div>
 
-  <div class="guestbook reveal-scroll">
+  <div class="guestbook ease-rise">
     <div class="guestbook-form">
       <input id="gb-name" type="text" placeholder="your name" maxlength="50">
       <textarea id="gb-message" placeholder="your message" maxlength="300"></textarea>
@@ -929,20 +843,76 @@
       }, delay);
     }
 
-    // ── reveal on scroll — the tornado, wax seal, and guestbook fade in
-    // the first time the page reaches them, rather than sitting fully
-    // visible from load like the .appear elements above the fold ──
+    // ── scroll-linked section easing — instead of a one-shot fade, each
+    // section is scrubbed in by scroll position as it crosses the lower
+    // half of the viewport: it eases up from below and settles as it
+    // nears centre, then eases back out as it leaves. this is what makes
+    // moving between sections feel like gliding to and from distinct
+    // scenes rather than a flat page. .ease-fade (vortex stages) only
+    // fades — no transform, to leave the pinned card layout alone;
+    // .ease-rise (wax seal, guestbook) also rises and settles. ──
     (function () {
-      const els = document.querySelectorAll('.reveal-scroll');
-      if (!els.length) return;
-      const io = new IntersectionObserver(entries => {
-        for (const e of entries) {
-          if (!e.isIntersecting) continue;
-          revealEl(e.target, 0, 0.9);
-          io.unobserve(e.target);
+      const fades = Array.from(document.querySelectorAll('.ease-fade'));
+      const rises = Array.from(document.querySelectorAll('.ease-rise'));
+      if (!fades.length && !rises.length) return;
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        [...fades, ...rises].forEach(el => { el.style.opacity = '1'; el.style.transform = 'none'; });
+        return;
+      }
+      const smooth = t => t * t * (3 - 2 * t);
+      // 0 when the element's top sits near the bottom of the viewport,
+      // 1 once it has risen to a little above the middle — where it rests
+      const prog = r => smooth(Math.max(0, Math.min(1, (innerHeight * 0.9 - r.top) / (innerHeight * 0.5))));
+      (function loop() {
+        requestAnimationFrame(loop);
+        if (document.hidden) return;
+        for (const el of fades) {
+          el.style.opacity = prog(el.getBoundingClientRect()).toFixed(3);
         }
-      }, { threshold: 0.15 });
-      els.forEach(el => io.observe(el));
+        for (const el of rises) {
+          const p = prog(el.getBoundingClientRect());
+          el.style.opacity = p.toFixed(3);
+          el.style.transform = `translateY(${((1 - p) * 46).toFixed(1)}px) scale(${(0.965 + 0.035 * p).toFixed(3)})`;
+        }
+      })();
+    })();
+
+    // ── section title veils — flash "spotify" / "soundcloud" once, the
+    // first time each vortex scrolls into view ──
+    (function () {
+      const veil = document.getElementById('section-veil');
+      if (!veil || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const word = veil.querySelector('.section-veil-word');
+      function flash(text, rgb) {
+        word.textContent = text || '';
+        word.style.display = text ? '' : 'none';
+        if (rgb) {
+          word.style.color = `rgb(${rgb})`;
+          word.style.textShadow = `0 0 22px rgba(${rgb},0.55), 0 0 64px rgba(${rgb},0.3)`;
+        }
+        veil.classList.remove('show');
+        void veil.offsetWidth;   // restart the animation from the top
+        veil.classList.add('show');
+      }
+      // each section flashes its own veil the moment it scrolls into view;
+      // observers stay live (no disconnect) so it replays on every entry.
+      // spotify/soundcloud carry a brand-coloured word, the guestbook is a
+      // wordless wash — so every section-to-section move gets a transition.
+      // a thin band at the viewport's vertical centre: each section fires
+      // its veil when it crosses the middle of the screen. position-based,
+      // not a ratio, so it works whatever the section's height.
+      const bandOpts = { threshold: 0, rootMargin: '-45% 0px -45% 0px' };
+      [
+        [document.getElementById('spotify-stage'), 'spotify',    '30,215,96'],
+        [document.getElementById('spiral-stage'),  'soundcloud', '255,95,0'],
+        [document.querySelector('.guestbook'),     '',           null],
+      ].forEach(([el, label, rgb]) => {
+        if (!el) return;
+        const io = new IntersectionObserver(entries => {
+          for (const e of entries) if (e.isIntersecting) flash(label, rgb);
+        }, bandOpts);
+        io.observe(el);
+      });
     })();
 
     function runMainSequence() {
@@ -1000,7 +970,6 @@
           document.querySelectorAll('.appear').forEach(el => revealEl(el, 0, 0.9));
         }, 300);
         setTimeout(() => {
-          if (window.__startWheel) window.__startWheel();
           if (window.__releaseFireflies) window.__releaseFireflies();
         }, 800);
 
@@ -1124,7 +1093,7 @@
       window.__releaseFireflies = () => {
         if (released) return;
         released = true;
-        const stage = document.getElementById('deck-stage');
+        const stage = document.getElementById('spotify-stage');
         const r = stage ? stage.getBoundingClientRect() : null;
         const cx = r ? r.left + r.width  / 2 : innerWidth  / 2;
         const cy = r ? r.top  + r.height / 2 : innerHeight / 3;
@@ -1172,228 +1141,48 @@
       })();
     })();
 
-    // ── the wheel — infinite circular carousel ──
-    (function () {
-      const stage = document.getElementById('deck-stage');
-      const ring  = document.getElementById('deck-ring');
-
-      // each song appears twice on the ring, 180° apart: ten slots at 36°
-      // means neighbours face the viewer at a readable angle, five cards
-      // are visible at once, and no song is ever on screen twice.
-      const anchors = Array.from(ring.querySelectorAll('.deck-card'));
-
-      // three transforms on three elements so none of them conflict:
-      // the anchor carries the ring position (js), .card-float carries
-      // the drift (css animation), .card-photo carries tilt + hover scale.
-      anchors.forEach(a => {
-        const f = document.createElement('div');
-        f.className = 'card-float';
-        while (a.firstChild) f.appendChild(a.firstChild);
-        a.appendChild(f);
-        a.querySelector('img').draggable = false;
-        a.querySelector('.card-photo').insertAdjacentHTML('beforeend',
-          '<span class="spot-badge"><svg viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.56.3z"/></svg></span>');
-      });
-
-      anchors.forEach(a => ring.appendChild(a.cloneNode(true)));
-
-      const cards = Array.from(ring.querySelectorAll('.deck-card'));
-      const N = cards.length, STEP = 360 / N;
-      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      // stagger drift phases so neighbours never move in step
-      cards.forEach((c, i) => {
-        c.querySelector('.card-float').style.animationDelay = `${(-i * 2.3).toFixed(1)}s`;
-      });
-
-      // R is the ring rotation in degrees, unbounded in both directions
-      let R = 0;
-      let targetR = R;
-      let dragging = false, moved = false;
-      let startX = 0, lastX = 0, lastT = 0, startR = 0, vel = 0;
-
-      const params = () => innerWidth <= 480
-        ? { r: 210, degPerPx: 0.3 }
-        : { r: 275, degPerPx: 0.22 };
-
-      // fold any angle into (-180, 180]
-      const norm = a => { a = ((a % 360) + 360) % 360; return a > 180 ? a - 360 : a; };
-
-      // place each card on the ring, facing outward
-      function layout() {
-        const p = params();
-        cards.forEach((c, i) => {
-          c.style.transform = `rotateY(${i * STEP}deg) translateZ(${p.r}px)`;
-        });
-      }
-      layout();
-      window.addEventListener('resize', layout);
-
-      function render() {
-        ring.style.transform = `rotateY(${R.toFixed(2)}deg)`;
-        for (let i = 0; i < N; i++) {
-          const th  = norm(i * STEP + R);   // 0 = facing the viewer
-          const cos = Math.cos(th * Math.PI / 180);
-          // darken with angle, dissolve before reaching the far side
-          cards[i].style.filter  = `brightness(${(0.3 + 0.7 * Math.max(0, cos)).toFixed(3)})`;
-          cards[i].style.opacity = Math.max(0, Math.min(1, cos * 1.6)).toFixed(3);
-          cards[i].style.pointerEvents = cos > 0.15 ? '' : 'none';
-          cards[i].classList.toggle('is-front', Math.abs(th) < STEP / 2);
-        }
-      }
-
-      // idle turn — a slow constant rotation, paused only by an active
-      // drag/fling, not by hovering
-      const IDLE_SPEED = 3.2;   // degrees per second
-      let restUntil = Infinity; // idling begins once the reveal fires
-
-      let frameT = performance.now();
-      (function loop() {
-        requestAnimationFrame(loop);
-        if (document.hidden) { frameT = performance.now(); return; }
-        const now = performance.now();
-        const dt  = Math.min((now - frameT) / 1000, 0.05);
-        frameT = now;
-        if (!dragging) {
-          const settled = Math.abs(targetR - R) < 0.5;
-          if (settled && now > restUntil && !reduced) {
-            targetR -= IDLE_SPEED * dt;
-          }
-          R += (targetR - R) * (reduced ? 1 : 0.09);
-          if (Math.abs(targetR - R) < 0.01) R = targetR;
-        }
-        render();
-      })();
-
-      // the reveal starts the idle turn; the wheel is already in position
-      window.__startWheel = () => { restUntil = 0; };
-      setTimeout(() => { restUntil = 0; }, 4500);   // fallback if the reveal never fires
-
-      // drag to spin — no clamps, no ends
-      stage.addEventListener('pointerdown', e => {
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
-        if (e.pointerType === 'mouse') e.preventDefault();   // stop native image drag
-        dragging = true; moved = false;
-        startX = lastX = e.clientX; lastT = performance.now();
-        startR = R; vel = 0;
-        stage.classList.add('dragging');
-      });
-      document.addEventListener('pointermove', e => {
-        if (!dragging) return;
-        const dx = e.clientX - startX;
-        if (Math.abs(dx) > 4) moved = true;
-        R = startR + dx * params().degPerPx;
-        const now = performance.now();
-        vel = (e.clientX - lastX) / Math.max(now - lastT, 1);
-        lastX = e.clientX; lastT = now;
-      });
-      function release() {
-        if (!dragging) return;
-        dragging = false;
-        stage.classList.remove('dragging');
-        // project the fling forward, then snap to the nearest slot
-        const flung = R + vel * 110 * params().degPerPx;
-        targetR = Math.round(flung / STEP) * STEP;
-      }
-      document.addEventListener('pointerup', release);
-      document.addEventListener('pointercancel', release);
-
-      // click a side card to bring it to the front; click the front card
-      // to follow its link. the idle drift means the front card is rarely
-      // at exactly 0°, so anything within half a slot counts as front.
-      cards.forEach((card, i) => {
-        card.addEventListener('click', e => {
-          if (moved) { e.preventDefault(); moved = false; return; }
-          const th = norm(i * STEP + targetR);
-          if (Math.abs(th) > STEP / 2) { e.preventDefault(); targetR = targetR - th; }
-        });
-      });
-
-      // arrow keys turn the wheel (unless typing in the guestbook)
-      document.addEventListener('keydown', e => {
-        if (e.target.closest('input,textarea')) return;
-        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-        if (e.key === 'ArrowLeft')  targetR = Math.round(targetR / STEP) * STEP + STEP;
-        if (e.key === 'ArrowRight') targetR = Math.round(targetR / STEP) * STEP - STEP;
-      });
-
-      render();
-    })();
-
-    // ── the tornado — soundcloud tracks on a scroll-pinned helix ──
-    (function () {
-      const wrap  = document.getElementById('spiral-scroll');
+    // ── the vortex — a scroll-pinned helix of cards. the page holds
+    // still while scroll walks the funnel one card at a time, then
+    // resumes; the front card is largest and full-brightness, the rest
+    // scatter above and below shrunken, dimmed, blurred and edge-on.
+    // shared by both carousels — spotify (polaroid links) and
+    // soundcloud (live embeds) below. ──
+    function initTornado(wrap, cardData, build) {
+      if (!wrap) return;
       const pin   = wrap.querySelector('.spiral-pin');
-      const stage = document.getElementById('spiral-stage');
-      const ring  = document.getElementById('spiral-ring');
-      if (!wrap || !pin || !stage || !ring) return;
+      const stage = wrap.querySelector('.spiral-stage');
+      const ring  = wrap.querySelector('.spiral-ring');
+      if (!pin || !stage || !ring) return;
       const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      // tracks not already featured in the spotify wheel above
-      const scTracks = [
-        { slug: 'the-fly',          title: 'the fly' },
-        { slug: 'innocence-remix',  title: 'innocence (remix)' },
-        { slug: 'alpha',            title: 'alpha' },
-        { slug: 'fuckboy-remix',    title: 'fuckboy, by brakence (remix)' },
-        { slug: 'end-of-the-world', title: 'end of the world' },
-        { slug: 'allineed',         title: 'all i need' },
-        { slug: 'blvi-2020',        title: 'music' },
-        { slug: 'downtown',         title: 'downtown' },
-        { slug: 'water',            title: 'water (under)' },
-        { slug: 'keepurheadup',     title: 'keepurheadup' },
-        { slug: 'fuckboy',          title: 'fuckboy' },
-        { slug: 'hot',              title: 'up and away' },
-        { slug: 'missyou',          title: 'missyou' },
-      ];
-
-      scTracks.forEach(t => {
-        const url = `https://soundcloud.com/blvi/${t.slug}`;
-        const embedSrc = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`
-          + '&color=%23c9a876&auto_play=false&hide_related=true&show_comments=false'
-          + '&show_user=true&show_reposts=false&show_teaser=false&visual=true';
-        const card = document.createElement('div');
-        card.className = 'spiral-card';
-        card.innerHTML = `<div class="spiral-frame">
-          <div class="spiral-embed-wrap">
-            <div class="spiral-catch"></div>
-            <iframe data-src="${embedSrc}" loading="lazy" scrolling="no" frameborder="no" allow="autoplay"></iframe>
-          </div>
-        </div>
-        <div class="spiral-caption">${t.title}</div>`;
-        ring.appendChild(card);
-      });
-
+      cardData.forEach(d => ring.appendChild(build(d)));
       const cards = Array.from(ring.querySelectorAll('.spiral-card'));
       const N = cards.length;
+
       // sway: horizontal reach of the funnel. drop: px between
       // neighbouring cards. wind: radians of twist per card. lean: how
       // far a card turns edge-on as it leaves the front. pace: scroll
-      // px it takes to advance one track while the stage is pinned.
+      // px it takes to advance one card while the stage is pinned.
       const params = () => innerWidth <= 480
         ? { sway: 96,  drop: 84,  wind: 0.85, lean: 55, pace: 300 }
         : { sway: 230, drop: 104, wind: 0.85, lean: 65, pace: 300 };
 
       // the wrapper is tall and the pin sticks, so the page holds still
-      // while scroll walks the funnel from the first track to the last.
-      // the wrapper's height is the pin's own (content-sized) height
-      // plus the walk distance — not the viewport — so releasing the
-      // pin doesn't leave a stretch of empty scroll before the wax
-      // seal shows up.
+      // while scroll walks the funnel from the first card to the last.
+      // startY accounts for the pin's `top` offset — it sticks that many
+      // px before the wrapper's own top reaches the viewport.
       let startY = 0, spanY = 1;
       function measure() {
         const pinH = pin.offsetHeight;
-        const top = parseFloat(getComputedStyle(pin).top) || 0;
+        const top  = parseFloat(getComputedStyle(pin).top) || 0;
         wrap.style.height = (pinH + (N - 1) * params().pace) + 'px';
-        // the pin sticks once its `top` offset is reached, i.e. `top`
-        // px of scroll before the wrapper's own top hits the viewport
         startY = wrap.offsetTop - top;
         spanY  = wrap.offsetHeight - pinH;
       }
       measure();
       window.addEventListener('resize', measure);
 
-      let pos = 0, targetPos = 0;
-      let loaded = false;
+      let pos = 0, targetPos = 0, loaded = false;
       const smooth = t => t * t * (3 - 2 * t);
 
       function render() {
@@ -1416,9 +1205,10 @@
         }
       }
 
-      // embeds load once, the first time the tornado comes into view —
-      // never reloaded afterward, so playback survives cards cycling
-      // away from the front and back
+      // any embeds load once, the first time the section comes into view
+      // — never reloaded afterward, so playback survives cards cycling
+      // away from the front and back (spotify cards have no iframe, so
+      // this is a no-op for them)
       const io = new IntersectionObserver(entries => {
         for (const e of entries) {
           if (!e.isIntersecting) continue;
@@ -1426,16 +1216,16 @@
           if (loaded) continue;
           loaded = true;
           cards.forEach(c => {
-            const ifr = c.querySelector('iframe');
-            if (ifr.dataset.src) { ifr.src = ifr.dataset.src; delete ifr.dataset.src; }
+            const ifr = c.querySelector('iframe[data-src]');
+            if (ifr) { ifr.src = ifr.dataset.src; delete ifr.dataset.src; }
           });
         }
       }, { rootMargin: '150px' });
       io.observe(stage);
 
-      // clicking a side card scrolls the page to where that card is
-      // front; the front card's catch overlay is pointer-events:none,
-      // so clicks reach the embed
+      // clicking a side card scrolls the page to where it becomes front;
+      // the front card's catch overlay is pointer-events:none, so its
+      // click falls through to the embed (soundcloud) or link (spotify)
       cards.forEach((card, i) => {
         card.querySelector('.spiral-catch').addEventListener('click', () => {
           scrollTo({ top: startY + (i / (N - 1)) * spanY, behavior: reduced ? 'auto' : 'smooth' });
@@ -1445,8 +1235,8 @@
       (function loop() {
         requestAnimationFrame(loop);
         if (document.hidden) return;
-        // scroll progress through the wrapper picks the front track;
-        // each card dwells at the front before flicking to the next
+        // scroll progress through the wrapper picks the front card; each
+        // card dwells at the front before flicking to the next
         const prog = Math.max(0, Math.min(1, (scrollY - startY) / spanY));
         const pf   = prog * (N - 1);
         const idx  = Math.floor(pf);
@@ -1456,7 +1246,68 @@
         render();
       })();
       render();
-    })();
+    }
+
+    // ── the spotify vortex — polaroid cards; the front one opens the
+    // track on spotify, a side one scrolls itself to the front ──
+    initTornado(
+      document.getElementById('spotify-scroll'),
+      [
+        { img: 'Album%20Covers/without.JPG',     title: 'without',      href: 'https://open.spotify.com/track/0EtqGR1ldAmSQ2ggU3VAQZ?si=90764b80aeb74ca0' },
+        { img: 'Album%20Covers/worthit.jpg',     title: 'worth it',     href: 'https://open.spotify.com/track/3jA1dfRX5lcQ22i3cM3g6c?si=8bc5d788a7424029' },
+        { img: 'Album%20Covers/skincare.jpg',    title: 'skin care',    href: 'https://open.spotify.com/track/6GHMWx90X0d1jZeVjFw7Gi?si=7415ecaeeeeb4227' },
+        { img: 'Album%20Covers/renshawlane.jpg', title: 'renshaw lane', href: 'https://open.spotify.com/track/7MR542qEmj4I85qlc19m9V?si=a68bc037c2b94db7' },
+        { img: 'Album%20Covers/worldeater.jpg',  title: 'world eater',  href: 'https://open.spotify.com/track/3gbhm4GgJFXw5ZRQIkcSWV?si=4bb016b43c7f4b11' },
+      ],
+      t => {
+        const card = document.createElement('div');
+        card.className = 'spiral-card';
+        card.innerHTML = `<a class="card-photo polaroid" href="${t.href}" target="_blank" rel="noopener">
+            <img src="${t.img}" alt="${t.title}" draggable="false">
+            <div class="card-caption">${t.title}</div>
+          </a>
+          <div class="spiral-catch"></div>`;
+        return card;
+      }
+    );
+
+    // ── the soundcloud vortex — live embeds; excludes any track already
+    // shown in the spotify vortex above (check both lists before adding
+    // a track to either) ──
+    initTornado(
+      document.getElementById('spiral-scroll'),
+      [
+        { slug: 'the-fly',          title: 'the fly' },
+        { slug: 'innocence-remix',  title: 'innocence (remix)' },
+        { slug: 'alpha',            title: 'alpha' },
+        { slug: 'fuckboy-remix',    title: 'fuckboy, by brakence (remix)' },
+        { slug: 'end-of-the-world', title: 'end of the world' },
+        { slug: 'allineed',         title: 'all i need' },
+        { slug: 'blvi-2020',        title: 'music' },
+        { slug: 'downtown',         title: 'downtown' },
+        { slug: 'water',            title: 'water (under)' },
+        { slug: 'keepurheadup',     title: 'keepurheadup' },
+        { slug: 'fuckboy',          title: 'fuckboy' },
+        { slug: 'hot',              title: 'up and away' },
+        { slug: 'missyou',          title: 'missyou' },
+      ],
+      t => {
+        const url = `https://soundcloud.com/blvi/${t.slug}`;
+        const embedSrc = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`
+          + '&color=%23c9a876&auto_play=false&hide_related=true&show_comments=false'
+          + '&show_user=true&show_reposts=false&show_teaser=false&visual=true';
+        const card = document.createElement('div');
+        card.className = 'spiral-card';
+        card.innerHTML = `<div class="spiral-frame">
+            <div class="spiral-embed-wrap">
+              <div class="spiral-catch"></div>
+              <iframe data-src="${embedSrc}" loading="lazy" scrolling="no" frameborder="no" allow="autoplay"></iframe>
+            </div>
+          </div>
+          <div class="spiral-caption">${t.title}</div>`;
+        return card;
+      }
+    );
 
     // ── guestbook ──
     const SUPA_URL = 'https://ptyyyhuuccnojxosnjuf.supabase.co';
