@@ -26,7 +26,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 0.5rem 1.5rem 6rem;
+      padding: 0.5rem 1.5rem 2rem;
     }
 
     /* ── background ── */
@@ -145,44 +145,20 @@
     }
     .veil.dissolve { opacity: 0; }
 
-    /* ── section transition veil — a quick dark wash that plays every
-       time you scroll into a section, carrying the section's name in its
-       brand colour for the spotify / soundcloud vortexes (set in JS),
-       wordless for the guestbook. the wash snaps in fast (the "click")
-       then eases out (the "smooth"). pointer-events:none so scrolling
-       continues underneath. ── */
-    .section-veil {
-      position: fixed;
-      inset: 0;
-      z-index: 9700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      opacity: 0;
-      background: radial-gradient(ellipse at center, rgba(6,7,6,0.7) 0%, rgba(6,7,6,0.44) 44%, rgba(6,7,6,0) 78%);
-    }
-    .section-veil.show { animation: sectionVeil 1.4s cubic-bezier(0.4,0,0.2,1) forwards; }
-    .section-veil-word {
+    /* ── vortex section titles — a small label above each vortex's cards
+       for the length of its scroll, instead of a one-off overlay flash.
+       lives inside .spiral-pin itself (not a sibling sticky of its own)
+       so it shares the pin's exact stick/release lifecycle — otherwise
+       it outlives the cards and lingers stuck at the top after the
+       funnel has released, overlapping whatever comes next. ── */
+    .vortex-title {
+      text-align: center;
       font-family: 'Almendra', serif;
-      font-size: clamp(1.5rem, 4.5vw, 2.6rem);
-      color: #f0ece4;
+      font-size: clamp(1rem, 2.4vw, 1.3rem);
       letter-spacing: 0.14em;
-      opacity: 0;
-    }
-    .section-veil.show .section-veil-word { animation: sectionVeilWord 1.4s cubic-bezier(0.16,1,0.3,1) forwards; }
-    @keyframes sectionVeil {
-      0%   { opacity: 0; }
-      9%   { opacity: 1; }   /* snap in — the "click" */
-      55%  { opacity: 1; }
-      100% { opacity: 0; }   /* ease out — the "smooth" */
-    }
-    @keyframes sectionVeilWord {
-      0%   { opacity: 0; transform: translateY(9px) scale(0.8); letter-spacing: 0.03em; }
-      11%  { opacity: 1; transform: translateY(0) scale(1.07); }   /* quick pop */
-      22%  { transform: translateY(0) scale(1); }
-      55%  { opacity: 1; }
-      100% { opacity: 0; transform: translateY(-8px) scale(1.02); letter-spacing: 0.32em; }
+      opacity: 0.85;
+      pointer-events: none;
+      margin-bottom: 1.4rem;
     }
 
     /* the hero greets you on load — logo + social links fill the first
@@ -277,7 +253,8 @@
         linear-gradient(135deg,#ede8de 0%,#e8e0d0 40%,#ede5d5 70%,#e6dece 100%);
       padding: 10px 10px 0 10px;
     }
-    .card-photo.polaroid img {
+    .card-photo-img { position: relative; }
+    .card-photo.polaroid .card-photo-img > img {
       display: block;
       width: 100%;
       aspect-ratio: 1;
@@ -285,6 +262,30 @@
       outline: 1.5px solid rgba(0,0,0,0.15);
       -webkit-user-drag: none;
       user-select: none;
+    }
+    /* hover affordance on the front card only — side cards aren't the
+       spotify link (their catch just scrolls them to front), so the
+       hint would be misleading there */
+    .spotify-badge {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #1ed760;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+      opacity: 0;
+      transform: scale(0.8);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .spotify-badge img { width: 16px; height: 16px; outline: none; }
+    .spiral-card.is-front .card-photo:hover .spotify-badge {
+      opacity: 1;
+      transform: scale(1);
     }
     .card-photo.polaroid .card-caption {
       font-family: 'Almendra', serif;
@@ -422,6 +423,17 @@
       .spiral-embed-wrap iframe { height: 128px; }
     }
 
+    /* height set in JS (see fixTailGap) — tops up the real scrollable
+       distance so the soundcloud vortex's sticky pin can actually fully
+       release before the page runs out of room to scroll (resizing the
+       pin itself doesn't help; see the JS comment). lives at the very
+       end of the page, after the guestbook, on purpose: a spacer can
+       only guarantee scroll can reach positions *before* it, never
+       itself or anything after — putting it here means it pads out the
+       page's real bottom instead of creating a visible gap between the
+       vortex and the wax seal. */
+    #tail-spacer { width: 100%; }
+
     /* ── wax seal divider ── */
     .wax-seal-wrap {
       display: flex;
@@ -456,7 +468,7 @@
     .wax-seal:hover { transform: scale(1.06); filter: grayscale(1) brightness(1.6); }
     .wax-seal:active { transform: scale(0.94); }
 
-    .guestbook { width: 100%; max-width: 560px; margin-top: 0; padding-bottom: 16vh; }
+    .guestbook { width: 100%; max-width: 560px; margin-top: 0; padding-bottom: 4vh; }
     .guestbook-form { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2.5rem; }
     .guestbook-form input, .guestbook-form textarea {
       background: transparent;
@@ -682,7 +694,6 @@
   <div id="constellation" class="constellation"><canvas id="galaxy-canvas"></canvas><svg id="constellation-svg" preserveAspectRatio="xMidYMid meet"></svg></div>
   <div id="torch" class="torch"></div>
   <div id="veil" class="veil"></div>
-  <div id="section-veil" class="section-veil"><span class="section-veil-word"></span></div>
 
   <div class="hero">
     <div class="logo-wrap appear-slow">
@@ -711,6 +722,7 @@
 
   <div class="spiral" id="spotify-scroll">
     <div class="spiral-pin">
+      <div class="vortex-title" style="color: rgb(30,215,96);">spotify</div>
       <div class="spiral-stage ease-fade" id="spotify-stage">
         <div class="spiral-ring" id="spotify-ring"></div>
       </div>
@@ -719,6 +731,7 @@
 
   <div class="spiral" id="spiral-scroll">
     <div class="spiral-pin">
+      <div class="vortex-title" style="color: rgb(255,95,0);">soundcloud</div>
       <div class="spiral-stage ease-fade" id="spiral-stage">
         <div class="spiral-ring" id="spiral-ring"></div>
       </div>
@@ -741,6 +754,8 @@
       <p class="guestbook-empty">no messages yet</p>
     </div>
   </div>
+
+  <div id="tail-spacer" aria-hidden="true"></div>
 
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.132.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.132.0/examples/jsm/" } }
@@ -875,44 +890,6 @@
           el.style.transform = `translateY(${((1 - p) * 46).toFixed(1)}px) scale(${(0.965 + 0.035 * p).toFixed(3)})`;
         }
       })();
-    })();
-
-    // ── section title veils — flash "spotify" / "soundcloud" once, the
-    // first time each vortex scrolls into view ──
-    (function () {
-      const veil = document.getElementById('section-veil');
-      if (!veil || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      const word = veil.querySelector('.section-veil-word');
-      function flash(text, rgb) {
-        word.textContent = text || '';
-        word.style.display = text ? '' : 'none';
-        if (rgb) {
-          word.style.color = `rgb(${rgb})`;
-          word.style.textShadow = `0 0 22px rgba(${rgb},0.55), 0 0 64px rgba(${rgb},0.3)`;
-        }
-        veil.classList.remove('show');
-        void veil.offsetWidth;   // restart the animation from the top
-        veil.classList.add('show');
-      }
-      // each section flashes its own veil the moment it scrolls into view;
-      // observers stay live (no disconnect) so it replays on every entry.
-      // spotify/soundcloud carry a brand-coloured word, the guestbook is a
-      // wordless wash — so every section-to-section move gets a transition.
-      // a thin band at the viewport's vertical centre: each section fires
-      // its veil when it crosses the middle of the screen. position-based,
-      // not a ratio, so it works whatever the section's height.
-      const bandOpts = { threshold: 0, rootMargin: '-45% 0px -45% 0px' };
-      [
-        [document.getElementById('spotify-stage'), 'spotify',    '30,215,96'],
-        [document.getElementById('spiral-stage'),  'soundcloud', '255,95,0'],
-        [document.querySelector('.guestbook'),     '',           null],
-      ].forEach(([el, label, rgb]) => {
-        if (!el) return;
-        const io = new IntersectionObserver(entries => {
-          for (const e of entries) if (e.isIntersecting) flash(label, rgb);
-        }, bandOpts);
-        io.observe(el);
-      });
     })();
 
     function runMainSequence() {
@@ -1263,7 +1240,10 @@
         const card = document.createElement('div');
         card.className = 'spiral-card';
         card.innerHTML = `<a class="card-photo polaroid" href="${t.href}" target="_blank" rel="noopener">
-            <img src="${t.img}" alt="${t.title}" draggable="false">
+            <div class="card-photo-img">
+              <img src="${t.img}" alt="${t.title}" draggable="false">
+              <span class="spotify-badge"><img src="Icons/spotify.png" alt=""></span>
+            </div>
             <div class="card-caption">${t.title}</div>
           </a>
           <div class="spiral-catch"></div>`;
@@ -1309,6 +1289,163 @@
       }
     );
 
+    // ── magnet gaps — auto-glide shut ──
+    // a handful of spots on the page are mostly-empty scroll distance:
+    // the hero's centred content leaves half a screen of background
+    // below it before the spotify vortex's front card appears, and the
+    // soundcloud vortex's pin stays stuck for a while after its last
+    // card has already settled, before releasing into the wax seal.
+    // scrolling through either by hand reads as dead space. once the
+    // user nudges into one of these bounded gaps, ease the rest of it
+    // shut automatically — same lerp-toward-target motion as the
+    // vortex's own card-to-front easing (pos += delta * k), so every
+    // hand-off on the page moves the same way. bounded to just the gap
+    // itself (never touches scroll once you're inside a vortex proper),
+    // so it can't trap scroll the way a page-wide scroll-snap did.
+    // snaps on *direction*, not distance — any nudge forward commits to
+    // the far side and any nudge back commits to the near side. and it
+    // commits the instant scroll enters the gap, not after scroll goes
+    // quiet — a trackpad's inertial scrolling keeps generating 'scroll'
+    // events throughout its whole momentum decay (there's no separate
+    // "finger lifted" signal to wait for), so a debounce-based trigger
+    // doesn't fire until that entire decay finishes, which reads as a
+    // stuck lag rather than an immediate hand-off.
+    function magnetGap(getBounds) {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      let raf = null, prevY = null, dir = 1;
+
+      // trackpads/mice keep feeding real scroll input (momentum) for as
+      // long as a gesture is still decaying, and that native scrolling
+      // doesn't stop just because we've started our own glide — it was
+      // fighting our scrollTo call every frame, each side undoing a bit
+      // of the other, which read as resistance/pushback rather than a
+      // clean hand-off. blocking wheel input for the glide's duration
+      // means our animation is the only thing moving the page.
+      function blockWheel(e) { e.preventDefault(); }
+
+      function animateTo(dest) {
+        cancelAnimationFrame(raf);
+        // clamp to what's actually reachable — the page's max scroll can
+        // land a hair short of the computed offset/top math below, and
+        // without this the loop chases an unreachable target forever
+        // (scrollTo clamps, y stalls, dy never shrinks below the
+        // threshold below)
+        dest = Math.min(dest, document.documentElement.scrollHeight - innerHeight);
+        let lastY = null;
+        window.addEventListener('wheel', blockWheel, { passive: false });
+        (function step() {
+          const y = scrollY;
+          const dy = dest - y;
+          if (Math.abs(dy) < 0.5 || y === lastY) {
+            raf = null;
+            window.removeEventListener('wheel', blockWheel);
+            return;
+          }
+          lastY = y;
+          // slower than the vortex's own card-to-front easing (0.09) —
+          // this covers a much bigger visual distance in one go (a full
+          // section hand-off, not one card nudging over for the next),
+          // so the same factor read as too fast here
+          scrollTo(0, y + dy * 0.045);
+          raf = requestAnimationFrame(step);
+        })();
+      }
+
+      window.addEventListener('scroll', () => {
+        if (raf) return; // don't re-trigger while we're the ones animating
+        const y = scrollY;
+        if (prevY !== null && y !== prevY) dir = y > prevY ? 1 : -1;
+        prevY = y;
+        const [lo, hi] = getBounds();
+        // a few px of tolerance at each edge — content that's still
+        // settling right after landing (e.g. a web font swapping in and
+        // reflowing the guestbook by a couple of px) can nudge lo/hi
+        // just enough that a dead-on landing reads as "still inside the
+        // gap", triggering a second, tiny, visible correction glide
+        const pad = 3;
+        if (y <= lo + pad || y >= hi - pad) return; // outside the gap — nothing to do
+        animateTo(dir >= 0 ? hi : lo);
+      }, { passive: true });
+    }
+
+    // a vortex's pin starts sticking once its wrap's own top reaches the
+    // pin's `top` offset (front card fully arrived from that point on),
+    // and stays stuck until scroll has carried the whole wrap past the
+    // viewport (last card fully settled well before that — see below).
+    function pinEngageY(wrapEl) {
+      const pin = wrapEl.querySelector('.spiral-pin');
+      return wrapEl.offsetTop - parseFloat(getComputedStyle(pin).top);
+    }
+    function pinSettleY(wrapEl) {
+      const pin = wrapEl.querySelector('.spiral-pin');
+      return pinEngageY(wrapEl) + (wrapEl.offsetHeight - pin.offsetHeight);
+    }
+
+    // the soundcloud pin's release point (and the wax seal just past
+    // it) is fixed by content earlier in the page and is unreachable if
+    // the page simply doesn't have that much scrollable room left below
+    // it (resizing the pin doesn't change this — release depends on the
+    // wrap's bottom edge, not the pin's dimensions). #tail-spacer tops
+    // up real document height, at the very end of the page, so scroll
+    // can actually reach that point — sized against the exact same
+    // centred target magnetGap uses below (plus a small pad), so it
+    // stays correct as the guestbook grows. keep this tight: sizing it
+    // against anything bigger than the real target (e.g. bare sealTop)
+    // over-provisions the spacer, which is exactly what let scroll
+    // continue past the guestbook into dead space last time.
+    function fixTailGap() {
+      const spacer = document.getElementById('tail-spacer');
+      const seal = document.querySelector('.wax-seal-wrap');
+      const gb = document.querySelector('.guestbook');
+      spacer.style.height = '0px';
+      const blockHeight = (gb.offsetTop + gb.offsetHeight) - seal.offsetTop;
+      const centred = seal.offsetTop - (innerHeight - blockHeight) / 2;
+      // no added buffer here — the centred position itself already
+      // leaves the correct symmetric space below the last message (the
+      // counterpart to the space above the seal). anything past that is
+      // scroll the page shouldn't allow at all once you've landed on
+      // the guestbook: it should be the actual end of the page, not
+      // just where the magnet happens to let go.
+      const maxScroll = document.documentElement.scrollHeight - innerHeight;
+      spacer.style.height = Math.max(0, centred - maxScroll) + 'px';
+    }
+    fixTailGap();
+    window.addEventListener('resize', fixTailGap);
+    // re-measure once webfonts actually swap in — Almendra/Spectral load
+    // async, and the guestbook's fallback-font metrics at page-load time
+    // can be a good deal shorter/narrower than the real serif, throwing
+    // off the centred target enough to visibly correct itself later
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fixTailGap);
+
+    // hero → spotify: from the top of the page to the point the
+    // vortex's pin engages (front card fully arrived).
+    magnetGap(() => [0, pinEngageY(document.getElementById('spotify-scroll'))]);
+
+    // spotify → soundcloud: from the point spotify's last card has
+    // settled to the point soundcloud's front card has fully arrived.
+    magnetGap(() => [
+      pinSettleY(document.getElementById('spotify-scroll')),
+      pinEngageY(document.getElementById('spiral-scroll')),
+    ]);
+
+    // soundcloud → guestbook: from the point the last card has settled
+    // to the seal+guestbook block centred in the viewport (not just its
+    // top edge), so the vortex is fully behind you and the whole
+    // guestbook lands in the middle of the screen with nothing left
+    // over from the last track and no dead space once the comments
+    // end. #tail-spacer (at the true end of the page) is what makes
+    // this actually reachable.
+    magnetGap(() => {
+      const wrap = document.getElementById('spiral-scroll');
+      const seal = document.querySelector('.wax-seal-wrap');
+      const gb = document.querySelector('.guestbook');
+      const blockTop = seal.offsetTop;
+      const blockHeight = (gb.offsetTop + gb.offsetHeight) - blockTop;
+      const centred = blockTop - (innerHeight - blockHeight) / 2;
+      return [pinSettleY(wrap), centred];
+    });
+
     // ── guestbook ──
     const SUPA_URL = 'https://ptyyyhuuccnojxosnjuf.supabase.co';
     const SUPA_KEY = 'sb_publishable_K7NFAi3YjR9w7f6DOf3JSA_FKcOXiOp';
@@ -1347,7 +1484,14 @@
               if (ink && ink.full) {
                 reply = `<div class="gb-reply full"><img src="${ink.img}" alt="handwritten reply from blvi"></div>`;
               } else if (ink) {
-                const l  = (ink.bx / ink.cw * 100).toFixed(2);
+                // centred horizontally regardless of where it was actually
+                // written — the quill pad spans the full comment width, so
+                // ink written anywhere left-to-right on it kept whatever
+                // stray horizontal offset it was drawn at (bx), reading as
+                // lopsided against the comment above it. vertical (t) stays
+                // true to where it was written since that's meaningful
+                // relative to the text's lines.
+                const l  = (((ink.cw - ink.bw) / 2) / ink.cw * 100).toFixed(2);
                 const t  = (ink.by / ink.ch * 100).toFixed(2);
                 const wd = (ink.bw / ink.cw * 100).toFixed(2);
                 reply = `<div class="gb-reply v2" style="aspect-ratio:${ink.cw.toFixed(1)}/${ink.ch.toFixed(1)}"><img src="${ink.img}" style="left:${l}%;top:${t}%;width:${wd}%" alt="handwritten reply from blvi"></div>`;
@@ -1358,6 +1502,12 @@
               return `<div class="guestbook-message" style="animation-delay:${i*0.12}s"><div class="guestbook-message-name">${esc(m.name)}</div><div class="guestbook-message-text">${esc(m.message)}</div>${reply}${tools}</div>`;
             }).join('')
           : '<p class="guestbook-empty">no messages yet</p>';
+        // the guestbook renders async (this fetch), well after
+        // fixTailGap's first pass at load time — which until now sized
+        // the tail spacer against the placeholder "no messages yet"
+        // line instead of the real (much taller) message list, throwing
+        // off the centred landing target it's meant to guarantee
+        if (typeof fixTailGap === 'function') fixTailGap();
         // names get the living-letters treatment; torch-ink re-registers
         box.querySelectorAll('.guestbook-message-name').forEach(el => window.__animateLetters && window.__animateLetters(el));
         if (window.__registerTorchInk) window.__registerTorchInk();
@@ -1399,7 +1549,10 @@
             wrap.classList.remove('full');
             wrap.classList.add('v2');
             wrap.style.aspectRatio = `${iw}/${ih}`;
-            img.style.left  = (minX / iw * 100).toFixed(2) + '%';
+            // centred horizontally regardless of where it was actually
+            // written (minX) — see the same note on the JSON v2 branch
+            // above; vertical (minY) stays true to where it was written.
+            img.style.left  = ((iw - tw) / 2 / iw * 100).toFixed(2) + '%';
             img.style.top   = (minY / ih * 100).toFixed(2) + '%';
             img.style.width = (tw / iw * 100).toFixed(2) + '%';
             img.src = out.toDataURL('image/png');
