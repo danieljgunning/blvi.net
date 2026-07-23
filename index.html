@@ -1312,17 +1312,43 @@
     // stuck lag rather than an immediate hand-off.
     function magnetGap(getBounds) {
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      // touch scrolling has its own OS-level momentum/rubber-band
+      // physics that our scrollTo loop can't negotiate with the way it
+      // can negotiate with desktop wheel input (there's no touch
+      // equivalent of preventDefault-ing just the momentum) — fighting
+      // it made the whole page janky rather than smooth, so don't
+      // attempt the glide at all on coarse-pointer (touch) devices.
+      // manual scrolling still works fine; it just won't auto-close.
+      if (matchMedia('(pointer: coarse)').matches) return;
 
-      let raf = null, prevY = null, dir = 1;
+      let raf = null, prevY = null, prevT = null, dir = 1;
 
       // trackpads/mice keep feeding real scroll input (momentum) for as
       // long as a gesture is still decaying, and that native scrolling
       // doesn't stop just because we've started our own glide — it was
       // fighting our scrollTo call every frame, each side undoing a bit
       // of the other, which read as resistance/pushback rather than a
-      // clean hand-off. blocking wheel input for the glide's duration
-      // means our animation is the only thing moving the page.
-      function blockWheel(e) { e.preventDefault(); }
+      // clean hand-off. blocking wheel input that agrees with the
+      // glide's own direction means our animation is the only thing
+      // moving the page. wheel input that *disagrees* — the user
+      // actively pushing back the other way — abandons the glide
+      // outright and lets that scroll through natively, rather than
+      // fighting them or launching a second controlled glide the other
+      // way (which risks the same tug-of-war in reverse if they change
+      // their mind again).
+      function blockWheel(e) {
+        // same reasoning as the movement threshold below — a stray
+        // sub-pixel deltaY during momentum decay shouldn't read as the
+        // user deciding to reverse
+        const wheelDir = e.deltaY > 10 ? 1 : e.deltaY < -10 ? -1 : 0;
+        if (wheelDir && wheelDir !== dir) {
+          cancelAnimationFrame(raf);
+          raf = null;
+          window.removeEventListener('wheel', blockWheel);
+          return; // let this event scroll normally
+        }
+        e.preventDefault();
+      }
 
       function animateTo(dest) {
         cancelAnimationFrame(raf);
@@ -1355,8 +1381,24 @@
       window.addEventListener('scroll', () => {
         if (raf) return; // don't re-trigger while we're the ones animating
         const y = scrollY;
-        if (prevY !== null && y !== prevY) dir = y > prevY ? 1 : -1;
+        const t = performance.now();
+        // px/ms since the last sample — used below to tell a deliberate
+        // pause-and-settle from just flicking straight through the gap
+        const velocity = prevY !== null && prevT !== null && t > prevT ? (y - prevY) / (t - prevT) : 0;
+        // a real minimum-movement threshold, not just "any decrease" —
+        // fast scrolling (real trackpad momentum, or the rubber-band
+        // some scroll simulations produce) can genuinely overshoot and
+        // settle back a noticeable amount between two 'scroll' samples,
+        // not just a stray sub-pixel. reacting to that as "the user
+        // reversed" flips `dir` and sends a full snap back to the
+        // previous section — and since every gap's listener sees every
+        // scroll event, that one bad flip can cascade backward through
+        // more than one gap in a row. 20px comfortably clears observed
+        // momentum bounce while still being far short of a deliberate
+        // reversal gesture.
+        if (prevY !== null && Math.abs(y - prevY) > 20) dir = y > prevY ? 1 : -1;
         prevY = y;
+        prevT = t;
         const [lo, hi] = getBounds();
         // a few px of tolerance at each edge — content that's still
         // settling right after landing (e.g. a web font swapping in and
@@ -1365,6 +1407,15 @@
         // gap", triggering a second, tiny, visible correction glide
         const pad = 3;
         if (y <= lo + pad || y >= hi - pad) return; // outside the gap — nothing to do
+        // scrolling in fast enough to just fly through the gap in one
+        // motion shouldn't get hijacked into our (much slower) glide —
+        // that's exactly what read as resistance even with no reversal
+        // involved: crossing the gap boundary at speed suddenly forced
+        // scroll down to a crawl. only commit once you've actually
+        // slowed to something close to settling speed; a fast flick
+        // sails through untouched, and if it decelerates while still
+        // inside the gap, the very next slow sample catches it.
+        if (Math.abs(velocity) > 1.2) return;
         animateTo(dir >= 0 ? hi : lo);
       }, { passive: true });
     }
