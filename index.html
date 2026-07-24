@@ -132,6 +132,8 @@
     /* ── vortex section titles — a small persistent label above each
        vortex's cards, in the vortex's brand colour ── */
     .vortex-title {
+      position: relative;
+      z-index: 250;   /* above floating vortex cards, which can bleed upward */
       text-align: center;
       font-family: 'Almendra', serif;
       font-size: clamp(1rem, 2.4vw, 1.3rem);
@@ -348,17 +350,63 @@
     .vortex-card.is-front .card-photo {
       box-shadow: 0 24px 70px rgba(0,0,0,0.8), 0 6px 18px rgba(0,0,0,0.55);
     }
+    /* a slow breathing lift, once a card has settled at the front — the
+       same "quietly alive" language as the firefly drift and the
+       living-letter float elsewhere, so the vortex doesn't go still the
+       moment scrolling stops. lives on the card's visual child, not
+       .vortex-card itself, since that's where the JS writes its own
+       per-frame transform every render — animating the same property on
+       the same element would fight it. --tilt is folded back in so the
+       spotify polaroids keep their askew rest angle underneath the bob. */
+    @keyframes vortexBreathe {
+      0%, 100% { transform: rotate(var(--tilt, 0deg)) translateY(0)     scale(1); }
+      50%      { transform: rotate(var(--tilt, 0deg)) translateY(-5px) scale(1.012); }
+    }
+    .vortex-card.is-front .card-photo,
+    .vortex-card.is-front .vortex-frame {
+      animation: vortexBreathe 5s ease-in-out infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .vortex-card.is-front .card-photo,
+      .vortex-card.is-front .vortex-frame { animation: none; }
+    }
 
-    /* ── the vortex — a funnel of cards, one card at a time facing the
-       viewer, centred and full-size and ready to play; the rest scatter
-       above and below it, shrunken, dimmed, blurred and turned edge-on.
-       walking between cards is wheel/touch-drag on .vortex-stage itself
-       (see initVortex in the JS) rather than page scroll, so the pane
-       just needs to centre the stage — no sticky/scroll-span math. */
+    /* ── the vortex — every track floats scattered in the background at
+       once, small/dim/blurred/turned edge-on, while one card sits centred
+       and full-size at the front, ready to play. walking to the next
+       track sends the front card back out to rejoin the floating group
+       and pulls the next one in from wherever it was floating (see
+       initVortex in the JS) — driven by wheel/touch-drag on .vortex-stage
+       itself rather than page scroll, so the pane just needs to centre
+       the stage — no sticky/scroll-span math. */
     .vortex-pin {
       display: flex;
       flex-direction: column;
       align-items: center;
+    }
+    /* a slow candlelit glow behind the funnel — the same warm ember tone
+       as the fireflies and click-sparks, so the whole vortex reads as
+       lit from within rather than rendered flat. sits behind every card
+       (z-index 0; cards start at 100 and only go down from there) */
+    .vortex-glow {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 70%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,175,105,0.22), transparent 70%);
+      filter: blur(18px);
+      z-index: 0;
+      pointer-events: none;
+      animation: vortexGlowPulse 6s ease-in-out infinite;
+    }
+    @keyframes vortexGlowPulse {
+      0%, 100% { opacity: 0.55; transform: translate(-50%,-50%) scale(0.92); }
+      50%      { opacity: 1;    transform: translate(-50%,-50%) scale(1.05); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .vortex-glow { animation: none; opacity: 0.75; }
     }
     .vortex-stage {
       --sw: 190px;              /* card outer width  */
@@ -462,36 +510,49 @@
       transform: translate(-50%,-50%) scale(1);
     }
     .vortex-play:hover { background: rgba(255,95,0,0.85); }
-    /* the scrub bar — a generous invisible drag strip along the bottom
-       edge of the artwork, with a thin visible track inside it. front
+    /* the scrub bar — sits below the artwork rather than over it, still
+       inside .vortex-frame so it shares the rounded corners/shadow. a
+       generous drag strip with a thin visible track inside it. front
        card only, same visibility treatment as the play button. */
     .vortex-scrub {
-      position: absolute;
-      left: 8px; right: 8px; bottom: 6px;
-      z-index: 4;
-      height: 20px;
-      display: flex;
+      position: relative;
+      width: 100%;
+      height: 26px;
+      padding: 0 10px;
+      display: none;
       align-items: center;
-      opacity: 0;
-      pointer-events: none;
+      background: rgba(0,0,0,0.28);
       cursor: pointer;
       touch-action: none;
-      transition: opacity 0.25s ease;
     }
-    .vortex-card.is-front .vortex-scrub { opacity: 1; pointer-events: auto; }
+    .vortex-card.is-front .vortex-scrub { display: flex; }
     .vortex-scrub-track {
       position: relative;
       width: 100%;
       height: 4px;
       border-radius: 2px;
       background: rgba(255,255,255,0.28);
-      overflow: hidden;
     }
     .vortex-scrub-fill {
       position: absolute;
       inset: 0;
       width: 0%;
+      border-radius: 2px;
       background: rgb(255,95,0);
+    }
+    /* the grab handle — a child of the track itself (not .vortex-scrub,
+       which is padded) so its percentage position lines up exactly with
+       the fill's; the track has no overflow:hidden to clip it, since the
+       fill now rounds its own corners instead of relying on the track's */
+    .vortex-scrub-thumb {
+      position: absolute;
+      top: 50%; left: 0%;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.55);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
     }
     .vortex-catch { position: absolute; inset: 0; z-index: 2; cursor: pointer; }
     /* click-through on the front card, so the spotify polaroid's own <a>
@@ -509,9 +570,11 @@
       color: var(--text);
       text-align: center;
       letter-spacing: 0.02em;
-      opacity: 0.8;
+      opacity: 0;
       padding-top: 0.55rem;
+      transition: opacity 0.25s ease;
     }
+    .vortex-card.is-front .vortex-caption { opacity: 0.8; }
     @media (max-width: 480px) {
       .vortex-stage { --sw: 132px; --sh: 130px; height: 320px; }
       .vortex-play { width: 44px; height: 44px; }
@@ -816,6 +879,7 @@
       <div class="vortex-pin">
         <div class="vortex-title" style="color: rgb(30,215,96);">spotify</div>
         <div class="vortex-stage" id="spotify-stage">
+          <div class="vortex-glow" style="background-image: radial-gradient(circle, rgba(30,215,96,0.18), transparent 70%);"></div>
           <div class="vortex-ring" id="spotify-ring"></div>
         </div>
       </div>
@@ -825,6 +889,7 @@
       <div class="vortex-pin">
         <div class="vortex-title" style="color: rgb(255,95,0);">soundcloud</div>
         <div class="vortex-stage" id="soundcloud-stage">
+          <div class="vortex-glow" style="background-image: radial-gradient(circle, rgba(255,95,0,0.2), transparent 70%);"></div>
           <div class="vortex-ring" id="soundcloud-ring"></div>
         </div>
       </div>
@@ -1202,13 +1267,24 @@
       const cards = Array.from(ring.querySelectorAll('.vortex-card'));
       const N = cards.length;
 
-      // sway: horizontal reach of the funnel. drop: px between
-      // neighbouring cards. wind: radians of twist per card. lean: how
-      // far a card turns edge-on as it leaves the front. pace: px of
-      // wheel/drag it takes to advance one card.
+      // every card floats at its own fixed "home" spot in the background
+      // — a phyllotaxis scatter (golden-angle spiral) so the group reads
+      // as an organic cluster rather than a ring or grid — and gently
+      // drifts there forever via a per-card sine bob. only the current
+      // front card leaves home, animating in to dead centre; walking to
+      // the next track sends it back out to its home spot while the new
+      // front card pulls in from its own. spreadR/depth: how far out and
+      // back the home cluster sits. scale/bright/blur/op: the floating
+      // (home) look vs. the front (centred) one. tilt: edge-on turn while
+      // floating. bobAmp: px of idle drift. pace: px of wheel/drag it
+      // takes to advance one card.
       const params = () => innerWidth <= 480
-        ? { sway: 96,  drop: 84,  wind: 0.85, lean: 55, pace: 190 }
-        : { sway: 230, drop: 104, wind: 0.85, lean: 65, pace: 190 };
+        ? { spreadR: 150, depthMin: 45, depthMax: 130, scaleMin: 0.24, scaleMax: 0.46,
+            brightMin: 0.3, brightMax: 0.55, blurMin: 1,   blurMax: 2.4, opMin: 0.4,  opMax: 0.8,
+            tiltY: 16, tiltZ: 6, bobAmp: 6,  frontScale: 1.15, pace: 190 }
+        : { spreadR: 300, depthMin: 70, depthMax: 230, scaleMin: 0.26, scaleMax: 0.5,
+            brightMin: 0.3, brightMax: 0.55, blurMin: 1.2, blurMax: 3.2, opMin: 0.45, opMax: 0.85,
+            tiltY: 22, tiltZ: 7, bobAmp: 11, frontScale: 1.3,  pace: 190 };
 
       // rawProgress is the vortex's own local scroll position, in cards
       // (0 .. N-1) — fed by wheel/touch on the stage, or set directly by
@@ -1217,23 +1293,77 @@
       let rawProgress = 0, pos = 0, targetPos = 0, loaded = false, settleTimer = null;
       const smooth = t => t * t * (3 - 2 * t);
 
-      function render() {
+      // deterministic 0..1 pseudo-random per card index, so each card's
+      // home spot and drift are stable across renders/resizes instead of
+      // reshuffling every frame
+      const seeded = (i, salt) => {
+        const x = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453;
+        return x - Math.floor(x);
+      };
+      const GOLDEN_ANGLE = 2.399963229728653;
+      const homes = cards.map((_, i) => ({
+        angle: i * GOLDEN_ANGLE,
+        rUnit: Math.sqrt((i + 0.6) / N),
+        zUnit: seeded(i, 3.1),
+        tiltY: seeded(i, 7.7) * 2 - 1,
+        tiltZ: seeded(i, 11.3) * 2 - 1,
+        phase: seeded(i, 19.5) * Math.PI * 2,
+        speed: 0.25 + seeded(i, 23.9) * 0.35,
+        amp:   0.6  + seeded(i, 29.1) * 0.8,
+      }));
+
+      function render(t) {
         const p = params();
+        const low  = Math.floor(pos);
+        const high = Math.min(low + 1, N - 1);
+        const fracRaw = pos - low;
         for (let i = 0; i < N; i++) {
-          const d  = i - pos;                       // whole cards from the front
-          const ad = Math.abs(d);
-          const focus = Math.max(0, 1 - ad);        // 1 at front, 0 a card away
-          const lean  = Math.max(-p.lean, Math.min(p.lean, d * 45));
-          const card  = cards[i];
+          const h = homes[i];
+          const r  = 30 + h.rUnit * p.spreadR;
+          const bx = Math.cos(h.angle) * r;
+          const by = Math.sin(h.angle) * r * 0.62;
+          const bz = -(p.depthMin + h.zUnit * (p.depthMax - p.depthMin));
+          const bScale  = p.scaleMax  - h.zUnit * (p.scaleMax - p.scaleMin);
+          const bBright = p.brightMax - h.zUnit * (p.brightMax - p.brightMin);
+          const bBlur   = p.blurMin + h.zUnit * (p.blurMax - p.blurMin);
+          const bOp     = p.opMax   - h.zUnit * (p.opMax - p.opMin);
+          const bRotY   = h.tiltY * p.tiltY;
+          const bRotZ   = h.tiltZ * p.tiltZ;
+
+          const ampPx = reduced ? 0 : p.bobAmp * h.amp;
+          const bobX = Math.sin(t * h.speed + h.phase) * ampPx;
+          const bobY = Math.cos(t * h.speed * 0.82 + h.phase * 1.3) * ampPx * 0.7;
+          const homeX = bx + bobX, homeY = by + bobY;
+
+          let mix = 0;
+          if (i === low) mix = 1 - fracRaw;
+          else if (i === high && high !== low) mix = fracRaw;
+          const e = smooth(mix);   // 1 = fully at front/centre, 0 = fully at home
+
+          const x = homeX + (0 - homeX) * e;
+          const y = homeY + (0 - homeY) * e;
+          const z = bz    + (0 - bz)    * e;
+          const scale = bScale  + (p.frontScale - bScale) * e;
+          const bright = bBright + (1 - bBright) * e;
+          const blur   = bBlur * (1 - e);
+          const op     = bOp   + (1 - bOp) * e;
+          const rotY   = bRotY * (1 - e);
+          const rotZ   = bRotZ * (1 - e);
+
+          const card = cards[i];
           card.style.transform =
-            `translate(${(Math.sin(d * p.wind) * p.sway).toFixed(1)}px, ${(d * p.drop).toFixed(1)}px)` +
-            ` rotateY(${lean.toFixed(1)}deg) scale(${(0.35 + 1.15 * focus).toFixed(3)})`;
-          card.style.zIndex  = 100 - Math.round(ad * 10);
-          card.style.filter  = `brightness(${(0.35 + 0.65 * focus).toFixed(3)}) blur(${(Math.min(ad, 1) * 1.6).toFixed(2)}px)`;
-          card.style.opacity = Math.max(0, Math.min(1, 1.1 - ad * 0.32)).toFixed(3);
-          card.style.visibility = ad > 3.6 ? 'hidden' : '';
-          card.style.pointerEvents = ad > 3 ? 'none' : '';
-          card.classList.toggle('is-front', ad < 0.5);
+            `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px)` +
+            ` rotateY(${rotY.toFixed(1)}deg) rotateZ(${rotZ.toFixed(1)}deg) scale(${scale.toFixed(3)})`;
+          card.style.zIndex  = Math.round(100 - h.zUnit * 80 + e * 100);
+          card.style.filter  = `brightness(${bright.toFixed(3)}) blur(${blur.toFixed(2)}px)`;
+          card.style.opacity = op.toFixed(3);
+          const isFront = e > 0.985;
+          // a card leaving the front fires vortex-blur — soundcloud cards
+          // listen for it to pause themselves, so scrolling away from a
+          // playing track actually stops it rather than leaving it
+          // running behind whatever's now in front
+          if (card.classList.contains('is-front') && !isFront) card.dispatchEvent(new Event('vortex-blur'));
+          card.classList.toggle('is-front', isFront);
         }
       }
 
@@ -1306,19 +1436,34 @@
       }, { passive: false });
       stage.addEventListener('touchend', () => { touchY = null; });
 
+      // a few embers — the same ones the click-spark system uses — catch
+      // the front card the instant a new track settles there, echoing
+      // the wax seal / firefly light language rather than a flat snap
+      let lastSettledIdx = 0;   // matches the starting position, so load itself doesn't spark
       (function loop() {
         requestAnimationFrame(loop);
         if (document.hidden) return;
         // rawProgress picks the front card; each card dwells at the
         // front before flicking to the next
         const idx = Math.floor(rawProgress);
-        targetPos = idx + smooth(Math.max(0, Math.min(1, (rawProgress - idx - 0.3) / 0.4)));
-        if (pos === targetPos) return;   // settled — skip the per-card filter/transform work below
-        pos += (targetPos - pos) * (reduced ? 1 : 0.09);
-        if (Math.abs(targetPos - pos) < 0.001) pos = targetPos;
-        render();
+        targetPos = idx + smooth(Math.max(0, Math.min(1, (rawProgress - idx - 0.18) / 0.64)));
+        if (pos !== targetPos) {
+          pos += (targetPos - pos) * (reduced ? 1 : 0.19);
+          if (Math.abs(targetPos - pos) < 0.001) pos = targetPos;
+        }
+        // background cards keep drifting even once the front has settled,
+        // so render() (and its time argument) runs every frame regardless
+        if (pos === targetPos) {
+          const settledIdx = Math.round(pos);
+          if (settledIdx !== lastSettledIdx && window.__spawnSparks) {
+            lastSettledIdx = settledIdx;
+            const r = cards[settledIdx].getBoundingClientRect();
+            window.__spawnSparks(r.left + r.width / 2, r.top + r.height / 2, 5 + ((Math.random() * 3) | 0));
+          }
+        }
+        render(performance.now() / 1000);
       })();
-      render();
+      render(0);
     }
 
     // ── the spotify vortex — polaroid cards; the front one opens the
@@ -1366,6 +1511,14 @@
         { slug: 'fuckboy',          title: 'fuckboy' },
         { slug: 'hot',              title: 'up and away' },
         { slug: 'missyou',          title: 'missyou' },
+        { slug: 'repair',           title: 'repair' },
+        { slug: 'be-content',       title: 'be content' },
+        { slug: 'asleep',           title: 'asleep' },
+        { slug: 'oh-dear',          title: 'oh dear' },
+        { slug: 'innocence',        title: 'innocence' },
+        { slug: 'twenty',           title: 'twenty' },
+        { slug: 'reason',           title: 'reason' },
+        { slug: 'linger',           title: 'linger' },
       ],
       t => {
         const url = `https://soundcloud.com/blvi/${t.slug}`;
@@ -1381,11 +1534,14 @@
                 <svg class="vortex-play-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                 <svg class="vortex-pause-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
               </button>
-              <div class="vortex-scrub">
-                <div class="vortex-scrub-track"><div class="vortex-scrub-fill"></div></div>
-              </div>
               <div class="vortex-catch"></div>
               <iframe class="vortex-audio" data-src="${embedSrc}" loading="lazy" scrolling="no" frameborder="no" allow="autoplay"></iframe>
+            </div>
+            <div class="vortex-scrub">
+              <div class="vortex-scrub-track">
+                <div class="vortex-scrub-fill"></div>
+                <div class="vortex-scrub-thumb"></div>
+              </div>
             </div>
           </div>
           <div class="vortex-caption">${t.title}</div>`;
@@ -1405,16 +1561,25 @@
         // reliably reach a cross-origin iframe regardless of overlay
         // timing (see the .vortex-catch CSS note), and this also means
         // the iframe itself never needs to be shown or touched directly.
-        const ifr      = card.querySelector('.vortex-audio');
-        const playBtn  = card.querySelector('.vortex-play');
-        const scrub    = card.querySelector('.vortex-scrub');
-        const scrubFill = card.querySelector('.vortex-scrub-fill');
+        const ifr        = card.querySelector('.vortex-audio');
+        const playBtn    = card.querySelector('.vortex-play');
+        const scrub      = card.querySelector('.vortex-scrub');
+        const scrubTrack = card.querySelector('.vortex-scrub-track');
+        const scrubFill  = card.querySelector('.vortex-scrub-fill');
+        const scrubThumb = card.querySelector('.vortex-scrub-thumb');
         let widget = null, playing = false, duration = 0, dragging = false;
 
+        function setProgress(frac) {
+          const pct = (frac * 100).toFixed(2) + '%';
+          scrubFill.style.width = pct;
+          scrubThumb.style.left = pct;
+        }
         function seekFromEvent(e) {
-          const rect = scrub.getBoundingClientRect();
+          // measured against the visible track, not the padded strip
+          // around it, so the thumb lands exactly under the pointer
+          const rect = scrubTrack.getBoundingClientRect();
           const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-          scrubFill.style.width = (frac * 100).toFixed(2) + '%';
+          setProgress(frac);
           if (widget && duration) widget.seekTo(frac * duration);
         }
         scrub.addEventListener('pointerdown', e => {
@@ -1433,16 +1598,18 @@
           widget.bind(SC.Widget.Events.FINISH, () => {
             playing = false;
             playBtn.classList.remove('is-playing');
-            scrubFill.style.width = '0%';
+            setProgress(0);
           });
           widget.bind(SC.Widget.Events.PLAY_PROGRESS, data => {
-            if (!dragging) scrubFill.style.width = (data.relativePosition * 100).toFixed(2) + '%';
+            if (!dragging) setProgress(data.relativePosition);
           });
         }, { once: true });
         playBtn.addEventListener('click', () => {
           if (!widget) return;   // the pane only just became visible — give the widget a moment
           playing ? widget.pause() : widget.play();
         });
+        // stop when scrolled away rather than keep playing off-screen
+        card.addEventListener('vortex-blur', () => { if (widget && playing) widget.pause(); });
 
         return card;
       }
@@ -1878,23 +2045,29 @@
       })();
     })();
 
-    // ── click sparks ──
+    // ── sparks — the same ember-catching-light burst used for clicks and,
+    // now, for a track catching the front of a vortex ──
     (function () {
-      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      document.addEventListener('pointerdown', e => {
-        if (e.target.closest('input,textarea')) return;
-        if (e.target.closest('.quill-canvas')) return;   // no sparks while writing
-        const count = 6 + ((Math.random() * 4) | 0);
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      function spawnSparks(x, y, count) {
+        if (reduced) return;
         for (let i = 0; i < count; i++) {
           const s = document.createElement('span');
           s.className = 'burst-spark';
           const sz = 3 + Math.random()*3, a = Math.random()*Math.PI*2, d = 24+Math.random()*44;
-          s.style.cssText = `width:${sz}px;height:${sz}px;left:${e.clientX-sz/2}px;top:${e.clientY-sz/2}px`;
+          s.style.cssText = `width:${sz}px;height:${sz}px;left:${x-sz/2}px;top:${y-sz/2}px`;
           s.style.setProperty('--dx', Math.cos(a)*d+'px');
           s.style.setProperty('--dy', (Math.sin(a)*d-14-Math.random()*18)+'px');
           document.body.appendChild(s);
           s.addEventListener('animationend', () => s.remove());
         }
+      }
+      window.__spawnSparks = spawnSparks;
+      if (reduced) return;
+      document.addEventListener('pointerdown', e => {
+        if (e.target.closest('input,textarea')) return;
+        if (e.target.closest('.quill-canvas')) return;   // no sparks while writing
+        spawnSparks(e.clientX, e.clientY, 6 + ((Math.random() * 4) | 0));
       });
     })();
 
