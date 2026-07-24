@@ -416,8 +416,9 @@
       max-width: 900px;
       height: 340px;
       perspective: 1200px;
-      touch-action: none;   /* drag walks the cards, not the (nonexistent) page scroll */
     }
+    /* drag walks the cards page-wide, not the (nonexistent) page scroll */
+    #spotify-scroll, #soundcloud-scroll { touch-action: none; }
     /* polaroid cards are taller than the embed frames (image + caption
        on paper), so the spotify stage needs a taller card box for the
        ring to centre each card on its true middle */
@@ -510,8 +511,9 @@
       transform: translate(-50%,-50%) scale(1);
     }
     .vortex-play:hover { background: rgba(255,95,0,0.85); }
-    /* the scrub bar — sits below the artwork rather than over it, still
-       inside .vortex-frame so it shares the rounded corners/shadow. a
+    /* the scrub bar — sits below the artwork, outside .vortex-frame so it
+       isn't clipped into a boxed/rounded shape by the frame's own
+       overflow:hidden — just the bare track floating on the page. a
        generous drag strip with a thin visible track inside it. front
        card only, same visibility treatment as the play button. */
     .vortex-scrub {
@@ -519,9 +521,9 @@
       width: 100%;
       height: 26px;
       padding: 0 10px;
+      margin-top: 0.5rem;
       display: none;
       align-items: center;
-      background: rgba(0,0,0,0.28);
       cursor: pointer;
       touch-action: none;
     }
@@ -1411,7 +1413,7 @@
         clearTimeout(settleTimer);
         settleTimer = setTimeout(() => { rawProgress = Math.round(rawProgress); }, 120);
       }
-      stage.addEventListener('wheel', e => {
+      wrap.addEventListener('wheel', e => {
         e.preventDefault();
         advance(e.deltaY);
       }, { passive: false });
@@ -1420,11 +1422,11 @@
       // preventDefault) once movement clears a small threshold, so a
       // plain tap still falls through to the front card's link/embed
       let touchY = null, dragging = false;
-      stage.addEventListener('touchstart', e => {
+      wrap.addEventListener('touchstart', e => {
         touchY = e.touches[0].clientY;
         dragging = false;
       }, { passive: true });
-      stage.addEventListener('touchmove', e => {
+      wrap.addEventListener('touchmove', e => {
         if (touchY === null) return;
         const y = e.touches[0].clientY;
         const dy = touchY - y;
@@ -1434,7 +1436,7 @@
         advance(dy);
         touchY = y;
       }, { passive: false });
-      stage.addEventListener('touchend', () => { touchY = null; });
+      wrap.addEventListener('touchend', () => { touchY = null; });
 
       // a few embers — the same ones the click-spark system uses — catch
       // the front card the instant a new track settles there, echoing
@@ -1537,11 +1539,11 @@
               <div class="vortex-catch"></div>
               <iframe class="vortex-audio" data-src="${embedSrc}" loading="lazy" scrolling="no" frameborder="no" allow="autoplay"></iframe>
             </div>
-            <div class="vortex-scrub">
-              <div class="vortex-scrub-track">
-                <div class="vortex-scrub-fill"></div>
-                <div class="vortex-scrub-thumb"></div>
-              </div>
+          </div>
+          <div class="vortex-scrub">
+            <div class="vortex-scrub-track">
+              <div class="vortex-scrub-fill"></div>
+              <div class="vortex-scrub-thumb"></div>
             </div>
           </div>
           <div class="vortex-caption">${t.title}</div>`;
