@@ -304,9 +304,10 @@
       -webkit-user-drag: none;
       user-select: none;
     }
-    /* hover affordance on the front card only — side cards aren't the
-       spotify link (their catch just scrolls them to front), so the
-       hint would be misleading there */
+    /* the front card only — side cards aren't the spotify link (their
+       catch just brings them to front), so the badge would be
+       misleading there. shown whenever a card IS the front one, not just
+       on hover, so it's visible on touch devices too. */
     .spotify-badge {
       position: absolute;
       right: 10px;
@@ -324,10 +325,11 @@
       transition: opacity 0.25s ease, transform 0.25s ease;
     }
     .spotify-badge img { width: 16px; height: 16px; outline: none; }
-    .vortex-card.is-front .card-photo:hover .spotify-badge {
+    .vortex-card.is-front .spotify-badge {
       opacity: 1;
       transform: scale(1);
     }
+    .vortex-card.is-front .card-photo:hover .spotify-badge { transform: scale(1.1); }
     .card-photo.polaroid .card-caption {
       font-family: 'Almendra', serif;
       font-size: 0.82rem;
@@ -372,6 +374,8 @@
        on paper), so the spotify stage needs a taller card box for the
        ring to centre each card on its true middle */
     #spotify-stage { --sh: 214px; }
+    /* square art + caption is a little taller than the card width too */
+    #soundcloud-stage { --sh: 222px; }
     .vortex-ring {
       position: absolute;
       left: 50%; top: 50%;
@@ -383,7 +387,7 @@
       width: var(--sw);
       will-change: transform, filter, opacity;
     }
-    /* no polaroid paper here — just the embed itself, rounded and
+    /* no polaroid paper here — just the artwork itself, rounded and
        shadowed, on the page's own background */
     .vortex-frame {
       position: relative;
@@ -395,35 +399,110 @@
     .vortex-card.is-front .vortex-frame {
       box-shadow: 0 26px 70px rgba(0,0,0,0.75), 0 6px 18px rgba(0,0,0,0.5);
     }
-    /* the widget's own "privacy policy" strip sits at a fixed offset from
-       its bottom edge — rendering the iframe taller than the visible
-       window and anchoring it to the top pushes that strip out of view
-       without touching anything soundcloud actually renders */
+    /* the track's own square artwork (fetched from soundcloud's oEmbed —
+       see initVortex's soundcloud builder) fills the frame; the widget
+       iframe behind it is never shown or clicked directly — playback is
+       driven entirely through the Widget postMessage API, both because
+       the embed's own UI clashed with the site and because a raw
+       click can't reliably reach a cross-origin iframe anyway (see the
+       vortex-catch note below) */
     .vortex-embed {
       position: relative;
       width: 100%;
-      height: 150px;
+      aspect-ratio: 1;
       background: rgba(0,0,0,0.2);
     }
-    .vortex-embed iframe {
-      display: block;
+    .vortex-art {
       position: absolute;
-      top: 0; left: 0;
+      inset: 0;
       width: 100%;
-      height: 190px;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .vortex-art.is-loaded { opacity: 1; }
+    .vortex-audio {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       border: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+    /* the play/pause button — the front card's only real control now.
+       hidden on side cards, same treatment as the spotify badge */
+    .vortex-play {
+      position: absolute;
+      z-index: 5;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%) scale(0.85);
+      width: 54px; height: 54px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(8,10,8,0.55);
+      backdrop-filter: blur(2px);
+      color: #f3ede0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease, background 0.25s ease;
+    }
+    .vortex-play svg { width: 20px; height: 20px; }
+    .vortex-play .vortex-pause-icon { display: none; }
+    .vortex-play.is-playing .vortex-play-icon { display: none; }
+    .vortex-play.is-playing .vortex-pause-icon { display: block; }
+    .vortex-card.is-front .vortex-play {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%,-50%) scale(1);
+    }
+    .vortex-play:hover { background: rgba(255,95,0,0.85); }
+    /* the scrub bar — a generous invisible drag strip along the bottom
+       edge of the artwork, with a thin visible track inside it. front
+       card only, same visibility treatment as the play button. */
+    .vortex-scrub {
+      position: absolute;
+      left: 8px; right: 8px; bottom: 6px;
+      z-index: 4;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      cursor: pointer;
+      touch-action: none;
+      transition: opacity 0.25s ease;
+    }
+    .vortex-card.is-front .vortex-scrub { opacity: 1; pointer-events: auto; }
+    .vortex-scrub-track {
+      position: relative;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.28);
+      overflow: hidden;
+    }
+    .vortex-scrub-fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      background: rgb(255,95,0);
     }
     .vortex-catch { position: absolute; inset: 0; z-index: 2; cursor: pointer; }
-    .vortex-card.is-front .vortex-catch { pointer-events: none; }
-    /* the soundcloud front card sits over a live iframe — a wheel event
-       whose pixel lands on the iframe is delivered entirely inside its own
-       browsing context and never reaches our page (true even with a
-       parent-attached listener), so unlike the spotify front card (a plain
-       same-document <a>, no such trap), it can't stay click-through by
-       default or scrolling over the embed would silently do nothing. keep
-       it blocking (catches the wheel); the JS below only lets an actual
-       press-and-release through to the embed. */
-    .vortex-card.is-front .vortex-embed .vortex-catch { pointer-events: auto; }
+    /* click-through on the front card, so the spotify polaroid's own <a>
+       stays clickable. soundcloud no longer needs this: its front card
+       has no direct-click target left underneath (the iframe is
+       pointer-events:none and always was going to be — a raw click can't
+       reliably reach a cross-origin iframe regardless of overlay timing,
+       which is why playback goes through the Widget API + the button
+       above instead) — so the catch simply stays clickable there too,
+       same as any side card. */
+    .vortex-card.is-front .card-photo ~ .vortex-catch { pointer-events: none; }
     .vortex-caption {
       font-family: 'Almendra', serif;
       font-size: 0.82rem;
@@ -435,8 +514,8 @@
     }
     @media (max-width: 480px) {
       .vortex-stage { --sw: 132px; --sh: 130px; height: 320px; }
-      .vortex-embed { height: 100px; }
-      .vortex-embed iframe { height: 128px; }
+      .vortex-play { width: 44px; height: 44px; }
+      .vortex-play svg { width: 17px; height: 17px; }
     }
 
     /* ── section divider — a plain rule echoing the wax seal's flanking
@@ -686,6 +765,7 @@
       .platforms { gap: 1.2rem 1.6rem; margin-bottom: 1.5rem; }
       .platform-break { display: block; flex-basis: 100%; height: 0; }
       #spotify-stage { --sh: 156px; }
+      #soundcloud-stage { --sh: 162px; }
       .card-photo.polaroid { padding: 6px 6px 0 6px; }
       .card-photo.polaroid .card-caption { font-size: 0.75rem; padding: 4px 3px 7px; }
       .guestbook-form input, .guestbook-form textarea { font-size: 16px; }
@@ -868,6 +948,7 @@
     reg(lc, () => { lctrl.update(); lr.render(ls, lcam); });
   </script>
 
+  <script src="https://w.soundcloud.com/player/api.js"></script>
   <script>
     // ── choreographed reveal with logo flight ──
     function revealEl(el, delay, duration) {
@@ -1126,14 +1207,14 @@
       // far a card turns edge-on as it leaves the front. pace: px of
       // wheel/drag it takes to advance one card.
       const params = () => innerWidth <= 480
-        ? { sway: 96,  drop: 84,  wind: 0.85, lean: 55, pace: 300 }
-        : { sway: 230, drop: 104, wind: 0.85, lean: 65, pace: 300 };
+        ? { sway: 96,  drop: 84,  wind: 0.85, lean: 55, pace: 190 }
+        : { sway: 230, drop: 104, wind: 0.85, lean: 65, pace: 190 };
 
       // rawProgress is the vortex's own local scroll position, in cards
       // (0 .. N-1) — fed by wheel/touch on the stage, or set directly by
       // clicking a side card. clamped, so running past either end just
       // stops rather than bleeding into the pager.
-      let rawProgress = 0, pos = 0, targetPos = 0, loaded = false;
+      let rawProgress = 0, pos = 0, targetPos = 0, loaded = false, settleTimer = null;
       const smooth = t => t * t * (3 - 2 * t);
 
       function render() {
@@ -1167,7 +1248,14 @@
           loaded = true;
           cards.forEach(c => {
             const ifr = c.querySelector('iframe[data-src]');
-            if (ifr) { ifr.src = ifr.dataset.src; delete ifr.dataset.src; }
+            if (!ifr) return;
+            ifr.src = ifr.dataset.src;
+            delete ifr.dataset.src;
+            // lets the soundcloud builder know exactly when to attach its
+            // Widget instance — has to be right now, synchronously, so it's
+            // listening before the iframe's own (async) ready message can
+            // possibly arrive and get missed
+            ifr.dispatchEvent(new Event('vortex-loaded'));
           });
         }
       }, { rootMargin: '150px' });
@@ -1176,12 +1264,22 @@
       // clicking a side card jumps it straight to front
       cards.forEach((card, i) => {
         card.querySelector('.vortex-catch').addEventListener('click', () => {
+          clearTimeout(settleTimer);
           rawProgress = i;
         });
       });
 
+      // wheel/touch feed rawProgress a tick at a time with no native
+      // momentum smoothing behind them (unlike real page-scroll), so
+      // input can stop with the fractional part sitting anywhere —
+      // including the middle stretch that the dwell curve below maps to
+      // an in-between position rather than a whole card. once input's
+      // been quiet a moment, round it to the nearest card so a vortex
+      // always comes to rest ON a track, never paused between two.
       function advance(delta) {
         rawProgress = Math.max(0, Math.min(N - 1, rawProgress + delta / params().pace));
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(() => { rawProgress = Math.round(rawProgress); }, 120);
       }
       stage.addEventListener('wheel', e => {
         e.preventDefault();
@@ -1215,6 +1313,7 @@
         // front before flicking to the next
         const idx = Math.floor(rawProgress);
         targetPos = idx + smooth(Math.max(0, Math.min(1, (rawProgress - idx - 0.3) / 0.4)));
+        if (pos === targetPos) return;   // settled — skip the per-card filter/transform work below
         pos += (targetPos - pos) * (reduced ? 1 : 0.09);
         if (Math.abs(targetPos - pos) < 0.001) pos = targetPos;
         render();
@@ -1277,25 +1376,74 @@
         card.className = 'vortex-card';
         card.innerHTML = `<div class="vortex-frame">
             <div class="vortex-embed">
+              <img class="vortex-art" alt="${t.title}">
+              <button class="vortex-play" type="button" aria-label="play ${t.title}">
+                <svg class="vortex-play-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                <svg class="vortex-pause-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+              </button>
+              <div class="vortex-scrub">
+                <div class="vortex-scrub-track"><div class="vortex-scrub-fill"></div></div>
+              </div>
               <div class="vortex-catch"></div>
-              <iframe data-src="${embedSrc}" loading="lazy" scrolling="no" frameborder="no" allow="autoplay"></iframe>
+              <iframe class="vortex-audio" data-src="${embedSrc}" loading="lazy" scrolling="no" frameborder="no" allow="autoplay"></iframe>
             </div>
           </div>
           <div class="vortex-caption">${t.title}</div>`;
-        // the front card's catch stays pointer-events:auto (see CSS) so wheel
-        // scroll reliably reaches the vortex instead of the iframe beneath —
-        // but that would also block clicking the embed's own controls. let a
-        // real press through: flip pointer-events off right as it starts, so
-        // by the time the matching mouseup/click re-hits-tests, it lands on
-        // the iframe instead of the catch; back on shortly after for the next
-        // scroll. side cards ignore this — their own click (jump to front)
-        // needs the catch to stay hit-testable.
-        const catchEl = card.querySelector('.vortex-catch');
-        catchEl.addEventListener('pointerdown', () => {
-          if (!card.classList.contains('is-front')) return;
-          catchEl.style.pointerEvents = 'none';
-          setTimeout(() => { catchEl.style.pointerEvents = ''; }, 350);
+
+        // the track's own square artwork — soundcloud's oEmbed needs no
+        // auth and already returns it at a decent resolution, so we can
+        // show that instead of the widget's own (ill-fitting, cluttered)
+        // player chrome
+        const art = card.querySelector('.vortex-art');
+        fetch(`https://soundcloud.com/oembed?url=${encodeURIComponent(url)}&format=json`)
+          .then(r => r.json())
+          .then(d => { if (d.thumbnail_url) { art.src = d.thumbnail_url; art.classList.add('is-loaded'); } })
+          .catch(() => {});
+
+        // play/pause and seeking through the widget's postMessage API
+        // instead of raw interaction with the iframe — a click can't
+        // reliably reach a cross-origin iframe regardless of overlay
+        // timing (see the .vortex-catch CSS note), and this also means
+        // the iframe itself never needs to be shown or touched directly.
+        const ifr      = card.querySelector('.vortex-audio');
+        const playBtn  = card.querySelector('.vortex-play');
+        const scrub    = card.querySelector('.vortex-scrub');
+        const scrubFill = card.querySelector('.vortex-scrub-fill');
+        let widget = null, playing = false, duration = 0, dragging = false;
+
+        function seekFromEvent(e) {
+          const rect = scrub.getBoundingClientRect();
+          const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+          scrubFill.style.width = (frac * 100).toFixed(2) + '%';
+          if (widget && duration) widget.seekTo(frac * duration);
+        }
+        scrub.addEventListener('pointerdown', e => {
+          dragging = true;
+          scrub.setPointerCapture(e.pointerId);
+          seekFromEvent(e);
         });
+        scrub.addEventListener('pointermove', e => { if (dragging) seekFromEvent(e); });
+        scrub.addEventListener('pointerup', () => { dragging = false; });
+
+        ifr.addEventListener('vortex-loaded', () => {
+          widget = SC.Widget(ifr);
+          widget.bind(SC.Widget.Events.READY, () => { widget.getDuration(d => { duration = d; }); });
+          widget.bind(SC.Widget.Events.PLAY,   () => { playing = true;  playBtn.classList.add('is-playing'); });
+          widget.bind(SC.Widget.Events.PAUSE,  () => { playing = false; playBtn.classList.remove('is-playing'); });
+          widget.bind(SC.Widget.Events.FINISH, () => {
+            playing = false;
+            playBtn.classList.remove('is-playing');
+            scrubFill.style.width = '0%';
+          });
+          widget.bind(SC.Widget.Events.PLAY_PROGRESS, data => {
+            if (!dragging) scrubFill.style.width = (data.relativePosition * 100).toFixed(2) + '%';
+          });
+        }, { once: true });
+        playBtn.addEventListener('click', () => {
+          if (!widget) return;   // the pane only just became visible — give the widget a moment
+          playing ? widget.pause() : widget.play();
+        });
+
         return card;
       }
     );
