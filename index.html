@@ -129,20 +129,6 @@
     }
     .veil.dissolve { opacity: 0; }
 
-    /* ── vortex section titles — a small persistent label above each
-       vortex's cards, in the vortex's brand colour ── */
-    .vortex-title {
-      position: relative;
-      z-index: 250;   /* above floating vortex cards, which can bleed upward */
-      text-align: center;
-      font-family: 'Almendra', serif;
-      font-size: clamp(1rem, 2.4vw, 1.3rem);
-      letter-spacing: 0.14em;
-      opacity: 0.85;
-      pointer-events: none;
-      margin-bottom: 1.4rem;
-    }
-
     /* ── the pager — the page is four fixed-viewport panes (hero, spotify,
        soundcloud, guestbook) with exactly one shown at a time. moving
        between them is arrow/keyboard-driven (see the JS pager controller),
@@ -306,32 +292,43 @@
       -webkit-user-drag: none;
       user-select: none;
     }
-    /* the front card only — side cards aren't the spotify link (their
-       catch just brings them to front), so the badge would be
+    /* the front card only — side cards aren't the spotify/soundcloud link
+       (their catch just brings them to front), so a badge would be
        misleading there. shown whenever a card IS the front one, not just
-       on hover, so it's visible on touch devices too. */
-    .spotify-badge {
+       on hover, so it's visible on touch devices too. shared by both
+       platform badges; only the background colour differs. */
+    .spotify-badge, .soundcloud-badge {
       position: absolute;
       right: 10px;
       bottom: 10px;
+      z-index: 6;   /* above .vortex-catch (2) so its own link is clickable */
       width: 30px;
       height: 30px;
       border-radius: 50%;
-      background: #1ed760;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 4px 14px rgba(0,0,0,0.45);
       opacity: 0;
+      pointer-events: none;
       transform: scale(0.8);
       transition: opacity 0.25s ease, transform 0.25s ease;
     }
+    .spotify-badge    { background: #1ed760; }
+    /* soundcloud's icon file is just the orange logo on transparent — no
+       baked-in background like spotify's — so an orange badge behind it
+       reads as orange-on-orange. dark instead, echoing the play button. */
+    .soundcloud-badge { background: rgba(18,14,10,0.85); }
     .spotify-badge img { width: 16px; height: 16px; outline: none; }
-    .vortex-card.is-front .spotify-badge {
+    .soundcloud-badge img { width: 16px; height: 16px; outline: none; }
+    .vortex-card.is-front .spotify-badge,
+    .vortex-card.is-front .soundcloud-badge {
       opacity: 1;
+      pointer-events: auto;
       transform: scale(1);
     }
-    .vortex-card.is-front .card-photo:hover .spotify-badge { transform: scale(1.1); }
+    .vortex-card.is-front .card-photo:hover .spotify-badge,
+    .vortex-card.is-front .soundcloud-badge:hover { transform: scale(1.1); }
     .card-photo.polaroid .card-caption {
       font-family: 'Almendra', serif;
       font-size: 0.82rem;
@@ -879,7 +876,6 @@
 
     <div class="pager-section" data-section="spotify" id="spotify-scroll">
       <div class="vortex-pin">
-        <div class="vortex-title" style="color: rgb(30,215,96);">spotify</div>
         <div class="vortex-stage" id="spotify-stage">
           <div class="vortex-glow" style="background-image: radial-gradient(circle, rgba(30,215,96,0.18), transparent 70%);"></div>
           <div class="vortex-ring" id="spotify-ring"></div>
@@ -889,7 +885,6 @@
 
     <div class="pager-section" data-section="soundcloud" id="soundcloud-scroll">
       <div class="vortex-pin">
-        <div class="vortex-title" style="color: rgb(255,95,0);">soundcloud</div>
         <div class="vortex-stage" id="soundcloud-stage">
           <div class="vortex-glow" style="background-image: radial-gradient(circle, rgba(255,95,0,0.2), transparent 70%);"></div>
           <div class="vortex-ring" id="soundcloud-ring"></div>
@@ -1328,7 +1323,7 @@
           const bScale  = p.scaleMax  - h.zUnit * (p.scaleMax - p.scaleMin);
           const bBright = p.brightMax - h.zUnit * (p.brightMax - p.brightMin);
           const bBlur   = p.blurMin + h.zUnit * (p.blurMax - p.blurMin);
-          const bOp     = p.opMax   - h.zUnit * (p.opMax - p.opMin);
+          const bOp     = p.opMax - h.zUnit * (p.opMax - p.opMin);
           const bRotY   = h.tiltY * p.tiltY;
           const bRotZ   = h.tiltZ * p.tiltZ;
 
@@ -1419,8 +1414,12 @@
       }, { passive: false });
 
       // touch drag: only start treating it as a drag (and only then
-      // preventDefault) once movement clears a small threshold, so a
-      // plain tap still falls through to the front card's link/embed
+      // preventDefault) once movement clears a threshold, so a plain tap
+      // still falls through to the front card's link/embed/play button.
+      // the threshold is deliberately generous (not the usual ~6px) since
+      // the play button sits screen-fixed at stage centre — right where a
+      // scroll gesture naturally starts — and a too-small threshold let a
+      // short, slow swipe synthesize a real tap-click on it mid-scroll.
       let touchY = null, dragging = false;
       wrap.addEventListener('touchstart', e => {
         touchY = e.touches[0].clientY;
@@ -1430,7 +1429,7 @@
         if (touchY === null) return;
         const y = e.touches[0].clientY;
         const dy = touchY - y;
-        if (!dragging && Math.abs(dy) < 6) return;
+        if (!dragging && Math.abs(dy) < 14) return;
         dragging = true;
         e.preventDefault();
         advance(dy);
@@ -1538,6 +1537,7 @@
               </button>
               <div class="vortex-catch"></div>
               <iframe class="vortex-audio" data-src="${embedSrc}" loading="lazy" scrolling="no" frameborder="no" allow="autoplay"></iframe>
+              <a class="soundcloud-badge" href="${url}" target="_blank" rel="noopener"><img src="Icons/soundcloud.png" alt=""></a>
             </div>
           </div>
           <div class="vortex-scrub">
