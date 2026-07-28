@@ -99,17 +99,25 @@
     }
     @media (hover: none) { .torch { display: none; } }
 
-    /* ── fireflies ── */
+    /* ── fireflies — silver on the hero/guestbook, retinted to each
+       vortex's brand colour while its pager section is active (see
+       initPager) ── */
+    :root {
+      --ff: 225,228,232;
+      --ff-glow1: 200,206,214;
+      --ff-glow2: 180,188,198;
+    }
     .ff {
       position: fixed;
       width: 4px; height: 4px;
       border-radius: 50%;
-      background: rgba(255,205,145,0.95);
-      box-shadow: 0 0 6px 2px rgba(255,180,110,0.45), 0 0 16px 6px rgba(255,165,90,0.16);
+      background: rgba(var(--ff),0.95);
+      box-shadow: 0 0 6px 2px rgba(var(--ff-glow1),0.45), 0 0 16px 6px rgba(var(--ff-glow2),0.16);
       pointer-events: none;
       z-index: 9000;
       top: 0; left: 0;
       will-change: transform, opacity;
+      transition: background 0.8s ease, box-shadow 0.8s ease;
     }
 
     /* ── entrance animation — initial state; reveal itself is driven by
@@ -257,12 +265,36 @@
       color: rgb(122,197,90);
       text-shadow: 0 0 8px rgba(122,197,90,0.15);
     }
+    .platforms a[href*="twitch"] {
+      color: rgb(145,70,255);
+      text-shadow: 0 0 8px rgba(145,70,255,0.15);
+    }
     .platform-float { animation: letterFloat 3.2s ease-in-out infinite; display: flex; align-items: center; gap: 0.5rem; }
     .platforms a[href*="soundcloud"] .platform-float { animation-delay: -1.6s; }
     .platforms a[href*="instagram"] .platform-float { animation-delay: -0.8s; }
     .platforms a[href*="youtube"] .platform-float { animation-delay: -2.4s; }
+    .platforms a[href*="twitch"] .platform-float { animation-delay: -3.6s; }
     .platforms a[href*="shop.blvi"] .platform-float { animation-delay: -3.1s; }
-    .platforms img { width: 15px; height: 15px; object-fit: contain; }
+    /* each icon glows its own brand colour at rest, breathing gently — no
+       hover needed to notice it's more than plain text. same stagger as
+       the float bob above so the row doesn't pulse in unison. */
+    .platforms img {
+      width: 15px; height: 15px; object-fit: contain;
+      animation: platformGlow 3.4s ease-in-out infinite;
+    }
+    .platforms a[href*="spotify"]    img { --icon-glow: 30,215,96; }
+    .platforms a[href*="soundcloud"] img { --icon-glow: 255,95,0;   animation-delay: -1.6s; }
+    .platforms a[href*="instagram"]  img { --icon-glow: 225,72,151; animation-delay: -0.8s; }
+    .platforms a[href*="youtube"]    img { --icon-glow: 240,78,72;  animation-delay: -2.4s; }
+    .platforms a[href*="twitch"]     img { --icon-glow: 145,70,255; animation-delay: -3.6s; }
+    .platforms a[href*="shop.blvi"]  img { --icon-glow: 122,197,90; animation-delay: -3.1s; }
+    @keyframes platformGlow {
+      0%, 100% { filter: drop-shadow(0 0 2px rgba(var(--icon-glow),0.55)); }
+      50%      { filter: drop-shadow(0 0 6px rgba(var(--icon-glow),0.95)); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .platforms img { animation: none; filter: drop-shadow(0 0 4px rgba(var(--icon-glow),0.75)); }
+    }
 
     /* ── card photo (polaroid material) — the spotify vortex's cards.
        the vortex layout/scroll logic lives in the .vortex* rules and
@@ -347,6 +379,22 @@
     .vortex-card.is-front .card-photo {
       box-shadow: 0 24px 70px rgba(0,0,0,0.8), 0 6px 18px rgba(0,0,0,0.55);
     }
+    /* the embed that actually plays the audio — never shown, spotify's
+       own player UI is never wanted on the page. spotify's SDK *replaces*
+       .spotify-embed-mount with its own iframe rather than filling it, so
+       hiding styles on that div alone never reach the real element — the
+       wrap around it survives the swap and hides whatever lands inside,
+       with !important since spotify's iframe carries its own inline size. */
+    .spotify-embed-wrap {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .spotify-embed-wrap iframe {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
     /* a slow breathing lift, once a card has settled at the front — the
        same "quietly alive" language as the firefly drift and the
        living-letter float elsewhere, so the vortex doesn't go still the
@@ -404,6 +452,52 @@
     }
     @media (prefers-reduced-motion: reduce) {
       .vortex-glow { animation: none; opacity: 0.75; }
+    }
+    /* a quiet position rail along the stage's edge — doubles as a hint
+       that the cards scroll (a gentle nudge plays a few times on first
+       show) and, once you're browsing, as a progress indicator. the
+       thumb's position is written by initVortex on every render; the
+       nudge lives on the wrapper's transform so it never fights that. */
+    /* .vortex-stage itself resolves to 0 width (the nested flex/
+       align-items:center chain that centres it never gives it a definite
+       width to be 100% of), so cards centre via .vortex-ring's own
+       left:50% rather than the stage's box — a plain right:4px would sit
+       at that same centre point instead of the visual edge. anchored the
+       same way the cards are instead: from centre, out by half a card's
+       width plus a gap. */
+    .vortex-rail {
+      position: absolute;
+      top: 50%; left: 50%;
+      height: 55%;
+      z-index: 220;
+      pointer-events: none;
+      transform: translate(calc(var(--sw) / 2 + 22px), -50%);
+    }
+    .vortex-rail.hint { animation: vortexRailHint 1.3s ease-in-out 3; }
+    @keyframes vortexRailHint {
+      0%, 100% { transform: translate(calc(var(--sw) / 2 + 22px), -50%); }
+      50%      { transform: translate(calc(var(--sw) / 2 + 22px), -42%); }
+    }
+    .vortex-rail-track {
+      position: relative;
+      width: 2px;
+      height: 100%;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.14);
+    }
+    .vortex-rail-thumb {
+      position: absolute;
+      left: 50%; top: 0%;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--rail-color, #fff);
+      box-shadow: 0 0 8px var(--rail-color, #fff);
+      transition: top 0.2s ease;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .vortex-rail.hint { animation: none; }
+      .vortex-rail-thumb { transition: none; }
     }
     .vortex-stage {
       --sw: 190px;              /* card outer width  */
@@ -508,6 +602,12 @@
       transform: translate(-50%,-50%) scale(1);
     }
     .vortex-play:hover { background: rgba(255,95,0,0.85); }
+    /* spotify's polaroid isn't a real player — clicking it always opens
+       the track on spotify — so this is just the same button styling as
+       an affordance, no pause state, sitting inside the card's own <a>
+       so a click just bubbles up and opens the link like clicking the
+       photo already does. */
+    .vortex-play.spotify-play:hover { background: rgba(30,215,96,0.85); }
     /* the scrub bar — sits below the artwork, outside .vortex-frame so it
        isn't clipped into a boxed/rounded shape by the frame's own
        overflow:hidden — just the bare track floating on the page. a
@@ -554,14 +654,16 @@
       pointer-events: none;
     }
     .vortex-catch { position: absolute; inset: 0; z-index: 2; cursor: pointer; }
-    /* click-through on the front card, so the spotify polaroid's own <a>
-       stays clickable. soundcloud no longer needs this: its front card
-       has no direct-click target left underneath (the iframe is
-       pointer-events:none and always was going to be — a raw click can't
-       reliably reach a cross-origin iframe regardless of overlay timing,
-       which is why playback goes through the Widget API + the button
-       above instead) — so the catch simply stays clickable there too,
-       same as any side card. */
+    /* click-through on the front card, so the spotify play button and
+       badge (both z-indexed above the catch) stay reachable — without
+       this the catch, painted above the plain (non-positioned) photo
+       underneath it, would swallow the click first. soundcloud doesn't
+       need this: its front card has no direct-click target left
+       underneath (the iframe is pointer-events:none and always was going
+       to be — a raw click can't reliably reach a cross-origin iframe
+       regardless of overlay timing, which is why playback goes through
+       the Widget API + the button above instead) — so the catch simply
+       stays clickable there too, same as any side card. */
     .vortex-card.is-front .card-photo ~ .vortex-catch { pointer-events: none; }
     .vortex-caption {
       font-family: 'Almendra', serif;
@@ -868,6 +970,9 @@
         <a href="https://youtube.com/@danieljgunning" target="_blank" rel="noopener">
           <span class="platform-float"><img src="Icons/youtube.png" alt=""> youtube</span>
         </a>
+        <a href="https://twitch.tv/blvi1" target="_blank" rel="noopener">
+          <span class="platform-float"><img src="Icons/twitch.png" alt=""> twitch</span>
+        </a>
         <a href="https://shop.blvi.net" target="_blank" rel="noopener">
           <span class="platform-float"><img src="Icons/shopify.png" alt=""> shop</span>
         </a>
@@ -878,6 +983,9 @@
       <div class="vortex-pin">
         <div class="vortex-stage" id="spotify-stage">
           <div class="vortex-glow" style="background-image: radial-gradient(circle, rgba(30,215,96,0.18), transparent 70%);"></div>
+          <div class="vortex-rail hint" style="--rail-color: rgb(30,215,96);">
+            <div class="vortex-rail-track"><div class="vortex-rail-thumb"></div></div>
+          </div>
           <div class="vortex-ring" id="spotify-ring"></div>
         </div>
       </div>
@@ -887,6 +995,9 @@
       <div class="vortex-pin">
         <div class="vortex-stage" id="soundcloud-stage">
           <div class="vortex-glow" style="background-image: radial-gradient(circle, rgba(255,95,0,0.2), transparent 70%);"></div>
+          <div class="vortex-rail hint" style="--rail-color: rgb(255,95,0);">
+            <div class="vortex-rail-track"><div class="vortex-rail-thumb"></div></div>
+          </div>
           <div class="vortex-ring" id="soundcloud-ring"></div>
         </div>
       </div>
@@ -1011,6 +1122,7 @@
   </script>
 
   <script src="https://w.soundcloud.com/player/api.js"></script>
+  <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
   <script>
     // ── choreographed reveal with logo flight ──
     function revealEl(el, delay, duration) {
@@ -1133,12 +1245,14 @@
       const soundcloud = document.querySelector('.platforms a[href*="soundcloud"]');
       const instagram  = document.querySelector('.platforms a[href*="instagram"]');
       const youtube    = document.querySelector('.platforms a[href*="youtube"]');
+      const twitch     = document.querySelector('.platforms a[href*="twitch"]');
       const shop       = document.querySelector('.platforms a[href*="shop.blvi"]');
       const links = [
         { el: spotify,    r: [30,215,96],  glow: 0, target: 0 },
         { el: soundcloud, r: [255,95,0],   glow: 0, target: 0 },
         { el: instagram,  r: [225,72,151], glow: 0, target: 0 },
         { el: youtube,    r: [240,78,72], glow: 0, target: 0 },
+        { el: twitch,     r: [145,70,255], glow: 0, target: 0 },
         { el: shop,       r: [122,197,90], glow: 0, target: 0 },
       ];
       const RADIUS = 220;
@@ -1255,8 +1369,9 @@
     // vortexes — spotify (polaroid links) and soundcloud (live embeds). ──
     function initVortex(wrap, cardData, build) {
       if (!wrap) return;
-      const stage = wrap.querySelector('.vortex-stage');
-      const ring  = wrap.querySelector('.vortex-ring');
+      const stage     = wrap.querySelector('.vortex-stage');
+      const ring      = wrap.querySelector('.vortex-ring');
+      const railThumb = wrap.querySelector('.vortex-rail-thumb');
       if (!stage || !ring) return;
       const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -1311,6 +1426,7 @@
 
       function render(t) {
         const p = params();
+        if (railThumb) railThumb.style.top = (N > 1 ? (pos / (N - 1)) * 100 : 0).toFixed(1) + '%';
         const low  = Math.floor(pos);
         const high = Math.min(low + 1, N - 1);
         const fracRaw = pos - low;
@@ -1420,10 +1536,22 @@
       // the play button sits screen-fixed at stage centre — right where a
       // scroll gesture naturally starts — and a too-small threshold let a
       // short, slow swipe synthesize a real tap-click on it mid-scroll.
-      let touchY = null, dragging = false;
+      //
+      // a genuine tap is dispatched by us, not left to the browser's own
+      // synthetic click: that click is hit-tested at touchEND time, but
+      // cards keep animating (settle easing, idle drift) the whole time a
+      // finger is down, so whatever's now under the finger at release can
+      // be a *different* card's play button than the one actually touched
+      // — tapping to scroll could silently "play" whatever just arrived.
+      // firing the click ourselves, against the element touched at
+      // touchSTART (a touch's target is fixed for the gesture per spec),
+      // sidesteps that entirely.
+      let touchY = null, dragging = false, tapTarget = null, tapTime = 0;
       wrap.addEventListener('touchstart', e => {
         touchY = e.touches[0].clientY;
         dragging = false;
+        tapTarget = e.target;
+        tapTime = Date.now();
       }, { passive: true });
       wrap.addEventListener('touchmove', e => {
         if (touchY === null) return;
@@ -1435,7 +1563,15 @@
         advance(dy);
         touchY = y;
       }, { passive: false });
-      wrap.addEventListener('touchend', () => { touchY = null; });
+      wrap.addEventListener('touchend', e => {
+        touchY = null;
+        if (!dragging && tapTarget && Date.now() - tapTime < 500) {
+          e.preventDefault();   // suppress the browser's own (mistargeted) synthetic click
+          tapTarget.click();
+        }
+        tapTarget = null;
+      }, { passive: false });
+      wrap.addEventListener('touchcancel', () => { touchY = null; tapTarget = null; });
 
       // a few embers — the same ones the click-spark system uses — catch
       // the front card the instant a new track settles there, echoing
@@ -1467,8 +1603,24 @@
       render(0);
     }
 
-    // ── the spotify vortex — polaroid cards; the front one opens the
-    // track on spotify, a side one scrolls itself to the front ──
+    // spotify's embed iframe API loads async and calls this once, globally,
+    // whenever it's ready — cards created before then just queue their
+    // controller setup rather than racing it
+    let spotifyIframeAPI = null;
+    const spotifyReadyQueue = [];
+    window.onSpotifyIframeApiReady = IFrameAPI => {
+      spotifyIframeAPI = IFrameAPI;
+      spotifyReadyQueue.splice(0).forEach(fn => fn(IFrameAPI));
+    };
+    function withSpotifyAPI(fn) {
+      if (spotifyIframeAPI) fn(spotifyIframeAPI); else spotifyReadyQueue.push(fn);
+    }
+
+    // ── the spotify vortex — polaroid cards; the photo itself isn't a
+    // link or a click target — the play button toggles a hidden embed
+    // (spotify only ever previews a short clip anyway), and vortex-blur
+    // also pauses it if you scroll away mid-preview. the badge is the one
+    // thing that still opens the track on spotify ──
     initVortex(
       document.getElementById('spotify-scroll'),
       [
@@ -1479,16 +1631,48 @@
         { img: 'Album%20Covers/worldeater.jpg',  title: 'world eater',  href: 'https://open.spotify.com/track/3gbhm4GgJFXw5ZRQIkcSWV?si=4bb016b43c7f4b11' },
       ],
       t => {
+        const trackId = t.href.match(/track\/([A-Za-z0-9]+)/)[1];
         const card = document.createElement('div');
         card.className = 'vortex-card';
-        card.innerHTML = `<a class="card-photo polaroid" href="${t.href}" target="_blank" rel="noopener">
+        card.innerHTML = `<div class="card-photo polaroid">
             <div class="card-photo-img">
               <img src="${t.img}" alt="${t.title}" draggable="false" loading="lazy" decoding="async">
-              <span class="spotify-badge"><img src="Icons/spotify.png" alt=""></span>
+              <span class="vortex-play spotify-play" aria-hidden="true">
+                <svg class="vortex-play-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                <svg class="vortex-pause-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+              </span>
+              <a class="spotify-badge" href="${t.href}" target="_blank" rel="noopener"><img src="Icons/spotify.png" alt=""></a>
+              <div class="spotify-embed-wrap"><div class="spotify-embed-mount"></div></div>
             </div>
             <div class="card-caption">${t.title}</div>
-          </a>
+          </div>
           <div class="vortex-catch"></div>`;
+
+        const mount   = card.querySelector('.spotify-embed-mount');
+        const playBtn = card.querySelector('.spotify-play');
+        let controller = null, playing = false;
+
+        function ensureController(cb) {
+          if (controller) { cb(controller); return; }
+          withSpotifyAPI(IFrameAPI => {
+            IFrameAPI.createController(mount, { uri: `spotify:track:${trackId}`, width: '100%', height: '100%' }, c => {
+              controller = c;
+              // spotify only ever previews a short clip — playback_update
+              // is the source of truth for playing/paused, same idea as
+              // the soundcloud widget's PLAY/PAUSE events
+              controller.addListener('playback_update', e => {
+                playing = !e.data.isPaused;
+                playBtn.classList.toggle('is-playing', playing);
+              });
+              cb(controller);
+            });
+          });
+        }
+        playBtn.addEventListener('click', () => {
+          ensureController(c => { playing ? c.pause() : c.play(); });
+        });
+        card.addEventListener('vortex-blur', () => { if (controller && playing) controller.pause(); });
+
         return card;
       }
     );
@@ -1636,6 +1820,19 @@
         downBtn.classList.toggle('is-hidden', index === sections.length - 1);
       }
 
+      const FIREFLY_COLORS = {
+        spotify:    ['30,215,96',  '30,215,96',  '30,215,96'],
+        soundcloud: ['255,95,0',   '255,95,0',   '255,95,0'],
+      };
+      const FIREFLY_DEFAULT = ['225,228,232', '200,206,214', '180,188,198'];
+      function setFireflyColor(section) {
+        const [c, g1, g2] = FIREFLY_COLORS[section] || FIREFLY_DEFAULT;
+        const root = document.documentElement.style;
+        root.setProperty('--ff', c);
+        root.setProperty('--ff-glow1', g1);
+        root.setProperty('--ff-glow2', g2);
+      }
+
       function go(delta) {
         if (transitioning) return;
         const next = Math.max(0, Math.min(sections.length - 1, index + delta));
@@ -1646,6 +1843,7 @@
         const nxt = sections[next];
         index = next;
         updateArrows();
+        setFireflyColor(nxt.dataset.section);
         cur.classList.remove('is-active');
 
         setTimeout(() => {
