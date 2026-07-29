@@ -514,8 +514,8 @@
        on paper), so the spotify stage needs a taller card box for the
        ring to centre each card on its true middle */
     #spotify-stage { --sh: 214px; }
-    /* square art + caption is a little taller than the card width too */
-    #soundcloud-stage { --sh: 222px; }
+    /* square art + waveform + caption is taller than the card width too */
+    #soundcloud-stage { --sh: 226px; }
     .vortex-ring {
       position: absolute;
       left: 50%; top: 50%;
@@ -608,50 +608,28 @@
        so a click just bubbles up and opens the link like clicking the
        photo already does. */
     .vortex-play.spotify-play:hover { background: rgba(30,215,96,0.85); }
-    /* the scrub bar — sits below the artwork, outside .vortex-frame so it
-       isn't clipped into a boxed/rounded shape by the frame's own
-       overflow:hidden — just the bare track floating on the page. a
-       generous drag strip with a thin visible track inside it. front
-       card only, same visibility treatment as the play button. */
+    /* the scrub — a waveform of the track's real peaks (see the `wf`
+       strings in the soundcloud track list), drawn on canvas. sits below
+       the artwork, outside .vortex-frame so it isn't clipped into a
+       boxed/rounded shape by the frame's own overflow:hidden, and spans
+       the full card width so its bars line up with the artwork's edges.
+       front card only, same visibility treatment as the play button. */
     .vortex-scrub {
-      position: relative;
       width: 100%;
-      height: 26px;
-      padding: 0 10px;
+      height: 30px;
       margin-top: 0.5rem;
       display: none;
-      align-items: center;
+    }
+    .vortex-card.is-front .vortex-scrub { display: block; }
+    /* the backing store is a fixed size set in JS and scaled to fit by
+       these dimensions, so a redraw never has to measure a canvas that
+       may still be display:none */
+    .vortex-wave {
+      display: block;
+      width: 100%;
+      height: 100%;
       cursor: pointer;
       touch-action: none;
-    }
-    .vortex-card.is-front .vortex-scrub { display: flex; }
-    .vortex-scrub-track {
-      position: relative;
-      width: 100%;
-      height: 4px;
-      border-radius: 2px;
-      background: rgba(255,255,255,0.28);
-    }
-    .vortex-scrub-fill {
-      position: absolute;
-      inset: 0;
-      width: 0%;
-      border-radius: 2px;
-      background: rgb(255,95,0);
-    }
-    /* the grab handle — a child of the track itself (not .vortex-scrub,
-       which is padded) so its percentage position lines up exactly with
-       the fill's; the track has no overflow:hidden to clip it, since the
-       fill now rounds its own corners instead of relying on the track's */
-    .vortex-scrub-thumb {
-      position: absolute;
-      top: 50%; left: 0%;
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      background: #fff;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.55);
-      transform: translate(-50%, -50%);
-      pointer-events: none;
     }
     .vortex-catch { position: absolute; inset: 0; z-index: 2; cursor: pointer; }
     /* click-through on the front card, so the spotify play button and
@@ -929,7 +907,7 @@
       .platforms { gap: 1.2rem 1.6rem; margin-bottom: 1.5rem; }
       .platform-break { display: block; flex-basis: 100%; height: 0; }
       #spotify-stage { --sh: 156px; }
-      #soundcloud-stage { --sh: 162px; }
+      #soundcloud-stage { --sh: 166px; }
       .card-photo.polaroid { padding: 6px 6px 0 6px; }
       .card-photo.polaroid .card-caption { font-size: 0.75rem; padding: 4px 3px 7px; }
       .guestbook-form input, .guestbook-form textarea { font-size: 16px; }
@@ -1390,19 +1368,27 @@
       // (home) look vs. the front (centred) one. tilt: edge-on turn while
       // floating. bobAmp: px of idle drift. pace: px of touch-drag it
       // takes to advance one card.
+      // the flight itself (see render's `arc`): arcLift/arcPop are how far
+      // the card rises and sails toward the viewer at the midpoint, spin/
+      // flutter the tumble it picks up on the way, glint the flare of light
+      // it catches as it passes.
       const params = () => innerWidth <= 480
         ? { spreadR: 150, depthMin: 45, depthMax: 130, scaleMin: 0.24, scaleMax: 0.46,
             brightMin: 0.3, brightMax: 0.55, blurMin: 1,   blurMax: 2.4, opMin: 0.4,  opMax: 0.8,
-            tiltY: 16, tiltZ: 6, bobAmp: 6,  frontScale: 1.15, pace: 190 }
+            tiltY: 16, tiltZ: 6, bobAmp: 6,  frontScale: 1.15, pace: 190,
+            arcLift: 48, arcPop: 55, spin: 18, flutter: 10, glint: 0.3 }
         : { spreadR: 300, depthMin: 70, depthMax: 230, scaleMin: 0.26, scaleMax: 0.5,
             brightMin: 0.3, brightMax: 0.55, blurMin: 1.2, blurMax: 3.2, opMin: 0.45, opMax: 0.85,
-            tiltY: 22, tiltZ: 7, bobAmp: 11, frontScale: 1.3,  pace: 190 };
+            tiltY: 22, tiltZ: 7, bobAmp: 11, frontScale: 1.3,  pace: 190,
+            arcLift: 92, arcPop: 95, spin: 26, flutter: 15, glint: 0.35 };
 
       // rawProgress is the vortex's own local scroll position, in cards
       // (0 .. N-1) — fed by wheel/touch on the stage, or set directly by
       // clicking a side card. clamped, so running past either end just
       // stops rather than bleeding into the pager.
-      let rawProgress = 0, pos = 0, targetPos = 0, loaded = false, settleTimer = null;
+      // flightDir remembers which way the last move went, so a card tumbles
+      // with the direction of travel rather than always spinning one way
+      let rawProgress = 0, pos = 0, targetPos = 0, loaded = false, settleTimer = null, flightDir = 1;
       const smooth = t => t * t * (3 - 2 * t);
 
       // deterministic 0..1 pseudo-random per card index, so each card's
@@ -1453,21 +1439,34 @@
           else if (i === high && high !== low) mix = fracRaw;
           const e = smooth(mix);   // 1 = fully at front/centre, 0 = fully at home
 
+          // a card doesn't slide between home and centre in a straight
+          // line — it sails. arc peaks at the midpoint of the journey and
+          // is zero at both ends, so the card lifts, swings toward the
+          // viewer (past the front card's own depth, hence the zIndex
+          // boost), tumbles, catches the light, then settles flat and
+          // still. the outgoing and incoming card peak together, reading
+          // as one exchange rather than two separate slides.
+          const arc = reduced ? 0 : Math.sin(e * Math.PI);
+
           const x = homeX + (0 - homeX) * e;
-          const y = homeY + (0 - homeY) * e;
-          const z = bz    + (0 - bz)    * e;
+          const y = homeY + (0 - homeY) * e - arc * p.arcLift;
+          const z = bz    + (0 - bz)    * e + arc * p.arcPop;
           const scale = bScale  + (p.frontScale - bScale) * e;
-          const bright = bBright + (1 - bBright) * e;
-          const blur   = bBlur * (1 - e);
+          const bright = bBright + (1 - bBright) * e + arc * p.glint;
+          // sharpens while in flight, so the motion reads crisp rather
+          // than smeared through the middle of it
+          const blur   = bBlur * (1 - e) * (1 - arc * 0.6);
           const op     = bOp   + (1 - bOp) * e;
           const rotY   = bRotY * (1 - e);
-          const rotZ   = bRotZ * (1 - e);
+          const rotZ   = bRotZ * (1 - e) + arc * p.spin * flightDir;
+          const rotX   = arc * p.flutter * flightDir;
 
           const card = cards[i];
           card.style.transform =
             `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px)` +
-            ` rotateY(${rotY.toFixed(1)}deg) rotateZ(${rotZ.toFixed(1)}deg) scale(${scale.toFixed(3)})`;
-          card.style.zIndex  = Math.round(100 - h.zUnit * 80 + e * 100);
+            ` rotateX(${rotX.toFixed(1)}deg) rotateY(${rotY.toFixed(1)}deg) rotateZ(${rotZ.toFixed(1)}deg)` +
+            ` scale(${scale.toFixed(3)})`;
+          card.style.zIndex  = Math.round(100 - h.zUnit * 80 + e * 100 + arc * 60);
           card.style.filter  = `brightness(${bright.toFixed(3)}) blur(${blur.toFixed(2)}px)`;
           card.style.opacity = op.toFixed(3);
           const isFront = e > 0.985;
@@ -1504,11 +1503,27 @@
       }, { rootMargin: '150px' });
       io.observe(stage);
 
+      // a discrete jump — a wheel notch, or clicking a background card —
+      // is tweened over a fixed span rather than left to the lerp below.
+      // the lerp is exponential, so it front-loads nearly all its motion
+      // into the first few frames and the flight arc never gets seen; a
+      // timed tween gives the card time to actually sail. touch-drag
+      // deliberately skips this and keeps the lerp, which has to stay
+      // glued to the finger.
+      let flight = null;
+      function startFlight(to) {
+        if (reduced) { flight = null; return; }
+        flightDir = to > pos ? 1 : -1;
+        flight = { from: pos, to, start: performance.now(),
+                   dur: Math.min(1100, 420 + Math.abs(to - pos) * 160) };
+      }
+
       // clicking a side card jumps it straight to front
       cards.forEach((card, i) => {
         card.querySelector('.vortex-catch').addEventListener('click', () => {
           clearTimeout(settleTimer);
           rawProgress = i;
+          startFlight(i);
         });
       });
 
@@ -1524,23 +1539,87 @@
         clearTimeout(settleTimer);
         settleTimer = setTimeout(() => { rawProgress = Math.round(rawProgress); }, 120);
       }
-      // the wheel steps whole tracks rather than feeding pixels in: one
-      // notch (or one trackpad flick) = one track, however far it was
-      // spun. a single notch fires several events and a trackpad flick
-      // many more, so the first one steps and the rest are swallowed
-      // until the burst goes quiet.
-      let wheelBusy = false, wheelTimer = null;
+      // the wheel steps whole tracks rather than feeding pixels in, but a
+      // mouse wheel and a trackpad want opposite treatment, so they're
+      // told apart and handled separately (see looksLikeNotch):
+      //   wheel — one notch = one track, stepped the instant it arrives,
+      //     and a continuous spin keeps stepping at a steady cadence
+      //     rather than stalling on the first card.
+      //   trackpad — a swipe streams hundreds of small deltas, so it earns
+      //     each track by distance travelled instead, with a floor on how
+      //     fast tracks can go by. it then keeps streaming *momentum* for
+      //     up to a couple of seconds after the fingers lift, which is what
+      //     made one flick run away through the list — so the momentum
+      //     phase is detected and ignored (see padCoasting).
+      let burstOpen = false, burstIsNotch = true, burstStepped = false,
+          lastStep = 0, padAccum = 0, padPeak = 0, padCoasting = false, wheelQuiet = null;
+      const STEP_CADENCE  = 320;   // ms between steps while a wheel spin continues
+      const PAD_PER_CARD  = 150;   // px of trackpad travel that buys one track
+      const PAD_CADENCE   = 280;   // ms floor between trackpad steps
       function step(dir) {
         clearTimeout(settleTimer);
-        rawProgress = Math.max(0, Math.min(N - 1, Math.round(rawProgress) + dir));
+        const to = Math.max(0, Math.min(N - 1, Math.round(rawProgress) + dir));
+        if (to === rawProgress) return;   // already hard against an end
+        rawProgress = to;
+        startFlight(to);
+      }
+      // a mouse wheel notch arrives as one big quantised jump — chrome and
+      // safari report wheelDeltaY in multiples of 120, firefox reports
+      // deltaMode in lines rather than pixels — where a trackpad streams
+      // small pixel deltas. only the FIRST event of a burst is classified:
+      // a trackpad ramps up from tiny deltas, but its mid-flick and
+      // momentum values can look every bit as coarse as a real notch.
+      function looksLikeNotch(e) {
+        if (e.deltaMode !== 0) return true;
+        if (e.wheelDeltaY) return Math.abs(e.wheelDeltaY) % 120 === 0;
+        return Math.abs(e.deltaY) >= 50;
       }
       wrap.addEventListener('wheel', e => {
         e.preventDefault();
         const dir = Math.sign(e.deltaY);
         if (!dir) return;
-        if (!wheelBusy) { wheelBusy = true; step(dir); }
-        clearTimeout(wheelTimer);
-        wheelTimer = setTimeout(() => { wheelBusy = false; }, 140);
+        const now = performance.now();
+
+        if (!burstOpen) {
+          burstOpen = true;
+          burstIsNotch = looksLikeNotch(e);
+          burstStepped = false;
+          padAccum = 0;
+          padPeak = 0;
+          padCoasting = false;
+        }
+
+        if (burstIsNotch) {
+          if (!burstStepped || now - lastStep >= STEP_CADENCE) {
+            burstStepped = true;
+            lastStep = now;
+            step(dir);
+          }
+        } else {
+          const mag = Math.abs(e.deltaY);
+          // a real swipe ramps up; momentum only ever decays. so a delta
+          // well below the peak means the fingers have lifted and the rest
+          // of this burst is coasting — let it drain without advancing.
+          // rising again means they're pushing it along, so pick back up.
+          if (mag >= padPeak) { padPeak = mag; padCoasting = false; }
+          else if (padPeak >= 12 && mag < padPeak * 0.55) padCoasting = true;
+
+          if (!padCoasting) {
+            padAccum += mag;
+            if (padAccum >= PAD_PER_CARD) {
+              if (now - lastStep >= PAD_CADENCE) {
+                padAccum -= PAD_PER_CARD;
+                lastStep = now;
+                step(dir);
+              } else {
+                padAccum = PAD_PER_CARD;   // hold at the threshold instead of banking up
+              }
+            }
+          }
+        }
+
+        clearTimeout(wheelQuiet);
+        wheelQuiet = setTimeout(() => { burstOpen = false; }, 140);
       }, { passive: false });
 
       // touch drag: only start treating it as a drag (and only then
@@ -1603,7 +1682,15 @@
         // front before flicking to the next
         const idx = Math.floor(rawProgress);
         targetPos = idx + smooth(Math.max(0, Math.min(1, (rawProgress - idx - 0.18) / 0.64)));
-        if (pos !== targetPos) {
+        // a touch-drag retargets mid-flight, which abandons the tween so
+        // the cards go back to following the finger
+        if (flight && targetPos !== flight.to) flight = null;
+        if (flight) {
+          const k = Math.min(1, (performance.now() - flight.start) / flight.dur);
+          pos = flight.from + (flight.to - flight.from) * smooth(k);
+          if (k === 1) flight = null;
+        } else if (pos !== targetPos) {
+          flightDir = targetPos > pos ? 1 : -1;
           pos += (targetPos - pos) * (reduced ? 1 : 0.19);
           if (Math.abs(targetPos - pos) < 0.001) pos = targetPos;
         }
@@ -1696,33 +1783,43 @@
       }
     );
 
+    const WF_DIGITS = '0123456789abcdefghijklmnopqrstuvwxyz';
+
     // ── the soundcloud vortex — live embeds; excludes any track already
     // shown in the spotify vortex above (check both lists before adding
     // a track to either) ──
     initVortex(
       document.getElementById('soundcloud-scroll'),
+      // `wf` is the track's own waveform, downsampled to 72 bars from the
+      // peaks soundcloud publishes at its waveform_url — one base36 char
+      // per bar, 0..35. baked in rather than fetched because those peaks
+      // only come from the track JSON, which needs a client_id and is
+      // CORS-blocked from the page. a new track needs its own string:
+      //   curl -sL https://soundcloud.com/blvi/<slug> | grep -o 'waveform_url":"[^"]*'
+      // then downsample that json's `samples` (0..`height`) to 72 buckets,
+      // taking each bucket's max.
       [
-        { slug: 'the-fly',          title: 'the fly' },
-        { slug: 'innocence-remix',  title: 'innocence (remix)' },
-        { slug: 'alpha',            title: 'alpha' },
-        { slug: 'fuckboy-remix',    title: 'fuckboy, by brakence (remix)' },
-        { slug: 'end-of-the-world', title: 'end of the world' },
-        { slug: 'allineed',         title: 'all i need' },
-        { slug: 'blvi-2020',        title: 'music' },
-        { slug: 'downtown',         title: 'downtown' },
-        { slug: 'water',            title: 'water (under)' },
-        { slug: 'keepurheadup',     title: 'keepurheadup' },
-        { slug: 'fuckboy',          title: 'fuckboy' },
-        { slug: 'hot',              title: 'up and away' },
-        { slug: 'missyou',          title: 'missyou' },
-        { slug: 'repair',           title: 'repair' },
-        { slug: 'be-content',       title: 'be content' },
-        { slug: 'asleep',           title: 'asleep' },
-        { slug: 'oh-dear',          title: 'oh dear' },
-        { slug: 'innocence',        title: 'innocence' },
-        { slug: 'twenty',           title: 'twenty' },
-        { slug: 'reason',           title: 'reason' },
-        { slug: 'linger',           title: 'linger' },
+        { slug: 'the-fly',          title: 'the fly',                      wf: 'vuuuwvuwyxyyyyyzzyyyyyyyyzwyxyyyyyyyxyyxyyxyywwvuuurppqqqqqqqoqnimklhiei' },
+        { slug: 'innocence-remix',  title: 'innocence (remix)',            wf: 'yyyyyyyyyyyyyyyyyyyyyzyyyyzyzzyzyzyywwwwvvwwwwwwxxyyyyyyyyyyyyyyyyyyywun' },
+        { slug: 'alpha',            title: 'alpha',                        wf: 'glprququwszwwyxxwvxuxvuwuvvuuttuuuutuwuuuupmmgmknleolinjnminhomlngnmhca7' },
+        { slug: 'fuckboy-remix',    title: 'fuckboy, by brakence (remix)', wf: 'kknorqqsssuvvpsuwxyssysywxyysxyyyyywywxxuwwyyyyyxyxyyyyzyyyyzywywxwwspkf' },
+        { slug: 'end-of-the-world', title: 'end of the world',             wf: 'mqsrrsqprrrqrpsssspprsrqvwxxxywxyyxwwvxwwwwwxxyxxyzyzyywxxxxxyzyzzywyxxx' },
+        { slug: 'allineed',         title: 'all i need',                   wf: 'xwswuwvwwvwtuuvswxvwwwwwvvxvswwwwwwvwwzxwvwvywzyyytxwxyywxxyuwxvyxwvwwww' },
+        { slug: 'blvi-2020',        title: 'music',                        wf: 'loqrtvvsuwwywwuuuttttwuusuuwssttutttuuwwwwwwwwwwwwwwwwwwxxwwwwwwxzywvspz' },
+        { slug: 'downtown',         title: 'downtown',                     wf: 'lllotxyxyyyxyxwxxwqyyyyyyyyyyyyyyyzyyyyyyyyywqrrrvuvuwwuuvutuussrppolkif' },
+        { slug: 'water',            title: 'water (under)',                wf: 'jilnqoqutqqqrsutupstsutussussutojfdbcfinuzuqmkvpifowolgmtqmonqokifdba865' },
+        { slug: 'keepurheadup',     title: 'keepurheadup',                 wf: 'srrqrrrsstuvutsrustuuwwyxxwwwwwxyyzyzzyzyyyyyzykikmlpyyyyxxxwwvuuuvvuwvv' },
+        { slug: 'fuckboy',          title: 'fuckboy',                      wf: 'yvtrssstsnrrssyxyyywxytyxwsyvuyuywyxxutyszywyzxvyuyxywyxwyqyyxvywwywxwyy' },
+        { slug: 'hot',              title: 'up and away',                  wf: 'nnlmmnnnnoyxvvywyuvyyyxyyywyyxyyyyyyyyyyyyyyvyyyyyuyyyyyyyyyzzyzyzyyyyyy' },
+        { slug: 'missyou',          title: 'missyou',                      wf: 'pqpooqommqrrqrssqsttutuuutqsuutuuvvuuyuxxzwywyyuxxwvwywxuxxywyyywuwwyvwy' },
+        { slug: 'repair',           title: 'repair',                       wf: 'vuvvvxwxvwxwuwxwywyvvyxywywwyxxyywxyzxyyvxxywyywwxywywxwtonmlmjjkjkkkllj' },
+        { slug: 'be-content',       title: 'be content',                   wf: 'nlwvvtsuutvwwvyutvuwwwvtvsutrqoquwuuskvztusruvvwutsutuyuwxtsututrppppusr' },
+        { slug: 'asleep',           title: 'asleep',                       wf: 'klkllkjommmpmlospmrnpsqpoqnntyvvuvyuwyxzyywvrprrsqqpnnmmomnoonnnmlmkmlkk' },
+        { slug: 'oh-dear',          title: 'oh dear',                      wf: 'uuvuwvuwvvuvtvvwwwuvuvuuuvvxwvwxyyxxwxyyyxyzyzyxyxxywwxvywwwwuvutsqomiih' },
+        { slug: 'innocence',        title: 'innocence',                    wf: 'wuwuwuwvwuwwuwwwxyzwzxzxyyyyyxyxurtqurtryyyyyxyxyxyxxwzyurtrrqqprqpomlig' },
+        { slug: 'twenty',           title: 'twenty',                       wf: 'ejmmnmsspsssrsspssqrqmpqpopmoooononnqooonxwwyywyzyyxuusdhhciighhdfgfdgd8' },
+        { slug: 'reason',           title: 'reason',                       wf: 'yxyyyyxyyyxxxyxxxyyyxyyyyxyyxyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyzyyyyyyyyyxyy' },
+        { slug: 'linger',           title: 'linger',                       wf: '8bdffhhjkkmoqrqqrqqqqrrxzyyyxvzxxwxwyxywvwxywyyxwwwututuuttuututuutttutu' },
       ],
       t => {
         const url = `https://soundcloud.com/blvi/${t.slug}`;
@@ -1744,10 +1841,7 @@
             </div>
           </div>
           <div class="vortex-scrub">
-            <div class="vortex-scrub-track">
-              <div class="vortex-scrub-fill"></div>
-              <div class="vortex-scrub-thumb"></div>
-            </div>
+            <canvas class="vortex-wave"></canvas>
           </div>
           <div class="vortex-caption">${t.title}</div>`;
 
@@ -1766,34 +1860,61 @@
         // reliably reach a cross-origin iframe regardless of overlay
         // timing (see the .vortex-catch CSS note), and this also means
         // the iframe itself never needs to be shown or touched directly.
-        const ifr        = card.querySelector('.vortex-audio');
-        const playBtn    = card.querySelector('.vortex-play');
-        const scrub      = card.querySelector('.vortex-scrub');
-        const scrubTrack = card.querySelector('.vortex-scrub-track');
-        const scrubFill  = card.querySelector('.vortex-scrub-fill');
-        const scrubThumb = card.querySelector('.vortex-scrub-thumb');
+        const ifr     = card.querySelector('.vortex-audio');
+        const playBtn = card.querySelector('.vortex-play');
+        const wave    = card.querySelector('.vortex-wave');
+        const wctx    = wave.getContext('2d');
         let widget = null, playing = false, duration = 0, dragging = false;
 
-        function setProgress(frac) {
-          const pct = (frac * 100).toFixed(2) + '%';
-          scrubFill.style.width = pct;
-          scrubThumb.style.left = pct;
+        // the waveform. bars are drawn at a fixed size and scaled to the
+        // card by CSS, so a redraw never measures the canvas — it can be
+        // drawn while its pane is still display:none, and stays drawn
+        // afterwards since canvas content survives being hidden.
+        const peaks = [...t.wf].map(c => WF_DIGITS.indexOf(c) / 35);
+        const SLOT = 4, BAR = 2.5, BASE = 21, UP = 20, DOWN = 8;
+        wave.width  = peaks.length * SLOT;
+        wave.height = BASE + 1 + DOWN;
+        let progress = 0, hover = -1;
+
+        function drawWave() {
+          wctx.clearRect(0, 0, wave.width, wave.height);
+          peaks.forEach((p, i) => {
+            const x = i * SLOT + (SLOT - BAR) / 2;
+            const f = (i + 0.5) / peaks.length;
+            wctx.fillStyle = f <= progress ? 'rgb(255,95,0)'
+                          : f <= hover     ? 'rgba(255,95,0,0.38)'
+                          :                  'rgba(240,236,228,0.4)';
+            const up = Math.max(1.5, p * UP);
+            wctx.fillRect(x, BASE - up, BAR, up);
+            // the dimmer stub below the baseline — soundcloud's waveform
+            // reflects its peaks rather than mirroring them at full height
+            wctx.globalAlpha = 0.45;
+            wctx.fillRect(x, BASE + 1, BAR, Math.max(1, p * DOWN));
+            wctx.globalAlpha = 1;
+          });
         }
-        function seekFromEvent(e) {
-          // measured against the visible track, not the padded strip
-          // around it, so the thumb lands exactly under the pointer
-          const rect = scrubTrack.getBoundingClientRect();
-          const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        function setProgress(frac) { progress = frac; drawWave(); }
+        function fracFromEvent(e) {
+          const rect = wave.getBoundingClientRect();
+          return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        }
+        function seekTo(frac) {
           setProgress(frac);
           if (widget && duration) widget.seekTo(frac * duration);
         }
-        scrub.addEventListener('pointerdown', e => {
+        wave.addEventListener('pointerdown', e => {
           dragging = true;
-          scrub.setPointerCapture(e.pointerId);
-          seekFromEvent(e);
+          wave.setPointerCapture(e.pointerId);
+          seekTo(fracFromEvent(e));
         });
-        scrub.addEventListener('pointermove', e => { if (dragging) seekFromEvent(e); });
-        scrub.addEventListener('pointerup', () => { dragging = false; });
+        wave.addEventListener('pointermove', e => {
+          const frac = fracFromEvent(e);
+          if (dragging) seekTo(frac);
+          else { hover = frac; drawWave(); }
+        });
+        wave.addEventListener('pointerup', () => { dragging = false; });
+        wave.addEventListener('pointerleave', () => { hover = -1; drawWave(); });
+        drawWave();
 
         // the widget is the only authority on whether audio is actually
         // running: on mobile it fires PLAY optimistically and *then* gets
