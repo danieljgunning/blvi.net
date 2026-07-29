@@ -1388,7 +1388,7 @@
       // front card pulls in from its own. spreadR/depth: how far out and
       // back the home cluster sits. scale/bright/blur/op: the floating
       // (home) look vs. the front (centred) one. tilt: edge-on turn while
-      // floating. bobAmp: px of idle drift. pace: px of wheel/drag it
+      // floating. bobAmp: px of idle drift. pace: px of touch-drag it
       // takes to advance one card.
       const params = () => innerWidth <= 480
         ? { spreadR: 150, depthMin: 45, depthMax: 130, scaleMin: 0.24, scaleMax: 0.46,
@@ -1524,9 +1524,23 @@
         clearTimeout(settleTimer);
         settleTimer = setTimeout(() => { rawProgress = Math.round(rawProgress); }, 120);
       }
+      // the wheel steps whole tracks rather than feeding pixels in: one
+      // notch (or one trackpad flick) = one track, however far it was
+      // spun. a single notch fires several events and a trackpad flick
+      // many more, so the first one steps and the rest are swallowed
+      // until the burst goes quiet.
+      let wheelBusy = false, wheelTimer = null;
+      function step(dir) {
+        clearTimeout(settleTimer);
+        rawProgress = Math.max(0, Math.min(N - 1, Math.round(rawProgress) + dir));
+      }
       wrap.addEventListener('wheel', e => {
         e.preventDefault();
-        advance(e.deltaY);
+        const dir = Math.sign(e.deltaY);
+        if (!dir) return;
+        if (!wheelBusy) { wheelBusy = true; step(dir); }
+        clearTimeout(wheelTimer);
+        wheelTimer = setTimeout(() => { wheelBusy = false; }, 140);
       }, { passive: false });
 
       // touch drag: only start treating it as a drag (and only then
@@ -1567,7 +1581,12 @@
         touchY = null;
         if (!dragging && tapTarget && Date.now() - tapTime < 500) {
           e.preventDefault();   // suppress the browser's own (mistargeted) synthetic click
-          tapTarget.click();
+          // .click() ignores pointer-events, so it would happily fire a
+          // background card's play button — which CSS has disabled — if
+          // that card drifted out of front while the finger was down.
+          // only dispatch while the tapped card is still the front one.
+          const inCard = tapTarget.closest('.vortex-card');
+          if (!inCard || inCard.classList.contains('is-front')) tapTarget.click();
         }
         tapTarget = null;
       }, { passive: false });
@@ -1776,10 +1795,28 @@
         scrub.addEventListener('pointermove', e => { if (dragging) seekFromEvent(e); });
         scrub.addEventListener('pointerup', () => { dragging = false; });
 
+        // the widget is the only authority on whether audio is actually
+        // running: on mobile it fires PLAY optimistically and *then* gets
+        // refused by the autoplay policy, reverting to paused without a
+        // matching PAUSE. trusting the events alone left the button
+        // showing "pause" over silence, and — since it then only ever
+        // called pause() on an already-paused widget, firing no event to
+        // correct itself — permanently dead. so ask, never assume.
+        function syncPlayState() {
+          if (!widget) return;
+          widget.isPaused(paused => {
+            playing = !paused;
+            playBtn.classList.toggle('is-playing', playing);
+          });
+        }
         ifr.addEventListener('vortex-loaded', () => {
           widget = SC.Widget(ifr);
           widget.bind(SC.Widget.Events.READY, () => { widget.getDuration(d => { duration = d; }); });
-          widget.bind(SC.Widget.Events.PLAY,   () => { playing = true;  playBtn.classList.add('is-playing'); });
+          widget.bind(SC.Widget.Events.PLAY, () => {
+            playing = true;
+            playBtn.classList.add('is-playing');
+            setTimeout(syncPlayState, 600);   // catch a refused play that never reports back
+          });
           widget.bind(SC.Widget.Events.PAUSE,  () => { playing = false; playBtn.classList.remove('is-playing'); });
           widget.bind(SC.Widget.Events.FINISH, () => {
             playing = false;
@@ -1792,10 +1829,13 @@
         }, { once: true });
         playBtn.addEventListener('click', () => {
           if (!widget) return;   // the pane only just became visible — give the widget a moment
-          playing ? widget.pause() : widget.play();
+          widget.isPaused(paused => {
+            if (paused) widget.play(); else widget.pause();
+            setTimeout(syncPlayState, 600);
+          });
         });
         // stop when scrolled away rather than keep playing off-screen
-        card.addEventListener('vortex-blur', () => { if (widget && playing) widget.pause(); });
+        card.addEventListener('vortex-blur', () => { if (widget) widget.pause(); });
 
         return card;
       }
