@@ -1479,26 +1479,23 @@
         }
       }
 
-      // any embeds load once, the first time the pane is shown — never
-      // reloaded afterward, so playback survives cards cycling away
-      // from the front and back (spotify cards have no iframe, so this
-      // is a no-op for them). the pane is display:none until the pager
-      // shows it, so this only fires once the vortex is actually visible.
+      // every card is told to build its player once, the first time the
+      // pane is shown — never again, so playback survives cards cycling
+      // away from the front and back. the pane is display:none until the
+      // pager shows it, so this only fires once the vortex is visible.
+      //
+      // it matters that players are built *here* and not on first tap:
+      // creating one takes an async round trip (an iframe load, a widget
+      // handshake, spotify's createController callback), and a play()
+      // issued from that callback runs outside the user activation the
+      // tap gave us — which mobile refuses. so by the time anything can
+      // be tapped the player already exists, and the tap handlers below
+      // only ever call play/pause synchronously.
       const io = new IntersectionObserver(entries => {
         for (const e of entries) {
           if (!e.isIntersecting || loaded) continue;
           loaded = true;
-          cards.forEach(c => {
-            const ifr = c.querySelector('iframe[data-src]');
-            if (!ifr) return;
-            ifr.src = ifr.dataset.src;
-            delete ifr.dataset.src;
-            // lets the soundcloud builder know exactly when to attach its
-            // Widget instance — has to be right now, synchronously, so it's
-            // listening before the iframe's own (async) ready message can
-            // possibly arrive and get missed
-            ifr.dispatchEvent(new Event('vortex-loaded'));
-          });
+          cards.forEach(c => c.dispatchEvent(new Event('vortex-load')));
         }
       }, { rootMargin: '150px' });
       io.observe(stage);
@@ -1758,8 +1755,9 @@
         const playBtn = card.querySelector('.spotify-play');
         let controller = null, playing = false;
 
-        function ensureController(cb) {
-          if (controller) { cb(controller); return; }
+        // built when the pane is first shown, never on the tap itself —
+        // see the vortex-load note in initVortex
+        card.addEventListener('vortex-load', () => {
           withSpotifyAPI(IFrameAPI => {
             IFrameAPI.createController(mount, { uri: `spotify:track:${trackId}`, width: '100%', height: '100%' }, c => {
               controller = c;
@@ -1770,12 +1768,12 @@
                 playing = !e.data.isPaused;
                 playBtn.classList.toggle('is-playing', playing);
               });
-              cb(controller);
             });
           });
-        }
+        }, { once: true });
         playBtn.addEventListener('click', () => {
-          ensureController(c => { playing ? c.pause() : c.play(); });
+          if (!controller) return;   // the pane only just became visible
+          if (playing) controller.pause(); else controller.play();
         });
         card.addEventListener('vortex-blur', () => { if (controller && playing) controller.pause(); });
 
@@ -1922,7 +1920,9 @@
         // matching PAUSE. trusting the events alone left the button
         // showing "pause" over silence, and — since it then only ever
         // called pause() on an already-paused widget, firing no event to
-        // correct itself — permanently dead. so ask, never assume.
+        // correct itself — permanently dead. so every toggle assumes, then
+        // reconciles here a moment later; asking first isn't an option,
+        // since the round trip would cost the tap its user activation.
         function syncPlayState() {
           if (!widget) return;
           widget.isPaused(paused => {
@@ -1930,7 +1930,11 @@
             playBtn.classList.toggle('is-playing', playing);
           });
         }
-        ifr.addEventListener('vortex-loaded', () => {
+        card.addEventListener('vortex-load', () => {
+          ifr.src = ifr.dataset.src;
+          delete ifr.dataset.src;
+          // attached right now, synchronously, so we're listening before
+          // the iframe's own (async) ready message can arrive and be missed
           widget = SC.Widget(ifr);
           widget.bind(SC.Widget.Events.READY, () => { widget.getDuration(d => { duration = d; }); });
           widget.bind(SC.Widget.Events.PLAY, () => {
@@ -1950,10 +1954,14 @@
         }, { once: true });
         playBtn.addEventListener('click', () => {
           if (!widget) return;   // the pane only just became visible — give the widget a moment
-          widget.isPaused(paused => {
-            if (paused) widget.play(); else widget.pause();
-            setTimeout(syncPlayState, 600);
-          });
+          // driven from the locally tracked state rather than asking
+          // isPaused() first: that round trip spends the tap's user
+          // activation, and the play() in its callback then gets refused
+          // on mobile. syncPlayState below is what keeps `playing` honest.
+          if (playing) widget.pause(); else widget.play();
+          playing = !playing;
+          playBtn.classList.toggle('is-playing', playing);
+          setTimeout(syncPlayState, 600);
         });
         // stop when scrolled away rather than keep playing off-screen
         card.addEventListener('vortex-blur', () => { if (widget) widget.pause(); });
