@@ -2171,7 +2171,15 @@
           withYouTubeAPI(() => {
             player = new YT.Player(mount, {
               videoId: v.id,
-              playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+              // cc_load_policy: 0 keeps captions off by default — without
+              // it youtube can still turn them on from the viewer's own
+              // saved preference on other videos, which for these (just
+              // music, no dialogue) reads as noise
+              playerVars: { rel: 0, modestbranding: 1, playsinline: 1, cc_load_policy: 0 },
+              // cc_load_policy alone doesn't always win against that saved
+              // preference, so this unloads the module outright once the
+              // player's ready — belt and suspenders
+              events: { onReady: e => e.target.unloadModule('captions') },
             });
           });
         }, { once: true });
