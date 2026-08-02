@@ -2175,7 +2175,16 @@
               // it youtube can still turn them on from the viewer's own
               // saved preference on other videos, which for these (just
               // music, no dialogue) reads as noise
-              playerVars: { rel: 0, modestbranding: 1, playsinline: 1, cc_load_policy: 0 },
+              // playsinline is deliberately left unset (default 0): that
+              // default is what makes ios safari fullscreen a video the
+              // moment it plays, which matters here since ios safari has
+              // no fullscreen API for iframes at all — the manual
+              // requestFullscreen() below can't reach it, so ios's own
+              // playsinline=0 behaviour is the only route to fullscreen
+              // it has. setting playsinline:1 (as an earlier version of
+              // this did) silently defeats that and leaves ios stuck
+              // inline with no fullscreen at all.
+              playerVars: { rel: 0, modestbranding: 1, cc_load_policy: 0 },
               // cc_load_policy alone doesn't always win against that saved
               // preference, so this unloads the module outright once the
               // player's ready — belt and suspenders
@@ -2193,9 +2202,9 @@
         // activation and the browser refuses it. webkitRequestFullscreen
         // (old safari) doesn't return a promise, hence the try rather than
         // a bare .catch; ios safari has no fullscreen API for iframes at
-        // all, so there `req` is simply undefined and this is a no-op —
-        // the card stays inline, which already has full controls once
-        // playing, just without the volume slider at that width.
+        // all, so there `req` is simply undefined and this is a no-op — ios
+        // gets its fullscreen instead from playsinline being left at its
+        // default above, which is the only lever that actually works there.
         playBtn.addEventListener('click', () => {
           if (!player) return;   // the pane only just became visible
           card.classList.add('is-live');
