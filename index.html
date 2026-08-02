@@ -329,7 +329,7 @@
        misleading there. shown whenever a card IS the front one, not just
        on hover, so it's visible on touch devices too. shared by both
        platform badges; only the background colour differs. */
-    .spotify-badge, .soundcloud-badge {
+    .spotify-badge, .soundcloud-badge, .instagram-badge, .youtube-badge {
       position: absolute;
       right: 10px;
       bottom: 10px;
@@ -350,16 +350,22 @@
     /* soundcloud's icon file is just the orange logo on transparent — no
        baked-in background like spotify's — so an orange badge behind it
        reads as orange-on-orange. dark instead, echoing the play button. */
-    .soundcloud-badge { background: rgba(18,14,10,0.85); }
-    .spotify-badge img { width: 16px; height: 16px; outline: none; }
-    .soundcloud-badge img { width: 16px; height: 16px; outline: none; }
+    .soundcloud-badge, .instagram-badge, .youtube-badge { background: rgba(18,14,10,0.85); }
+    .spotify-badge img, .soundcloud-badge img, .instagram-badge img, .youtube-badge img { width: 16px; height: 16px; outline: none; }
     .vortex-card.is-front .spotify-badge,
-    .vortex-card.is-front .soundcloud-badge {
+    .vortex-card.is-front .soundcloud-badge,
+    .vortex-card.is-front .instagram-badge,
+    .vortex-card.is-front .youtube-badge {
       opacity: 1;
       pointer-events: auto;
       transform: scale(1);
     }
+    /* the youtube badge goes with the thumbnail — once the player has the
+       frame, its own "watch on youtube" chrome takes over */
+    .vortex-card.is-live .youtube-badge { opacity: 0; pointer-events: none; }
     .vortex-card.is-front .card-photo:hover .spotify-badge,
+    .vortex-card.is-front .ig-photo:hover .instagram-badge,
+    .vortex-card.is-front .youtube-badge:hover,
     .vortex-card.is-front .soundcloud-badge:hover { transform: scale(1.1); }
     .card-photo.polaroid .card-caption {
       font-family: 'Almendra', serif;
@@ -509,13 +515,21 @@
       perspective: 1200px;
     }
     /* drag walks the cards page-wide, not the (nonexistent) page scroll */
-    #spotify-scroll, #soundcloud-scroll { touch-action: none; }
+    #spotify-scroll, #soundcloud-scroll, #instagram-scroll, #youtube-scroll { touch-action: none; }
     /* polaroid cards are taller than the embed frames (image + caption
        on paper), so the spotify stage needs a taller card box for the
        ring to centre each card on its true middle */
     #spotify-stage { --sh: 214px; }
     /* square art + waveform + caption is taller than the card width too */
     #soundcloud-stage { --sh: 226px; }
+    /* instagram shots share a fixed height (.ig-shot) rather than a fixed
+       width, so the card box is sized from that height, and made wide
+       enough for the widest shot a square post can produce — narrower and
+       the photo would overhang the box it's centred in. no caption row,
+       so unlike the other two stages --sh tracks .ig-shot directly */
+    #instagram-stage { --sw: 214px; --sh: 210px; }
+    /* the only landscape cards on the site — 4:3 plus a caption row */
+    #youtube-stage { --sw: 280px; --sh: 235px; }
     .vortex-ring {
       position: absolute;
       left: 50%; top: 50%;
@@ -635,14 +649,17 @@
     /* click-through on the front card, so the spotify play button and
        badge (both z-indexed above the catch) stay reachable — without
        this the catch, painted above the plain (non-positioned) photo
-       underneath it, would swallow the click first. soundcloud doesn't
-       need this: its front card has no direct-click target left
-       underneath (the iframe is pointer-events:none and always was going
-       to be — a raw click can't reliably reach a cross-origin iframe
-       regardless of overlay timing, which is why playback goes through
-       the Widget API + the button above instead) — so the catch simply
-       stays clickable there too, same as any side card. */
-    .vortex-card.is-front .card-photo ~ .vortex-catch { pointer-events: none; }
+       underneath it, would swallow the click first. instagram needs the
+       same for the opposite reason: there the whole card *is* the link
+       out to the post. soundcloud needs neither: its front card has no
+       direct-click target left underneath (the iframe is
+       pointer-events:none and always was going to be — a raw click can't
+       reliably reach a cross-origin iframe regardless of overlay timing,
+       which is why playback goes through the Widget API + the button
+       above instead) — so the catch simply stays clickable there too,
+       same as any side card. */
+    .vortex-card.is-front .card-photo ~ .vortex-catch,
+    .vortex-card.is-front .ig-photo ~ .vortex-catch { pointer-events: none; }
     .vortex-caption {
       font-family: 'Almendra', serif;
       font-size: 0.82rem;
@@ -654,8 +671,77 @@
       transition: opacity 0.25s ease;
     }
     .vortex-card.is-front .vortex-caption { opacity: 0.8; }
+
+    /* ── instagram cards — every shot is drawn at one shared height and
+       its own natural width, rather than fitted into a common box: a
+       square post and a 9:16 reel then sit in the same vortex without
+       either being cropped or floated inside a mount, and the frame (and
+       its shadow, and the badge in its corner) hugs the photo itself. ── */
+    .ig-photo { display: block; text-align: center; }
+    .ig-mount { display: inline-block; vertical-align: top; }
+    .ig-shot { display: block; height: 210px; width: auto; }
+    /* marks the reels apart from the stills. front card only, same
+       visibility treatment as the badges */
+    .ig-reel {
+      position: absolute;
+      z-index: 6;
+      top: 9px; left: 9px;
+      width: 21px; height: 21px;
+      color: #f3ede0;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.8));
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .vortex-card.is-front .ig-reel { opacity: 0.85; }
+
+    /* ── youtube cards — the one vortex whose embed has to be *seen*, not
+       just heard, so it can't stay hidden behind artwork the way the
+       soundcloud one does. a card starts as its thumbnail; the first play
+       hands the frame over to the player for good (.is-live), and from
+       there youtube's own controls do the scrubbing and fullscreen. ── */
+    /* 4:3 because the videos themselves are — they're 2020 phone footage.
+       ytimg only ever serves a 16:9 thumbnail, with the pillarbox bars
+       baked into the jpeg, and cropping a 16:9 image to 4:3 with `cover`
+       takes off exactly those bars (720 * 4/3 = 960 of its 1280). so the
+       thumbnail fills the frame edge to edge, and the player then shows
+       the video at its own shape instead of inside black margins. a 16:9
+       upload here would need this box back at 16/9. */
+    .yt-embed {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: rgba(0,0,0,0.35);
+    }
+    .yt-art {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 0.35s ease;
+    }
+    .yt-mount {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .yt-mount iframe { width: 100%; height: 100%; border: 0; }
+    .vortex-card.is-live .yt-art,
+    .vortex-card.is-live .yt-play { opacity: 0; pointer-events: none; }
+    .vortex-card.is-live .yt-mount { opacity: 1; }
+    /* only the front card's player takes the pointer — a card that was
+       played and then scrolled away keeps its catch clickable, so it can
+       still be brought back to the front */
+    .vortex-card.is-front.is-live .yt-mount { pointer-events: auto; }
+    .vortex-card.is-front.is-live .vortex-catch { pointer-events: none; }
+    .vortex-play.yt-play:hover { background: rgba(240,78,72,0.85); }
     @media (max-width: 480px) {
       .vortex-stage { --sw: 132px; --sh: 130px; height: 320px; }
+      #instagram-stage { --sw: 152px; --sh: 148px; }
+      #youtube-stage { --sw: 210px; --sh: 182px; }
+      .ig-shot { height: 148px; }
       .vortex-play { width: 44px; height: 44px; }
       .vortex-play svg { width: 17px; height: 17px; }
     }
@@ -981,6 +1067,30 @@
       </div>
     </div>
 
+    <div class="pager-section" data-section="instagram" id="instagram-scroll">
+      <div class="vortex-pin">
+        <div class="vortex-stage" id="instagram-stage">
+          <div class="vortex-glow" style="background-image: radial-gradient(circle, rgba(225,72,151,0.16), transparent 70%);"></div>
+          <div class="vortex-rail hint" style="--rail-color: rgb(225,72,151);">
+            <div class="vortex-rail-track"><div class="vortex-rail-thumb"></div></div>
+          </div>
+          <div class="vortex-ring" id="instagram-ring"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pager-section" data-section="youtube" id="youtube-scroll">
+      <div class="vortex-pin">
+        <div class="vortex-stage" id="youtube-stage">
+          <div class="vortex-glow" style="background-image: radial-gradient(circle, rgba(240,78,72,0.18), transparent 70%);"></div>
+          <div class="vortex-rail hint" style="--rail-color: rgb(240,78,72);">
+            <div class="vortex-rail-track"><div class="vortex-rail-thumb"></div></div>
+          </div>
+          <div class="vortex-ring" id="youtube-ring"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="pager-section" data-section="guestbook" id="guestbook-section">
       <div class="section-divider"></div>
 
@@ -1101,6 +1211,7 @@
 
   <script src="https://w.soundcloud.com/player/api.js"></script>
   <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
+  <script src="https://www.youtube.com/iframe_api" async></script>
   <script>
     // ── choreographed reveal with logo flight ──
     function revealEl(el, delay, duration) {
@@ -1719,6 +1830,18 @@
       if (spotifyIframeAPI) fn(spotifyIframeAPI); else spotifyReadyQueue.push(fn);
     }
 
+    // youtube's iframe API announces itself the same way spotify's does,
+    // through one global callback, so it gets the same queue
+    let youtubeAPIReady = false;
+    const youtubeReadyQueue = [];
+    window.onYouTubeIframeAPIReady = () => {
+      youtubeAPIReady = true;
+      youtubeReadyQueue.splice(0).forEach(fn => fn());
+    };
+    function withYouTubeAPI(fn) {
+      if (youtubeAPIReady) fn(); else youtubeReadyQueue.push(fn);
+    }
+
     // ── the spotify vortex — polaroid cards; the photo itself isn't a
     // link or a click target — the play button toggles a hidden embed
     // (spotify only ever previews a short clip anyway), and vortex-blur
@@ -1970,7 +2093,116 @@
       }
     );
 
-    // ── the pager — arrow/keyboard-driven navigation between the four
+    // ── the instagram vortex — the post's own media, held locally in
+    // Instagram/<shortcode>.jpg, and the whole card is a link out to the
+    // post. no embed, deliberately: instagram's embed iframe won't play a
+    // reel inline anyway (its play button just sends you to instagram),
+    // it costs ~600kb per card, and its white chrome fights the page.
+    // hotlinking the media isn't an option either — instagram's cdn urls
+    // are signed and expire within days.
+    // adding a post: save its media as Instagram/<shortcode>.jpg and add a
+    // line here, newest first. `kind` is the post's own url segment, so it
+    // both builds the link and says whether the card is a reel.
+    initVortex(
+      document.getElementById('instagram-scroll'),
+      [
+        { code: 'DZkHNMFyiUL', kind: 'reel', title: 'skin care'       },
+        { code: 'DWLRgQJEWu5', kind: 'reel', title: 'the gorge'       },
+        { code: 'DWCtK6NElIw', kind: 'reel', title: 'wildflowers'     },
+        { code: 'DUxCkUTkrqJ', kind: 'p',    title: 'fortitude valley' },
+        { code: 'DTrzA8IkrRO', kind: 'p',    title: 'coffs harbour'   },
+      ],
+      g => {
+        const card = document.createElement('div');
+        card.className = 'vortex-card';
+        card.innerHTML = `<a class="ig-photo" href="https://www.instagram.com/${g.kind}/${g.code}/" target="_blank" rel="noopener">
+            <div class="vortex-frame ig-mount">
+              <img class="ig-shot" src="Instagram/${g.code}.jpg" alt="${g.title}" draggable="false" loading="lazy" decoding="async">
+              ${g.kind === 'reel' ? `<svg class="ig-reel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="5"/>
+                <path d="M3.4 8.6h17.2M9.1 3.2l3.4 5.2M14.9 3.2l3.4 5.2"/>
+                <path d="M10.3 12.2v4.8l4.2-2.4z" fill="currentColor" stroke="none"/>
+              </svg>` : ''}
+              <span class="instagram-badge"><img src="Icons/instagram.png" alt=""></span>
+            </div>
+          </a>
+          <div class="vortex-catch"></div>`;
+        return card;
+      }
+    );
+
+    // ── the youtube vortex — thumbnails until played, then the real
+    // player. thumbnails come straight from i.ytimg.com: unlike
+    // instagram's, those urls are stable and unsigned, so there's nothing
+    // to keep locally. the player is built at vortex-load like the other
+    // two (see the note in initVortex on why not on the tap), but here it
+    // stays visible once started — this is the one embed you have to
+    // watch rather than just hear. ──
+    initVortex(
+      document.getElementById('youtube-scroll'),
+      [
+        { id: 'uvdAAwGi_p8', title: 'may 23rd, 2020'      },
+        { id: 'umLGH_i_fzo', title: 'april 13th, 2020'    },
+        { id: 'C6vObLvBYtU', title: 'february 21st, 2020' },
+      ],
+      v => {
+        const card = document.createElement('div');
+        card.className = 'vortex-card';
+        card.innerHTML = `<div class="vortex-frame">
+            <div class="yt-embed">
+              <img class="yt-art" src="https://i.ytimg.com/vi/${v.id}/maxresdefault.jpg" alt="${v.title}" draggable="false" loading="lazy" decoding="async">
+              <div class="yt-mount"><div></div></div>
+              <button class="vortex-play yt-play" type="button" aria-label="play ${v.title}">
+                <svg class="vortex-play-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              </button>
+              <div class="vortex-catch"></div>
+              <a class="youtube-badge" href="https://www.youtube.com/watch?v=${v.id}" target="_blank" rel="noopener"><img src="Icons/youtube.png" alt=""></a>
+            </div>
+          </div>
+          <div class="vortex-caption">${v.title}</div>`;
+
+        // the api replaces the element it's handed with the iframe, so it
+        // gets a bare inner div to consume rather than the styled wrapper
+        const mount   = card.querySelector('.yt-mount > div');
+        const playBtn = card.querySelector('.yt-play');
+        let player = null;
+
+        card.addEventListener('vortex-load', () => {
+          withYouTubeAPI(() => {
+            player = new YT.Player(mount, {
+              videoId: v.id,
+              playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+            });
+          });
+        }, { once: true });
+        // one-way: the frame belongs to the player from the first play on,
+        // so pausing (or scrolling away) doesn't snap back to the thumbnail.
+        // the card itself is too small at rest for youtube's controls to
+        // show their volume slider, so play sends the iframe straight to
+        // fullscreen — full controls, and the card no longer has to fit
+        // them. has to be called synchronously in this handler, not after
+        // playVideo's postMessage round-trip, or it loses the click's user
+        // activation and the browser refuses it. webkitRequestFullscreen
+        // (old safari) doesn't return a promise, hence the try rather than
+        // a bare .catch; ios safari has no fullscreen API for iframes at
+        // all, so there `req` is simply undefined and this is a no-op —
+        // the card stays inline, which already has full controls once
+        // playing, just without the volume slider at that width.
+        playBtn.addEventListener('click', () => {
+          if (!player) return;   // the pane only just became visible
+          card.classList.add('is-live');
+          player.playVideo();
+          const ifr = player.getIframe();
+          const req = ifr.requestFullscreen || ifr.webkitRequestFullscreen;
+          if (req) { try { Promise.resolve(req.call(ifr)).catch(() => {}); } catch (e) {} }
+        });
+        card.addEventListener('vortex-blur', () => { if (player) player.pauseVideo(); });
+
+        return card;
+      }
+    );
+
+    // ── the pager — arrow/keyboard-driven navigation between the six
     // fixed panes. panes are never visible together (see .pager-section
     // in the CSS), so a section change is sequential: the current pane
     // fades + drops out, then — only once that's finished — the target
@@ -1992,6 +2224,11 @@
       const FIREFLY_COLORS = {
         spotify:    ['30,215,96',  '30,215,96',  '30,215,96'],
         soundcloud: ['255,95,0',   '255,95,0',   '255,95,0'],
+        // the one brand that isn't a single colour — pink core through a
+        // violet inner halo to a warm outer one, so the fireflies carry
+        // instagram's gradient rather than flattening it
+        instagram:  ['225,72,151', '150,47,191', '253,175,69'],
+        youtube:    ['240,78,72',  '240,78,72',  '240,78,72'],
       };
       const FIREFLY_DEFAULT = ['225,228,232', '200,206,214', '180,188,198'];
       function setFireflyColor(section) {
