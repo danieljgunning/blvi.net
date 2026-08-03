@@ -870,7 +870,9 @@
       pointer-events: none;   /* the comment beneath stays selectable */
     }
     .gb-reply img { display: block; }
-    .gb-reply.v2 img { position: absolute; height: auto; }
+    /* right:0 is the shared margin every reply hangs from — the inline
+       style only sets top/width, so the right edge can't drift per reply */
+    .gb-reply.v2 img { position: absolute; right: 0; height: auto; }
     .gb-reply.full { height: 100%; }
     .gb-reply.full img {
       width: 100%;
@@ -2406,17 +2408,17 @@
               if (ink && ink.full) {
                 reply = `<div class="gb-reply full"><img src="${ink.img}" alt="handwritten reply from blvi"></div>`;
               } else if (ink) {
-                // centred horizontally regardless of where it was actually
-                // written — the quill pad spans the full comment width, so
-                // ink written anywhere left-to-right on it kept whatever
-                // stray horizontal offset it was drawn at (bx), reading as
-                // lopsided against the comment above it. vertical (t) stays
-                // true to where it was written since that's meaningful
-                // relative to the text's lines.
-                const l  = (((ink.cw - ink.bw) / 2) / ink.cw * 100).toFixed(2);
+                // pinned to the right edge rather than left at the stray
+                // horizontal offset it happened to be drawn at (bx), which
+                // read as lopsided, or centred, which left every reply on
+                // its own ragged left edge. a shared right margin lines the
+                // replies up with each other and with the form above, and
+                // reads as a note in the letter's margin. vertical (t)
+                // stays true to where it was written, since that *is*
+                // meaningful against the text's lines.
                 const t  = (ink.by / ink.ch * 100).toFixed(2);
                 const wd = (ink.bw / ink.cw * 100).toFixed(2);
-                reply = `<div class="gb-reply v2" style="aspect-ratio:${ink.cw.toFixed(1)}/${ink.ch.toFixed(1)}"><img src="${ink.img}" style="left:${l}%;top:${t}%;width:${wd}%" alt="handwritten reply from blvi"></div>`;
+                reply = `<div class="gb-reply v2" style="aspect-ratio:${ink.cw.toFixed(1)}/${ink.ch.toFixed(1)}"><img src="${ink.img}" style="top:${t}%;width:${wd}%" alt="handwritten reply from blvi"></div>`;
               }
               const tools = quillToken
                 ? `<div class="quill-tools"><button class="quill-btn" data-quill="${m.id}">${hasInk ? 'redraw' : 'reply with the quill'}</button>${hasInk ? `<button class="quill-btn" data-erase="${m.id}">erase</button>` : ''}</div>`
@@ -2446,10 +2448,9 @@
             wrap.classList.remove('full');
             wrap.classList.add('v2');
             wrap.style.aspectRatio = `${iw}/${ih}`;
-            // centred horizontally regardless of where it was actually
-            // written (minX) — see the same note on the JSON v2 branch
-            // above; vertical (minY) stays true to where it was written.
-            img.style.left  = ((iw - t.tw) / 2 / iw * 100).toFixed(2) + '%';
+            // pinned right, dropping the offset it was drawn at (minX) —
+            // see the same note on the JSON v2 branch above; vertical
+            // (minY) stays true to where it was written.
             img.style.top   = (t.minY / ih * 100).toFixed(2) + '%';
             img.style.width = (t.tw / iw * 100).toFixed(2) + '%';
             img.src = t.canvas.toDataURL('image/png');
@@ -2580,7 +2581,13 @@
 
         const canvas = pad.querySelector('canvas');
         canvas.style.height = contentH + 'px';
-        const dpr = Math.min(devicePixelRatio || 1, 2);
+        // ink is stored as a bitmap, so whatever resolution it's captured
+        // at is all it will ever have — the earliest replies went in at
+        // dpr 1 (612px wide) and can only ever be resampled up from that.
+        // so oversample well past the display: 3x covers a retina screen
+        // 1:1 with room to spare, and a strokes-only png of this size
+        // costs a few kb.
+        const dpr = Math.max(3, Math.min(devicePixelRatio || 1, 4));
         const w = canvas.clientWidth, h = canvas.clientHeight;
         canvas.width  = w * dpr;
         canvas.height = h * dpr;
