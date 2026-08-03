@@ -586,7 +586,10 @@
       pointer-events: none;
     }
     /* the play/pause button — the front card's only real control now.
-       hidden on side cards, same treatment as the spotify badge */
+       hidden on side cards, same treatment as the spotify badge. a
+       <button> in the spotify/soundcloud/desktop-youtube vortexes, an
+       <a> straight out to the video in the touch-device youtube one,
+       hence the text-decoration */
     .vortex-play {
       position: absolute;
       z-index: 5;
@@ -595,6 +598,7 @@
       width: 54px; height: 54px;
       border: none;
       border-radius: 50%;
+      text-decoration: none;
       background: rgba(8,10,8,0.55);
       backdrop-filter: blur(2px);
       color: #f3ede0;
@@ -606,7 +610,10 @@
       pointer-events: none;
       transition: opacity 0.25s ease, transform 0.25s ease, background 0.25s ease;
     }
-    .vortex-play svg { width: 20px; height: 20px; }
+    /* the glyph is decoration — pointer-events:none keeps a tap/click
+       landing on it targeting the control itself rather than the <svg>,
+       which matters for the synthesized tap in initVortex's touchend */
+    .vortex-play svg { width: 20px; height: 20px; pointer-events: none; }
     .vortex-play .vortex-pause-icon { display: none; }
     .vortex-play.is-playing .vortex-play-icon { display: none; }
     .vortex-play.is-playing .vortex-pause-icon { display: block; }
@@ -681,7 +688,8 @@
     .ig-mount { display: inline-block; vertical-align: top; }
     .ig-shot { display: block; height: 210px; width: auto; }
     /* marks the reels apart from the stills. front card only, same
-       visibility treatment as the badges */
+       visibility treatment as the badges. decoration only — see the
+       pointer-events note on .vortex-play svg */
     .ig-reel {
       position: absolute;
       z-index: 6;
@@ -690,6 +698,7 @@
       color: #f3ede0;
       filter: drop-shadow(0 2px 6px rgba(0,0,0,0.8));
       opacity: 0;
+      pointer-events: none;
       transition: opacity 0.25s ease;
     }
     .vortex-card.is-front .ig-reel { opacity: 0.85; }
@@ -1768,12 +1777,22 @@
         touchY = null;
         if (!dragging && tapTarget && Date.now() - tapTime < 500) {
           e.preventDefault();   // suppress the browser's own (mistargeted) synthetic click
+          // a tap that lands on an icon targets an <svg> or one of its
+          // <path>s, and click() lives only on HTMLElement — SVGElement
+          // has none. calling it there throws, and since the native click
+          // has just been prevented the tap becomes a silent no-op (this
+          // is what made the play buttons need several tries on a phone:
+          // hitting the glyph failed, hitting the ring around it worked).
+          // so walk up to the nearest html ancestor — the control the
+          // icon is decorating anyway.
+          let hit = tapTarget;
+          while (hit && typeof hit.click !== 'function') hit = hit.parentElement;
           // .click() ignores pointer-events, so it would happily fire a
           // background card's play button — which CSS has disabled — if
           // that card drifted out of front while the finger was down.
           // only dispatch while the tapped card is still the front one.
-          const inCard = tapTarget.closest('.vortex-card');
-          if (!inCard || inCard.classList.contains('is-front')) tapTarget.click();
+          const inCard = hit && hit.closest('.vortex-card');
+          if (hit && (!inCard || inCard.classList.contains('is-front'))) hit.click();
         }
         tapTarget = null;
       }, { passive: false });
@@ -2157,33 +2176,36 @@
         const card = document.createElement('div');
         card.className = 'vortex-card';
         const watchHref = `https://www.youtube.com/watch?v=${v.id}`;
+        const playGlyph = '<svg class="vortex-play-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+        // touch devices skip the inline embed entirely — ios safari has
+        // never supported the fullscreen API on iframes (no client-side
+        // workaround exists for that), and youtube's mobile player omits
+        // its own fullscreen button here regardless, so there's no route
+        // to fullscreen through an embed on a phone at all. the control
+        // is a plain link out to the video instead, same pattern as the
+        // instagram cards — most phones hand that straight to the youtube
+        // app, which gives real native fullscreen for free.
+        // it has to be a real <a>, not a button calling window.open: with
+        // a features argument window.open is what mobile safari treats as
+        // a popup and blocks, and a link needs no user-activation budget
+        // at all — it just navigates.
+        const playControl = TOUCH_DEVICE
+          ? `<a class="vortex-play yt-play" href="${watchHref}" target="_blank" rel="noopener" aria-label="watch ${v.title} on youtube">${playGlyph}</a>`
+          : `<button class="vortex-play yt-play" type="button" aria-label="play ${v.title}">${playGlyph}</button>`;
         card.innerHTML = `<div class="vortex-frame">
             <div class="yt-embed">
               <img class="yt-art" src="https://i.ytimg.com/vi/${v.id}/maxresdefault.jpg" alt="${v.title}" draggable="false" loading="lazy" decoding="async">
               ${TOUCH_DEVICE ? '' : '<div class="yt-mount"><div></div></div>'}
-              <button class="vortex-play yt-play" type="button" aria-label="play ${v.title}">
-                <svg class="vortex-play-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-              </button>
+              ${playControl}
               <div class="vortex-catch"></div>
               <a class="youtube-badge" href="${watchHref}" target="_blank" rel="noopener"><img src="Icons/youtube.png" alt=""></a>
             </div>
           </div>
           <div class="vortex-caption">${v.title}</div>`;
 
-        const playBtn = card.querySelector('.yt-play');
+        if (TOUCH_DEVICE) return card;
 
-        // touch devices skip the inline embed entirely — ios safari has
-        // never supported the fullscreen API on iframes (no client-side
-        // workaround exists for that), and android's mobile player omits
-        // its own fullscreen button here regardless, so there's no route
-        // to fullscreen through an embed on a phone at all. tapping play
-        // instead opens the video on youtube proper, same pattern as the
-        // instagram cards — most phones offer to hand that straight to
-        // the youtube app, which gives real native fullscreen for free.
-        if (TOUCH_DEVICE) {
-          playBtn.addEventListener('click', () => window.open(watchHref, '_blank', 'noopener'));
-          return card;
-        }
+        const playBtn = card.querySelector('.yt-play');
 
         // the api replaces the element it's handed with the iframe, so it
         // gets a bare inner div to consume rather than the styled wrapper
