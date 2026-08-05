@@ -125,21 +125,38 @@
     .appear        { opacity: 0; transform: translateY(24px) scale(0.9); }
     .appear-slow   { opacity: 0; transform: translateY(24px) scale(0.9); }
 
-    /* ── veil ── */
+    /* ── veil — the dark the page opens out of. it doesn't fade and it
+       doesn't burn a hole: it *lifts*. an oversized sheet with one soft,
+       slightly canted edge along its bottom, drawn straight up and off
+       the top of the frame, so the reveal has a direction — and the logo,
+       which enters from below, rides its leading edge in.
+       the sheet is sized so that at rest the soft edge sits just under
+       the fold (the cant would otherwise drag a corner of it into view),
+       and it moves by transform alone, so it composites.
+       deliberately NOT a radial glow — see "no radial washes" in
+       CLAUDE.md before reaching for one here. */
     .veil {
       position: fixed;
-      inset: 0;
-      background: #060706;
+      left: -50%; top: -244%;
+      width: 200%; height: 400%;
+      background: linear-gradient(to top,
+        rgba(6,7,6,0)    0%,
+        rgba(6,7,6,0.5)  3%,
+        rgba(6,7,6,0.92) 6%,
+        #060706          9%);
       z-index: 10000;
       pointer-events: none;
+      transform: rotate(-6deg);
+      will-change: transform;
       transition: opacity 1.2s cubic-bezier(0.4,0,0.2,1);
-      will-change: opacity;
     }
-    .veil.dissolve { opacity: 0; }
+    /* the reduced-motion path has no lift to ride, so the sheet just goes */
+    .veil.gone { opacity: 0; }
 
     /* ── the pager — the page is four fixed-viewport panes (hero, spotify,
        soundcloud, guestbook) with exactly one shown at a time. moving
-       between them is arrow/keyboard-driven (see the JS pager controller),
+       between them is driven by the index below and the keyboard (see the
+       JS pager controller),
        never by scrolling — scrolling is reserved for walking a vortex's
        cards, or for the guestbook's own message list.
        only the active pane is ever laid out (display:none otherwise), so
@@ -161,7 +178,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 0.5rem 1.5rem 2rem;
+      padding: 0.5rem 1.5rem 4rem;   /* the deep bottom clears the index */
       opacity: 0;
       transform: translateY(46px) scale(0.965);
       transition: opacity 0.6s cubic-bezier(0.22,1,0.36,1),
@@ -172,44 +189,139 @@
        viewport — it scrolls internally (native overflow, no custom JS).
        "safe center" centres it like the other panes while it's short
        enough to fit, but falls back to flex-start once it overflows —
-       plain "center" would clip the top out of scroll-reach in that case.
-       padding-top clears the fixed up-arrow (top:1.4rem + 42px tall). */
+       plain "center" would clip the top out of scroll-reach in that case. */
     #guestbook-section {
       justify-content: safe center;
       overflow-y: auto;
-      padding-top: 4.5rem;
     }
 
-    /* ── pager arrows — a small ring + chevron echoing the wax seal's
-       circular motif, fixed top/bottom centre. hidden (not removed) at
-       whichever end of the section list is currently unreachable. ── */
-    .pager-arrow {
+    /* ── the index — the whole of the site's navigation: a row of marks
+       along the bottom centre, one per pane in pane order, every one a
+       direct jump. the mark says where it goes (each platform's own
+       logo, which needs no reading), the hairline threading them says
+       they're a sequence and how long it is, and the lit one says where
+       you are — none of which a bare pair of chevrons could say. no
+       labels: the logos carry it, and the bottom edge is the one nothing
+       else uses, so it reads at a glance without crowding the content or
+       the vortexes' own scroll rail out at the right. ── */
+    .index-rail {
       position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
+      inset: auto 0 1.4rem 0;
       z-index: 9200;
-      width: 42px;
-      height: 42px;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;   /* the box spans the width; only the marks take clicks */
+    }
+    .rail-items {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      pointer-events: auto;
+    }
+    /* the thread — a hairline behind the marks, fading out at both ends
+       like the rules flanking the wax seal. bottom:17px is half a ring,
+       so it runs through their centres. */
+    .rail-items::before {
+      content: '';
+      position: absolute;
+      left: 6px; right: 6px; bottom: 17px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(240,236,228,0.16), transparent);
+    }
+    /* the ring is the button itself — it echoes the wax seal's circular
+       motif, and holds nothing but its mark */
+    .rail-item {
+      position: relative;     /* the ring of light the current entry drops */
+      flex-shrink: 0;
+      width: 34px; height: 34px;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 0;
       border-radius: 50%;
       border: 1px solid rgba(240,236,228,0.18);
-      background: rgba(8,10,8,0.35);
-      color: var(--muted);
+      background: rgba(8,10,8,0.55);
       cursor: pointer;
-      transition: opacity 0.5s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1),
-                  border-color 0.3s ease, color 0.3s ease;
+      --tint: 240,236,228;    /* overridden per brand in the markup */
+      transition: border-color 0.35s ease, box-shadow 0.35s ease,
+                  transform 0.35s cubic-bezier(0.22,1,0.36,1);
     }
-    .pager-arrow:hover {
+    /* the marks rest dimmed and drained of colour so the rail stays a
+       footnote rather than a row of bright logos — they take their
+       brand colour back on hover, and keep it while current */
+    .rail-mark {
+      width: 15px; height: 15px;
+      object-fit: contain;
+      opacity: 0.5;
+      filter: grayscale(0.85);
+      transition: opacity 0.35s ease, filter 0.35s ease;
+    }
+    /* the hero's mark is the wordmark's own initial, not a logo */
+    .rail-mark-b {
+      width: auto; height: auto;
+      font-family: 'Almendra', serif;
+      font-size: 1rem;
+      line-height: 1;
       color: var(--text);
-      border-color: rgba(240,236,228,0.4);
-      transform: translateX(-50%) scale(1.08);
+      filter: none;
     }
-    .pager-arrow svg { width: 16px; height: 16px; }
-    .pager-arrow-up { top: 1.4rem; }
-    .pager-arrow-down { bottom: 1.4rem; }
-    .pager-arrow.is-hidden { opacity: 0; pointer-events: none; }
+    .rail-mark-seal { width: 19px; height: 19px; filter: grayscale(1) brightness(1.4); }
+    .rail-item:hover { border-color: rgba(240,236,228,0.4); transform: scale(1.08); }
+    .rail-item:hover .rail-mark { opacity: 0.9; filter: grayscale(0.15); }
+    /* an outline rather than a shadow, so focus composes with the current
+       entry's glow instead of replacing it */
+    .rail-item:focus-visible {
+      outline: 1px solid rgba(240,236,228,0.45);
+      outline-offset: 3px;
+    }
+    /* the current entry doesn't just sit lit — it breathes, the way the
+       fireflies and the letters do, and drops one ring of light the
+       moment it's chosen. both carry the entry's own --tint, so where
+       you are is announced in that section's colour. */
+    .rail-item.is-current {
+      border-color: rgba(var(--tint),0.7);
+      animation: railBreathe 3.8s ease-in-out infinite;
+    }
+    .rail-item.is-current .rail-mark {
+      opacity: 1;
+      filter: drop-shadow(0 0 4px rgba(var(--tint),0.45));
+    }
+    /* the seal is the one mark with no brand colour to take back — its
+       wax stays grey-cast and lifted exactly like the real seal at the
+       foot of the guestbook, so lighting it silvers rather than reddens
+       it. these have to sit after the states they override. */
+    .rail-item:hover .rail-mark-seal { filter: grayscale(1) brightness(1.6); }
+    .rail-item.is-current .rail-mark-seal {
+      filter: grayscale(1) brightness(1.6) drop-shadow(0 0 4px rgba(var(--tint),0.45));
+    }
+    /* the ring restarts on its own each time the class lands somewhere
+       new — a fresh element getting an animation is a fresh run */
+    .rail-item.is-current::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 50%;
+      border: 1px solid rgba(var(--tint),0.7);
+      pointer-events: none;
+      animation: railRipple 1.5s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+    @keyframes railBreathe {
+      0%, 100% { box-shadow: 0 0 8px  rgba(var(--tint),0.26), inset 0 0 7px  rgba(var(--tint),0.10); }
+      50%      { box-shadow: 0 0 17px rgba(var(--tint),0.5),  inset 0 0 11px rgba(var(--tint),0.2); }
+    }
+    @keyframes railRipple {
+      from { transform: scale(1);   opacity: 0.75; }
+      to   { transform: scale(2.2); opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .rail-item:hover { transform: none; }
+      .rail-item.is-current {
+        animation: none;
+        box-shadow: 0 0 12px rgba(var(--tint),0.35), inset 0 0 8px rgba(var(--tint),0.14);
+      }
+      .rail-item.is-current::after { display: none; }
+    }
 
     /* ── logo flight ── */
     .logo-wrap {
@@ -999,7 +1111,7 @@
       .alive-letter { color: inherit; }
     }
     @media (max-width: 480px) {
-      .pager-section { padding: 0.5rem 1rem 3.5rem; }
+      .pager-section { padding: 0.5rem 1rem 4rem; }
       #logo-3d { width: 280px; height: 120px; }
       .platforms { gap: 1.2rem 1.6rem; margin-bottom: 1.5rem; }
       .platform-break { display: block; flex-basis: 100%; height: 0; }
@@ -1008,9 +1120,6 @@
       .card-photo.polaroid { padding: 6px 6px 0 6px; }
       .card-photo.polaroid .card-caption { font-size: 0.75rem; padding: 4px 3px 7px; }
       .guestbook-form input, .guestbook-form textarea { font-size: 16px; }
-      .pager-arrow { width: 36px; height: 36px; }
-      .pager-arrow-up { top: 0.8rem; }
-      .pager-arrow-down { bottom: 0.8rem; }
     }
   </style>
 </head>
@@ -1124,13 +1233,30 @@
     </div>
   </div>
 
-  <nav class="pager-arrows">
-    <button class="pager-arrow pager-arrow-up is-hidden" id="pager-up" type="button" aria-label="previous section">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>
-    </button>
-    <button class="pager-arrow pager-arrow-down" id="pager-down" type="button" aria-label="next section">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-    </button>
+  <!-- the index. data-section is what binds an entry to its pane — the
+       pager looks it up rather than trusting the two lists to stay in the
+       same order. it arrives with the platform row via .appear. -->
+  <nav class="index-rail" aria-label="sections">
+    <div class="rail-items appear">
+      <button class="rail-item" type="button" data-section="hero" aria-label="blvi">
+        <span class="rail-mark rail-mark-b">b</span>
+      </button>
+      <button class="rail-item" type="button" data-section="spotify" aria-label="spotify" style="--tint: 30,215,96;">
+        <img class="rail-mark" src="Icons/spotify.png" alt="">
+      </button>
+      <button class="rail-item" type="button" data-section="soundcloud" aria-label="soundcloud" style="--tint: 255,95,0;">
+        <img class="rail-mark" src="Icons/soundcloud.png" alt="">
+      </button>
+      <button class="rail-item" type="button" data-section="instagram" aria-label="instagram" style="--tint: 225,72,151;">
+        <img class="rail-mark" src="Icons/instagram.png" alt="">
+      </button>
+      <button class="rail-item" type="button" data-section="youtube" aria-label="youtube" style="--tint: 240,78,72;">
+        <img class="rail-mark" src="Icons/youtube.png" alt="">
+      </button>
+      <button class="rail-item" type="button" data-section="guestbook" aria-label="guestbook">
+        <img class="rail-mark rail-mark-seal" src="Icons/waxseal.png" alt="">
+      </button>
+    </div>
   </nav>
 
   <script type="importmap">
@@ -1208,6 +1334,9 @@
     lcam.position.set(0, 0, 4);
     const lctrl = makeControls(lcam, lc);
     window.__setLogoSpin = spd => { lctrl.autoRotateSpeed = spd; };
+    // the opening ramps this from near-dark up through a flash — the chrome
+    // finding the light is the model's own material doing it, not an overlay
+    window.__setLogoExposure = v => { lr.toneMappingExposure = v; };
     loadGLB(ls, 'https://danieljgunning.github.io/chrome/chrome.glb');
     window.addEventListener('resize', () => {
       const w = lc.clientWidth, h = lc.clientHeight;
@@ -1236,6 +1365,7 @@
     function runMainSequence() {
       const veil     = document.getElementById('veil');
       const logoWrap = document.querySelector('.logo-wrap');
+      const reduced  = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       // measure the logo's home position (its natural spot in the flow)
       const homeRect = logoWrap.getBoundingClientRect();
@@ -1246,24 +1376,35 @@
       // the logo NEVER leaves the document flow — we only ever transform it.
       // its layout space is always reserved, so the page can never shift.
       logoWrap.classList.remove('appear-slow');
-      logoWrap.style.zIndex = '10001';
+      logoWrap.style.zIndex = '10002';   // over the veil while it lifts
       logoWrap.style.position = 'relative';
       logoWrap.style.willChange = 'transform';
+
+      // the whole flight is motion for its own sake — with it suppressed
+      // there is nothing to stage, so the page simply opens
+      if (reduced) {
+        logoWrap.style.opacity = '1';
+        logoWrap.style.zIndex = '';
+        logoWrap.style.position = '';
+        logoWrap.style.willChange = '';
+        veil.classList.add('gone');
+        document.querySelectorAll('.appear').forEach(el => revealEl(el, 0, 0.9));
+        if (window.__releaseFireflies) window.__releaseFireflies();
+        setTimeout(() => veil.remove(), 1300);
+        return;
+      }
+
       logoWrap.style.opacity = '0';
 
-      const startDX = (vw / 2) - homeX;
-      const startDY = (vh / 2) - homeY;
-      logoWrap.style.transform = `translate(${startDX}px, ${startDY}px) scale(0.7)`;
-
-      setTimeout(() => {
-        logoWrap.style.transition = 'opacity 0.5s ease';
-        logoWrap.style.opacity = '1';
-      }, 80);
-
-      const P0 = { x: vw / 2,    y: vh / 2 };
-      const P1 = { x: vw * 0.82, y: vh * 0.72 };
-      const P2 = { x: vw * 0.65, y: vh * 0.08 };
-      const P3 = { x: homeX,     y: homeY };
+      // one long counter-clockwise sweep: in from off the bottom-right
+      // corner, left along the floor of the frame, up the left edge and
+      // curling into place from above. the eye can follow the whole path,
+      // which the old wander through two mid-screen control points never
+      // gave it.
+      const P0 = { x: vw *  1.24, y: vh *  1.12 };
+      const P1 = { x: vw * -0.16, y: vh *  1.04 };
+      const P2 = { x: vw * -0.08, y: vh * -0.22 };
+      const P3 = { x: homeX,      y: homeY };
 
       function bezier(p0, p1, p2, p3, t) {
         const u = 1 - t;
@@ -1272,27 +1413,39 @@
           y: u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y,
         };
       }
-      function ease(t) {
-        return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,3)/2;
-      }
+      // it enters already travelling, so there's nothing to accelerate —
+      // a pure ease-out spends the flight decelerating into the landing
+      function ease(t) { return 1 - Math.pow(1 - t, 4); }
+      const clamp01 = v => Math.max(0, Math.min(1, v));
 
-      const FLIGHT_MS    = 1400;
-      const FLIGHT_START = 600;
+      const FLIGHT_MS    = 1900;
+      const FLIGHT_START = 420;
+
+      // how far the sheet has to travel to take its soft edge fully off the
+      // top of the frame. measured rather than assumed: the cant widens the
+      // box by half its width times sin(6deg), which is a share of the
+      // *viewport width* — so a fixed vh figure clears a tall window and
+      // leaves the fade banded across the top of a wide one.
+      const veilTravel = veil.getBoundingClientRect().bottom + vh * 0.06;
+
+      logoWrap.style.transform =
+        `translate(${(P0.x - homeX).toFixed(1)}px, ${(P0.y - homeY).toFixed(1)}px) scale(0.3) rotate(-16deg)`;
 
       setTimeout(() => {
-        veil.classList.add('dissolve');
+        logoWrap.style.transition = 'opacity 0.5s ease';
+        logoWrap.style.opacity = '1';
+      }, 80);
 
+      setTimeout(() => {
         setTimeout(() => {
           document.querySelectorAll('.appear').forEach(el => revealEl(el, 0, 0.9));
-        }, 300);
-        setTimeout(() => {
-          if (window.__releaseFireflies) window.__releaseFireflies();
-        }, 800);
+        }, FLIGHT_MS * 0.55);
 
-        if (window.__setLogoSpin) window.__setLogoSpin(28);
+        if (window.__setLogoSpin) window.__setLogoSpin(70);
 
         logoWrap.style.transition = 'none';
         const t0 = performance.now();
+        let frame = 0;
 
         function fly(now) {
           const raw = Math.min((now - t0) / FLIGHT_MS, 1);
@@ -1300,26 +1453,60 @@
           const pos = bezier(P0, P1, P2, P3, t);
 
           if (window.__setLogoSpin) {
-            const spinSpeed = 28 * (1 - t) + 1.5 * t + Math.sin(raw * 18) * 6 * (1 - t);
-            window.__setLogoSpin(spinSpeed);
+            window.__setLogoSpin(70 * (1 - t) + 1.5 * t + Math.sin(raw * 18) * 8 * (1 - t));
           }
+          // dim on entry, up to its resting exposure as it lands. the floor
+          // stays well clear of 0 — the veil is gone before the flight ends,
+          // and a darker logo would read as a flat silhouette against the page.
+          if (window.__setLogoExposure) window.__setLogoExposure(0.35 + 0.55 * t);
+
+          // the sheet is drawn straight up, its soft edge crossing the frame
+          // from the floor. smoothstep so it starts and stops without a
+          // visible kick, and it's clear of the top well before the landing.
+          const lift = clamp01((raw - 0.04) / 0.6);
+          veil.style.transform =
+            `translateY(${(-veilTravel * lift * lift * (3 - 2 * lift)).toFixed(1)}px) rotate(-6deg)`;
+
+          // a touch past full size just before it settles, back to exactly
+          // 1 at t=1 — the sine is zero at both ends, so nothing snaps
+          const grow  = 0.3 + 0.7 * ease(clamp01(raw * 1.12));
+          const land  = Math.sin(clamp01((raw - 0.72) / 0.28) * Math.PI) * 0.06;
+          const bank  = -16 * (1 - t);
 
           const dx = pos.x - homeX;
           const dy = pos.y - homeY;
-          const scale = 0.7 + 0.3 * Math.min(t * 1.5, 1);
-          logoWrap.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${scale.toFixed(3)})`;
+          logoWrap.style.transform =
+            `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${(grow + land).toFixed(3)}) rotate(${bank.toFixed(2)}deg)`;
+
+          // a wake of the site's own embers, thinning as it slows
+          if (raw < 0.86 && ++frame % 2 === 0) window.__spawnSparks(pos.x, pos.y, 1);
 
           if (raw < 1) {
             requestAnimationFrame(fly);
           } else {
             if (window.__setLogoSpin) window.__setLogoSpin(1.5);
-            // at t=1 the bezier point IS home, so dx=dy=0 and scale=1 —
-            // clearing the transform changes nothing visually. no snap.
+            // at t=1 the bezier point IS home, so dx=dy=0, scale=1 and the
+            // bank is 0 — clearing the transform changes nothing. no snap.
             logoWrap.style.transform = 'none';
             logoWrap.style.zIndex = '';
             logoWrap.style.position = '';
             logoWrap.style.willChange = '';
-            setTimeout(() => veil.remove(), 1300);
+
+            window.__spawnSparks(homeX, homeY, 16);
+            if (window.__releaseFireflies) window.__releaseFireflies();
+
+            // the landing is carried by the chrome's own light rather than
+            // anything laid over it: one flare of the renderer's exposure,
+            // settling back. kept well short of blowing out — past about
+            // 1.4 the chrome loses its modelling and goes flat white.
+            const flash = performance.now();
+            (function settle(t2) {
+              const k = clamp01((t2 - flash) / 700);
+              if (window.__setLogoExposure) window.__setLogoExposure(0.9 + 0.45 * (1 - k) * (1 - k));
+              if (k < 1) requestAnimationFrame(settle);
+            })(flash);
+
+            veil.remove();
           }
         }
         requestAnimationFrame(fly);
@@ -2265,23 +2452,27 @@
       }
     );
 
-    // ── the pager — arrow/keyboard-driven navigation between the six
+    // ── the pager — index-rail/keyboard-driven navigation between the six
     // fixed panes. panes are never visible together (see .pager-section
     // in the CSS), so a section change is sequential: the current pane
     // fades + drops out, then — only once that's finished — the target
     // pane's display is restored and it fades + rises in. ──
     (function initPager() {
-      const sections = Array.from(document.querySelectorAll('.pager-section'));
-      const upBtn   = document.getElementById('pager-up');
-      const downBtn = document.getElementById('pager-down');
-      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const OUT_MS  = reduced ? 0 : 500;
+      const sections  = Array.from(document.querySelectorAll('.pager-section'));
+      const railItems = Array.from(document.querySelectorAll('.rail-item'));
+      const reduced   = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const OUT_MS    = reduced ? 0 : 500;
 
       let index = 0, transitioning = false;
 
-      function updateArrows() {
-        upBtn.classList.toggle('is-hidden', index === 0);
-        downBtn.classList.toggle('is-hidden', index === sections.length - 1);
+      function updateRail() {
+        const here = sections[index].dataset.section;
+        railItems.forEach(item => {
+          const current = item.dataset.section === here;
+          item.classList.toggle('is-current', current);
+          if (current) item.setAttribute('aria-current', 'true');
+          else         item.removeAttribute('aria-current');
+        });
       }
 
       const FIREFLY_COLORS = {
@@ -2302,16 +2493,16 @@
         root.setProperty('--ff-glow2', g2);
       }
 
-      function go(delta) {
-        if (transitioning) return;
-        const next = Math.max(0, Math.min(sections.length - 1, index + delta));
-        if (next === index) return;
+      // a jump straight across the list runs the same single out/in as a
+      // step to the neighbour — the panes in between are never shown
+      function goTo(next) {
+        if (transitioning || next === index) return;
         transitioning = true;
 
         const cur = sections[index];
         const nxt = sections[next];
         index = next;
-        updateArrows();
+        updateRail();
         setFireflyColor(nxt.dataset.section);
         cur.classList.remove('is-active');
 
@@ -2324,8 +2515,13 @@
         }, OUT_MS);
       }
 
-      upBtn.addEventListener('click', () => go(-1));
-      downBtn.addEventListener('click', () => go(1));
+      const go = delta => goTo(Math.max(0, Math.min(sections.length - 1, index + delta)));
+
+      railItems.forEach(item => {
+        item.addEventListener('click', () => {
+          goTo(sections.findIndex(s => s.dataset.section === item.dataset.section));
+        });
+      });
 
       window.addEventListener('keydown', e => {
         if (e.target.closest('input, textarea, [contenteditable]')) return;
@@ -2338,7 +2534,7 @@
       // on top of that
       sections[0].style.display = 'flex';
       sections[0].classList.add('is-active');
-      updateArrows();
+      updateRail();
     })();
 
     // ── guestbook ──
