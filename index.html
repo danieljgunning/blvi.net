@@ -459,10 +459,12 @@
       transition: opacity 0.25s ease, transform 0.25s ease;
     }
     .spotify-badge    { background: #1ed760; }
-    /* soundcloud's icon file is just the orange logo on transparent — no
-       baked-in background like spotify's — so an orange badge behind it
-       reads as orange-on-orange. dark instead, echoing the play button. */
-    .soundcloud-badge, .instagram-badge, .youtube-badge { background: rgba(18,14,10,0.85); }
+    .instagram-badge, .youtube-badge { background: rgba(18,14,10,0.85); }
+    /* soundcloud's icon file is just the orange logo on transparent, so on
+       an orange badge it would vanish — the cloud is flattened to white
+       instead, the way spotify's mark reads on its green. */
+    .soundcloud-badge { background: #ff5500; }
+    .soundcloud-badge img { filter: brightness(0) invert(1); }
     .spotify-badge img, .soundcloud-badge img, .instagram-badge img, .youtube-badge img { width: 16px; height: 16px; outline: none; }
     .vortex-card.is-front .spotify-badge,
     .vortex-card.is-front .soundcloud-badge,
@@ -839,6 +841,11 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      /* the crop to 4:3 lands within a few px of the baked-in bars, not on
+         them, so a thin black sliver was left down each edge (4-8px of the
+         960 kept, varying per video). a little over-scale pushes it out of
+         the frame, which clips it; costs ~1% of the picture all round. */
+      transform: scale(1.025);
       transition: opacity 0.35s ease;
     }
     .yt-mount {
@@ -1776,7 +1783,12 @@
             ` rotateX(${rotX.toFixed(1)}deg) rotateY(${rotY.toFixed(1)}deg) rotateZ(${rotZ.toFixed(1)}deg)` +
             ` scale(${scale.toFixed(3)})`;
           card.style.zIndex  = Math.round(100 - h.zUnit * 80 + e * 100 + arc * 60);
-          card.style.filter  = `brightness(${bright.toFixed(3)}) blur(${blur.toFixed(2)}px)`;
+          // a card at rest at the front is brightness(1) blur(0), which is a
+          // no-op — but a filter of any kind still sends the card through an
+          // offscreen render pass every frame, so say `none` when it is one
+          card.style.filter  = (blur < 0.05 && Math.abs(bright - 1) < 0.002)
+            ? 'none'
+            : `brightness(${bright.toFixed(3)}) blur(${blur.toFixed(2)}px)`;
           card.style.opacity = op.toFixed(3);
           const isFront = e > 0.985;
           // a card leaving the front fires vortex-blur — soundcloud cards
@@ -1788,24 +1800,35 @@
         }
       }
 
-      // every card is told to build its player once, the first time the
-      // pane is shown — never again, so playback survives cards cycling
-      // away from the front and back. the pane is display:none until the
-      // pager shows it, so this only fires once the vortex is visible.
+      // a card is told to build its player once, when it comes within one
+      // of the front — never again, so playback survives cards cycling
+      // away from the front and back. only the front card is ever played,
+      // so building every card's player the moment the pane opened was
+      // twenty-odd iframes loading at once (soundcloud alone) for the sake
+      // of one. the pane is display:none until the pager shows it, so the
+      // first build waits for the vortex to be visible.
       //
-      // it matters that players are built *here* and not on first tap:
-      // creating one takes an async round trip (an iframe load, a widget
-      // handshake, spotify's createController callback), and a play()
-      // issued from that callback runs outside the user activation the
-      // tap gave us — which mobile refuses. so by the time anything can
-      // be tapped the player already exists, and the tap handlers below
-      // only ever call play/pause synchronously.
-      const io = new IntersectionObserver(entries => {
-        for (const e of entries) {
-          if (!e.isIntersecting || loaded) continue;
-          loaded = true;
-          cards.forEach(c => c.dispatchEvent(new Event('vortex-load')));
+      // it matters that players are built *ahead* of the front card and
+      // not on tap: creating one takes an async round trip (an iframe
+      // load, a widget handshake, spotify's createController callback),
+      // and a play() issued from that callback runs outside the user
+      // activation the tap gave us — which mobile refuses. a card only
+      // becomes tappable by reaching the front, and it was built a step
+      // before that, so the tap handlers below only ever call play/pause
+      // synchronously. it follows the destination, not the card in
+      // flight, so a jump across the stack doesn't build everything it
+      // passes through.
+      const built = new Array(N).fill(false);
+      let builtAround = -1;
+      function buildAround(centre) {
+        for (let i = Math.max(0, centre - 1); i <= Math.min(N - 1, centre + 1); i++) {
+          if (built[i]) continue;
+          built[i] = true;
+          cards[i].dispatchEvent(new Event('vortex-load'));
         }
+      }
+      const io = new IntersectionObserver(entries => {
+        if (entries.some(e => e.isIntersecting)) { loaded = true; io.disconnect(); }
       }, { rootMargin: '150px' });
       io.observe(stage);
 
@@ -1993,11 +2016,18 @@
       let lastSettledIdx = 0;   // matches the starting position, so load itself doesn't spark
       (function loop() {
         requestAnimationFrame(loop);
-        if (document.hidden) return;
+        // only the pane the pager is showing has anything to draw — the rest
+        // are display:none, and restyling their cards 60 times a second
+        // (the pager sets the inline display, hence reading it from there)
+        if (document.hidden || wrap.style.display !== 'flex') return;
         // rawProgress picks the front card; each card dwells at the
         // front before flicking to the next
         const idx = Math.floor(rawProgress);
         targetPos = idx + smooth(Math.max(0, Math.min(1, (rawProgress - idx - 0.18) / 0.64)));
+        if (loaded && Math.round(targetPos) !== builtAround) {
+          builtAround = Math.round(targetPos);
+          buildAround(builtAround);
+        }
         // a touch-drag retargets mid-flight, which abandons the tween so
         // the cards go back to following the finger
         if (flight && targetPos !== flight.to) flight = null;
@@ -2066,6 +2096,7 @@
     initVortex(
       document.getElementById('spotify-scroll'),
       [
+        { img: 'Album%20Covers/ohdear.jpg',      title: 'oh dear',      href: 'https://open.spotify.com/track/6kRVg5ABdJq0xsf4NeJs1k?si=42dca2acf77046a6' },
         { img: 'Album%20Covers/without.JPG',     title: 'without',      href: 'https://open.spotify.com/track/0EtqGR1ldAmSQ2ggU3VAQZ?si=90764b80aeb74ca0' },
         { img: 'Album%20Covers/worthit.jpg',     title: 'worth it',     href: 'https://open.spotify.com/track/3jA1dfRX5lcQ22i3cM3g6c?si=8bc5d788a7424029' },
         { img: 'Album%20Covers/skincare.jpg',    title: 'skin care',    href: 'https://open.spotify.com/track/6GHMWx90X0d1jZeVjFw7Gi?si=7415ecaeeeeb4227' },
@@ -2136,25 +2167,25 @@
       // then downsample that json's `samples` (0..`height`) to 72 buckets,
       // taking each bucket's max.
       [
+        { slug: 'oh-dear',          title: 'oh dear',                      wf: 'uuvuwuuwvvuvtvvwwwuuuvuuuvvwwvwxyywxwxyxyxyzyyyxxxwywwxvywwwvuvutsqomiig' },
+        { slug: 'wannabe',          title: 'wannabe c418',                 wf: '9bdfghkjlnoorrqrspstuuqususuuussrssstsuvuvtuwwxyxyzyuomjihhifgfeeeccba87' },
+        { slug: 'profound',         title: 'a profound change of heart',   wf: 'nooqnoqqqrrppqqrssqssssuuuuuvuvxwwxwxyyyyyyyzyyzzyyyyyyyyxxyxzwxxwyyxxxx' },
+        { slug: 'heartbeat',        title: 'heart beat',                   wf: 'skomiojomiqlqmlpprorssuutuvwuwyxyxyzwyyxxyxyxyyxzwxxyyxxvvywwuuvuusqprqq' },
         { slug: 'the-fly',          title: 'the fly',                      wf: 'vuuuwvuwyxyyyyyzzyyyyyyyyzwyxyyyyyyyxyyxyyxyywwvuuurppqqqqqqqoqnimklhiei' },
         { slug: 'innocence-remix',  title: 'innocence (remix)',            wf: 'yyyyyyyyyyyyyyyyyyyyyzyyyyzyzzyzyzyywwwwvvwwwwwwxxyyyyyyyyyyyyyyyyyyywun' },
         { slug: 'alpha',            title: 'alpha',                        wf: 'glprququwszwwyxxwvxuxvuwuvvuuttuuuutuwuuuupmmgmknleolinjnminhomlngnmhca7' },
         { slug: 'fuckboy-remix',    title: 'fuckboy, by brakence (remix)', wf: 'kknorqqsssuvvpsuwxyssysywxyysxyyyyywywxxuwwyyyyyxyxyyyyzyyyyzywywxwwspkf' },
-        { slug: 'end-of-the-world', title: 'end of the world',             wf: 'mqsrrsqprrrqrpsssspprsrqvwxxxywxyyxwwvxwwwwwxxyxxyzyzyywxxxxxyzyzzywyxxx' },
         { slug: 'allineed',         title: 'all i need',                   wf: 'xwswuwvwwvwtuuvswxvwwwwwvvxvswwwwwwvwwzxwvwvywzyyytxwxyywxxyuwxvyxwvwwww' },
         { slug: 'blvi-2020',        title: 'music',                        wf: 'loqrtvvsuwwywwuuuttttwuusuuwssttutttuuwwwwwwwwwwwwwwwwwwxxwwwwwwxzywvspz' },
         { slug: 'downtown',         title: 'downtown',                     wf: 'lllotxyxyyyxyxwxxwqyyyyyyyyyyyyyyyzyyyyyyyyywqrrrvuvuwwuuvutuussrppolkif' },
         { slug: 'water',            title: 'water (under)',                wf: 'jilnqoqutqqqrsutupstsutussussutojfdbcfinuzuqmkvpifowolgmtqmonqokifdba865' },
         { slug: 'keepurheadup',     title: 'keepurheadup',                 wf: 'srrqrrrsstuvutsrustuuwwyxxwwwwwxyyzyzzyzyyyyyzykikmlpyyyyxxxwwvuuuvvuwvv' },
-        { slug: 'fuckboy',          title: 'fuckboy',                      wf: 'yvtrssstsnrrssyxyyywxytyxwsyvuyuywyxxutyszywyzxvyuyxywyxwyqyyxvywwywxwyy' },
         { slug: 'hot',              title: 'up and away',                  wf: 'nnlmmnnnnoyxvvywyuvyyyxyyywyyxyyyyyyyyyyyyyyvyyyyyuyyyyyyyyyzzyzyzyyyyyy' },
         { slug: 'missyou',          title: 'missyou',                      wf: 'pqpooqommqrrqrssqsttutuuutqsuutuuvvuuyuxxzwywyyuxxwvwywxuxxywyyywuwwyvwy' },
         { slug: 'repair',           title: 'repair',                       wf: 'vuvvvxwxvwxwuwxwywyvvyxywywwyxxyywxyzxyyvxxywyywwxywywxwtonmlmjjkjkkkllj' },
         { slug: 'be-content',       title: 'be content',                   wf: 'nlwvvtsuutvwwvyutvuwwwvtvsutrqoquwuuskvztusruvvwutsutuyuwxtsututrppppusr' },
-        { slug: 'asleep',           title: 'asleep',                       wf: 'klkllkjommmpmlospmrnpsqpoqnntyvvuvyuwyxzyywvrprrsqqpnnmmomnoonnnmlmkmlkk' },
-        { slug: 'oh-dear',          title: 'oh dear',                      wf: 'uuvuwvuwvvuvtvvwwwuvuvuuuvvxwvwxyyxxwxyyyxyzyzyxyxxywwxvywwwwuvutsqomiih' },
+        { slug: 'asleep',           title: 'wake me up',                   wf: 'klkllkjommmpmlospmrnpsqpoqnntyvvuvyuwyxzyywvrprrsqqpnnmmomnoonnnmlmkmlkk' },
         { slug: 'innocence',        title: 'innocence',                    wf: 'wuwuwuwvwuwwuwwwxyzwzxzxyyyyyxyxurtqurtryyyyyxyxyxyxxwzyurtrrqqprqpomlig' },
-        { slug: 'twenty',           title: 'twenty',                       wf: 'ejmmnmsspsssrsspssqrqmpqpopmoooononnqooonxwwyywyzyyxuusdhhciighhdfgfdgd8' },
         { slug: 'reason',           title: 'reason',                       wf: 'yxyyyyxyyyxxxyxxxyyyxyyyyxyyxyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyzyyyyyyyyyxyy' },
         { slug: 'linger',           title: 'linger',                       wf: '8bdffhhjkkmoqrqqrqqqqrrxzyyyxvzxxwxwyxywvwxywyyxwwwututuuttuututuutttutu' },
       ],
@@ -2356,10 +2387,13 @@
     // watch rather than just hear. ──
     initVortex(
       document.getElementById('youtube-scroll'),
+      // `art` names the ytimg thumbnail when maxresdefault doesn't exist —
+      // youtube only makes one for uploads it transcoded at 720p or above,
+      // and this one topped out at 480p. maxres1 is the same frame at 16:9.
       [
-        { id: 'uvdAAwGi_p8', title: 'may 23rd, 2020'      },
-        { id: 'umLGH_i_fzo', title: 'april 13th, 2020'    },
-        { id: 'C6vObLvBYtU', title: 'february 21st, 2020' },
+        { id: 'mpsy-Klvk9s', art: 'maxres1', title: 'i miss you (2020)' },
+        { id: 'uvdAAwGi_p8', title: 'may 23rd, 2020'   },
+        { id: 'umLGH_i_fzo', title: 'april 13th, 2020' },
       ],
       v => {
         const card = document.createElement('div');
@@ -2383,7 +2417,7 @@
           : `<button class="vortex-play yt-play" type="button" aria-label="play ${v.title}">${playGlyph}</button>`;
         card.innerHTML = `<div class="vortex-frame">
             <div class="yt-embed">
-              <img class="yt-art" src="https://i.ytimg.com/vi/${v.id}/maxresdefault.jpg" alt="${v.title}" draggable="false" loading="lazy" decoding="async">
+              <img class="yt-art" src="https://i.ytimg.com/vi/${v.id}/${v.art || 'maxresdefault'}.jpg" alt="${v.title}" draggable="false" loading="lazy" decoding="async">
               ${TOUCH_DEVICE ? '' : '<div class="yt-mount"><div></div></div>'}
               ${playControl}
               <div class="vortex-catch"></div>
